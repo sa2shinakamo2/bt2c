@@ -1,0 +1,31 @@
+{
+  "name": "bt2c-node",
+  "version": "1.0.0",
+  "description": "BT2C Node Implementation",
+  "main": "src/index.js",
+  "bin": {
+    "bt2c": "src/cli.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "axios": "^1.8.2",
+    "cors": "^2.8.5",
+    "crypto": "^1.0.1",
+    "elliptic": "^6.5.4",
+    "express": "^4.18.2",
+    "level": "^8.0.0",
+    "merkle": "^0.6.0",
+    "nodemailer": "^6.10.0",
+    "prompt-sync": "^4.2.0",
+    "ws": "^8.13.0",
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "jest": "^29.5.0",
+    "nodemon": "^2.0.22"
+  }
+}

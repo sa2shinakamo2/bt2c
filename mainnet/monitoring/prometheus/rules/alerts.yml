@@ -1,0 +1,33 @@
+{
+  "groups": [
+    {
+      "name": "bt2c_alerts",
+      "rules": [
+        {
+          "alert": "HighCPUUsage",
+          "expr": "process_cpu_seconds_total > 80",
+          "for": "5m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "High CPU usage detected",
+            "description": "CPU usage is above 80% for 5 minutes"
+          }
+        },
+        {
+          "alert": "HighMemoryUsage",
+          "expr": "process_resident_memory_bytes > 1e9",
+          "for": "5m",
+          "labels": {
+            "severity": "warning"
+          },
+          "annotations": {
+            "summary": "High memory usage detected",
+            "description": "Memory usage is above 1GB for 5 minutes"
+          }
+        }
+      ]
+    }
+  ]
+}

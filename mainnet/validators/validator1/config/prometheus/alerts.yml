@@ -1,0 +1,38 @@
+groups:
+  - name: bt2c_alerts
+    rules:
+      - alert: ValidatorDown
+        expr: up{job="bt2c_validator"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Validator node is down"
+          description: "The validator node has been down for more than 1 minute"
+
+      - alert: HighMemoryUsage
+        expr: process_resident_memory_bytes / process_virtual_memory_bytes > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage detected"
+          description: "Memory usage is above 80% for 5 minutes"
+
+      - alert: MissedBlocks
+        expr: increase(bt2c_missed_blocks_total[1h]) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Validator is missing blocks"
+          description: "The validator has missed more than 5 blocks in the last hour"
+
+      - alert: LowPeerCount
+        expr: bt2c_connected_peers < 3
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low peer count"
+          description: "The validator has less than 3 connected peers"

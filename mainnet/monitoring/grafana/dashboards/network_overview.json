@@ -1,0 +1,25 @@
+{
+  "title": "BT2C Network Overview",
+  "panels": [
+    {
+      "title": "Active Validators",
+      "type": "gauge",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "bt2c_active_validators"
+        }
+      ]
+    },
+    {
+      "title": "Transaction Rate",
+      "type": "graph",
+      "datasource": "Prometheus",
+      "targets": [
+        {
+          "expr": "rate(bt2c_transactions_total[5m])"
+        }
+      ]
+    }
+  ]
+}

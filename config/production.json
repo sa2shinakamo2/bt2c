@@ -1,0 +1,59 @@
+{
+    "network": {
+        "type": "mainnet",
+        "genesis_timestamp": 1709856254,
+        "initial_peers": [
+            "validator1.bt2c.network:26656",
+            "validator2.bt2c.network:26657",
+            "validator3.bt2c.network:26658"
+        ],
+        "max_peers": 50,
+        "peer_timeout": 300,
+        "peer_maintenance_interval": 60
+    },
+    "consensus": {
+        "block_time": 30,
+        "minimum_stake": 1000,
+        "validator_slots": 100,
+        "distribution_blocks": 2016,
+        "initial_reward": 100,
+        "block_reward": 50
+    },
+    "mempool": {
+        "max_size_mb": 300,
+        "max_tx_count": 10000,
+        "min_fee_per_byte": 0.00001
+    },
+    "security": {
+        "ssl_required": true,
+        "min_password_length": 12,
+        "max_failed_attempts": 5,
+        "lockout_duration": 3600
+    },
+    "database": {
+        "url": "postgresql://bt2c:${DB_PASSWORD}@postgres:5432/bt2c",
+        "pool_size": 20,
+        "max_overflow": 10
+    },
+    "redis": {
+        "url": "redis://:${REDIS_PASSWORD}@redis:6379/0",
+        "pool_size": 20
+    },
+    "logging": {
+        "level": "INFO",
+        "file": "/var/log/bt2c/node.log",
+        "max_size_mb": 100,
+        "backup_count": 10
+    },
+    "monitoring": {
+        "prometheus_port": 9090,
+        "metrics_enabled": true,
+        "health_check_interval": 60
+    },
+    "backup": {
+        "enabled": true,
+        "interval_hours": 24,
+        "retention_days": 30,
+        "path": "/var/backups/bt2c"
+    }
+}

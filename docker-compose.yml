@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  validator1:
+    build: .
+    ports:
+      - "8081:8081"
+      - "26656:26656"
+    volumes:
+      - ./config:/app/config
+      - ./blockchain:/app/blockchain
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["python", "-m", "blockchain", "--config", "/app/config/validator.json"]
+    networks:
+      - default
+
+  validator2:
+    build: .
+    ports:
+      - "8082:8082"
+      - "26657:26657"
+    volumes:
+      - ./config:/app/config
+      - ./blockchain:/app/blockchain
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: ["python", "-m", "blockchain", "--config", "/app/config/validator2.json"]
+    networks:
+      - default
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: bt2c
+      POSTGRES_PASSWORD: bt2c
+      POSTGRES_DB: bt2c
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bt2c"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - default
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - default
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  default:
+    name: bt2c_default
+    external: true

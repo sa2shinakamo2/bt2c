@@ -1,0 +1,8 @@
+# Run backup every 6 hours
+0 */6 * * * /opt/bt2c/mainnet/validators/validator1/scripts/backup.sh
+
+# Check validator health every minute
+* * * * * curl -k https://localhost:8000/status > /dev/null 2>&1 || systemctl restart bt2c-validator.service
+
+# Rotate logs daily
+0 0 * * * find /opt/bt2c/mainnet/validators/validator1/data/logs -type f -name "*.log" -mtime +7 -delete

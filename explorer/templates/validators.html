@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}BT2C Explorer - Validators{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1>Validators</h1>
+        <p class="lead">Browse all validators on the BT2C blockchain</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Network Statistics</h5>
+                <dl class="row mb-0">
+                    <dt class="col-sm-8">Total Validators:</dt>
+                    <dd class="col-sm-4">{{ data.total_validators }}</dd>
+                    
+                    <dt class="col-sm-8">Minimum Stake Required:</dt>
+                    <dd class="col-sm-4">{{ data.minimum_stake }} BT2C</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Address</th>
+                                <th>Stake</th>
+                                <th>Blocks Validated</th>
+                                <th>Last Block</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for validator in data.validators %}
+                            <tr>
+                                <td class="text-truncate" style="max-width: 200px;">
+                                    <a href="/address/{{ validator.address }}" class="text-decoration-none">{{ validator.address }}</a>
+                                </td>
+                                <td>{{ validator.stake }} BT2C</td>
+                                <td>{{ validator.blocks_validated }}</td>
+                                <td>{{ validator.last_block }}</td>
+                                <td>
+                                    {% if validator.stake >= data.minimum_stake %}
+                                    <span class="badge bg-success">Active</span>
+                                    {% else %}
+                                    <span class="badge bg-warning">Insufficient Stake</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center">No validators found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}BT2C Explorer - Blocks{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1>Blocks</h1>
+        <p class="lead">Browse all blocks on the BT2C blockchain</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Height</th>
+                                <th>Hash</th>
+                                <th>Time</th>
+                                <th>Validator</th>
+                                <th>Transactions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for block in data.blocks %}
+                            <tr>
+                                <td>{{ block.index }}</td>
+                                <td class="text-truncate" style="max-width: 200px;">
+                                    <a href="/block/{{ block.hash }}" class="text-decoration-none">{{ block.hash }}</a>
+                                </td>
+                                <td>{{ block.timestamp }}</td>
+                                <td class="text-truncate" style="max-width: 150px;">
+                                    <a href="/address/{{ block.validator }}" class="text-decoration-none">{{ block.validator }}</a>
+                                </td>
+                                <td>{{ block.transactions }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center">No blocks found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if data.pagination.pages > 1 %}
+                <nav aria-label="Block list navigation">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if data.pagination.page > 1 %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ data.pagination.page - 1 }}" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% for p in range(1, data.pagination.pages + 1) %}
+                        <li class="page-item {% if p == data.pagination.page %}active{% endif %}">
+                            <a class="page-link" href="?page={{ p }}">{{ p }}</a>
+                        </li>
+                        {% endfor %}
+
+                        {% if data.pagination.page < data.pagination.pages %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ data.pagination.page + 1 }}" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

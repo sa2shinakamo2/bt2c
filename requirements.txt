@@ -1,0 +1,46 @@
+# Core dependencies
+fastapi
+uvicorn
+pydantic
+pydantic-settings>=2.1.0
+jinja2==3.1.3
+aiofiles>=0.7.0
+aiohttp
+python-multipart==0.0.6
+python-jose[cryptography]>=3.3.0
+pyOpenSSL>=23.3.0
+websockets>=10.0
+redis
+aioredis
+structlog==24.1.0
+
+# Database
+sqlalchemy==2.0.25
+alembic>=1.7.0
+psycopg2-binary
+aiosqlite>=0.17.0
+
+# Monitoring and metrics
+prometheus-client
+prometheus-fastapi-instrumentator>=6.0.0
+psutil>=5.9.0
+
+# Blockchain specific
+base58>=2.1.1
+cryptography
+coincurve==19.0.1
+eth-hash>=0.5.0
+eth-keys>=0.4.0
+eth-utils>=2.1.0
+pycryptodome>=3.19.0
+mnemonic==0.20
+hdwallet==2.2.1
+
+# Testing and development
+pytest>=7.0.0
+pytest-asyncio>=0.18.0
+pytest-cov>=3.0.0
+black>=22.3.0
+isort>=5.10.0
+mypy>=1.0.0
+flake8>=3.9.2

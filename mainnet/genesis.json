@@ -1,0 +1,65 @@
+{
+  "timestamp": 1741164690,
+  "network_type": "mainnet",
+  "chain_id": "bt2c-mainnet-1",
+  "block_time": 5,
+  "initial_supply": 100000000,
+  "consensus_params": {
+    "block": {
+      "max_bytes": 22020096,
+      "max_gas": -1,
+      "time_iota_ms": 1000
+    },
+    "evidence": {
+      "max_age_num_blocks": 100000,
+      "max_age_duration": "172800000000000"
+    },
+    "validator": {
+      "pub_key_types": [
+        "ed25519"
+      ],
+      "minimum_stake": 10000
+    }
+  },
+  "validators": [
+    {
+      "address": "bt2c1validator1example",
+      "power": "100",
+      "name": "Validator 1",
+      "commission_rate": "0.10"
+    }
+  ],
+  "app_state": {
+    "accounts": [
+      {
+        "address": "bt2c1ecosystem",
+        "balance": 30000000,
+        "vesting_schedule": {
+          "start_time": 1741164690,
+          "duration": 31536000,
+          "cliff_duration": 7776000
+        }
+      },
+      {
+        "address": "bt2c1validator1example",
+        "balance": 40000000,
+        "is_validator": true,
+        "commission_rate": "0.10",
+        "max_commission_rate": "0.20"
+      },
+      {
+        "address": "bt2c1community",
+        "balance": 30000000
+      }
+    ],
+    "staking": {
+      "params": {
+        "unbonding_time": "1814400000000000",
+        "max_validators": 100,
+        "max_entries": 7,
+        "historical_entries": 10000,
+        "minimum_stake": 10000
+      }
+    }
+  }
+}

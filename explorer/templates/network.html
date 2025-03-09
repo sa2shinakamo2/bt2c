@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}BT2C Explorer - Network Status{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1>Network Status</h1>
+        <p class="lead">Current status and statistics of the BT2C blockchain</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Blockchain Statistics</h5>
+                <dl class="row mb-0">
+                    <dt class="col-sm-8">Current Height:</dt>
+                    <dd class="col-sm-4">{{ data.stats.current_height }}</dd>
+                    
+                    <dt class="col-sm-8">Total Transactions:</dt>
+                    <dd class="col-sm-4">{{ data.stats.total_transactions }}</dd>
+                    
+                    <dt class="col-sm-8">Average Block Time:</dt>
+                    <dd class="col-sm-4">{{ data.stats.avg_block_time }}s</dd>
+                    
+                    <dt class="col-sm-8">Network Type:</dt>
+                    <dd class="col-sm-4">{{ data.stats.network_type }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Validator Statistics</h5>
+                <dl class="row mb-0">
+                    <dt class="col-sm-8">Active Validators:</dt>
+                    <dd class="col-sm-4">{{ data.stats.active_validators }}</dd>
+                    
+                    <dt class="col-sm-8">Total Staked:</dt>
+                    <dd class="col-sm-4">{{ data.stats.total_staked }} BT2C</dd>
+                    
+                    <dt class="col-sm-8">Minimum Stake:</dt>
+                    <dd class="col-sm-4">{{ data.stats.minimum_stake }} BT2C</dd>
+                    
+                    <dt class="col-sm-8">Block Reward:</dt>
+                    <dd class="col-sm-4">{{ data.stats.block_reward }} BT2C</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Supply Statistics</h5>
+                <dl class="row mb-0">
+                    <dt class="col-sm-8">Total Supply:</dt>
+                    <dd class="col-sm-4">{{ data.stats.total_supply }} BT2C</dd>
+                    
+                    <dt class="col-sm-8">Total Minted:</dt>
+                    <dd class="col-sm-4">{{ data.stats.total_minted }} BT2C</dd>
+                    
+                    <dt class="col-sm-8">Remaining Supply:</dt>
+                    <dd class="col-sm-4">{{ data.stats.total_supply - data.stats.total_minted }} BT2C</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">Recent Blocks</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Height</th>
+                                <th>Time</th>
+                                <th>Txs</th>
+                                <th>Validator</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for block in data.recent_blocks %}
+                            <tr>
+                                <td>
+                                    <a href="/block/{{ block.index }}" class="text-decoration-none">{{ block.index }}</a>
+                                </td>
+                                <td>{{ block.timestamp }}</td>
+                                <td>{{ block.transactions }}</td>
+                                <td class="text-truncate" style="max-width: 150px;">
+                                    <a href="/address/{{ block.validator }}" class="text-decoration-none">{{ block.validator }}</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{
+  "ssl": {
+    "status": "failed",
+    "error": "[Errno 61] Connection refused"
+  },
+  "firewall": {
+    "8000": "closed",
+    "26656": "closed",
+    "9090": "open",
+    "3000": "open"
+  },
+  "consensus": {
+    "block_time": true,
+    "max_validators": true,
+    "minimum_stake": true
+  },
+  "genesis": {
+    "error": "'>' not supported between instances of 'NoneType' and 'int'"
+  },
+  "monitoring": {
+    "prometheus": true,
+    "grafana": true
+  }
+}

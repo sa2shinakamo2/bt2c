@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}BT2C Explorer - Home{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="mb-4">BT2C Explorer</h1>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stats-card h-100">
+            <h2>{{ data.stats.total_blocks }}</h2>
+            <p>Total Blocks</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card h-100">
+            <h2>{{ data.stats.total_transactions }}</h2>
+            <p>Total Transactions</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card h-100">
+            <h2>{{ data.stats.active_validators }}</h2>
+            <p>Active Validators</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stats-card h-100">
+            <h2>{{ data.stats.total_staked }} BT2C</h2>
+            <p>Total Staked</p>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title mb-4">Latest Blocks</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Height</th>
+                                <th>Time</th>
+                                <th>Txs</th>
+                                <th>Validator</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for block in data.latest_blocks %}
+                            <tr>
+                                <td>
+                                    <a href="/block/{{ block.index }}" class="text-decoration-none">{{ block.index }}</a>
+                                </td>
+                                <td>{{ block.timestamp }}</td>
+                                <td>{{ block.transactions }}</td>
+                                <td class="text-truncate" style="max-width: 150px;">
+                                    <a href="/address/{{ block.validator }}" class="text-decoration-none">{{ block.validator }}</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-center mt-3">
+                    <a href="/blocks" class="btn btn-primary">View All Blocks</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title mb-4">Latest Transactions</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Hash</th>
+                                <th>From</th>
+                                <th>To</th>
+                                <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tx in data.latest_transactions %}
+                            <tr>
+                                <td class="text-truncate" style="max-width: 100px;">
+                                    <a href="/transaction/{{ tx.hash }}" class="text-decoration-none">{{ tx.hash }}</a>
+                                </td>
+                                <td class="text-truncate" style="max-width: 100px;">
+                                    <a href="/address/{{ tx.sender }}" class="text-decoration-none">{{ tx.sender }}</a>
+                                </td>
+                                <td class="text-truncate" style="max-width: 100px;">
+                                    <a href="/address/{{ tx.recipient }}" class="text-decoration-none">{{ tx.recipient }}</a>
+                                </td>
+                                <td>{{ tx.amount }} BT2C</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="text-center mt-3">
+                    <a href="/transactions" class="btn btn-primary">View All Transactions</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize search form
+    const searchForm = document.getElementById('main-search-form');
+    if (searchForm) {
+        searchForm.addEventListener('submit', function(e) {
+            const query = document.getElementById('main-search-query').value;
+            if (!query || query.trim() === '') {
+                e.preventDefault();
+                return false;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

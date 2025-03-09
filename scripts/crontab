@@ -1,0 +1,1 @@
+0 */6 * * * /app/scripts/backup.sh > /var/log/bt2c-backup.log 2>&1

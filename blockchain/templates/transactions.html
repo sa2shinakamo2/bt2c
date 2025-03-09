@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Transactions</h1>
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">Submit Transaction</h5>
+        <form id="transactionForm">
+            <div class="mb-3">
+                <label for="from_addr" class="form-label">From Address</label>
+                <input type="text" class="form-control" id="from_addr" required>
+            </div>
+            <div class="mb-3">
+                <label for="to_addr" class="form-label">To Address</label>
+                <input type="text" class="form-control" id="to_addr" required>
+            </div>
+            <div class="mb-3">
+                <label for="amount" class="form-label">Amount</label>
+                <input type="number" class="form-control" id="amount" step="0.000001" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit Transaction</button>
+        </form>
+    </div>
+</div>
+
+<div class="mt-4">
+    <h2>Recent Transactions</h2>
+    <div class="table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>From</th>
+                    <th>To</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody id="transactionsTable">
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+async function loadTransactions() {
+    const response = await fetch('/transactions/data');
+    const data = await response.json();
+    const tbody = document.getElementById('transactionsTable');
+    tbody.innerHTML = '';
+    
+    data.transactions.forEach(tx => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${tx.from_addr}</td>
+            <td>${tx.to_addr}</td>
+            <td>${tx.amount}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+document.getElementById('transactionForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const transaction = {
+        from_addr: document.getElementById('from_addr').value,
+        to_addr: document.getElementById('to_addr').value,
+        amount: parseFloat(document.getElementById('amount').value)
+    };
+    
+    try {
+        const response = await fetch('/transactions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(transaction)
+        });
+        
+        if (response.ok) {
+            loadTransactions();
+            document.getElementById('transactionForm').reset();
+        } else {
+            alert('Failed to submit transaction');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to submit transaction');
+    }
+});
+
+// Load transactions initially and every 5 seconds
+loadTransactions();
+setInterval(loadTransactions, 5000);
+</script>
+{% endblock %}

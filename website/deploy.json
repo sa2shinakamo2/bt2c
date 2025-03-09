@@ -1,0 +1,28 @@
+{
+    "name": "bit2coin",
+    "domain": "bit2co.net",
+    "version": "1.0.0",
+    "static_files": [
+        "index.html",
+        "validators.html",
+        "explorer.html",
+        "docs.html",
+        "wallet.html",
+        "css/*",
+        "js/*",
+        "images/*"
+    ],
+    "api": {
+        "endpoint": "api.bit2co.net",
+        "cors_origins": ["https://bit2co.net"],
+        "routes": [
+            "/api/distribution/info",
+            "/api/distribution/check/:address"
+        ]
+    },
+    "meta": {
+        "title": "bit2coin - Sustainable Blockchain Technology",
+        "description": "A sustainable proof-of-stake blockchain platform for the future of digital transactions",
+        "keywords": "bit2coin, blockchain, cryptocurrency, proof of stake, sustainable blockchain"
+    }
+}

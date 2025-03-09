@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}BT2C Explorer - Block {{ block.index }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item"><a href="/blocks">Blocks</a></li>
+                <li class="breadcrumb-item active">Block {{ block.index }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title mb-0">Block #{{ block.index }}</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <th>Hash:</th>
+                                    <td class="text-break">{{ block.hash }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Previous Block:</th>
+                                    <td>
+                                        {% if block.index > 0 %}
+                                        <a href="/block/{{ block.previous_hash }}">{{ block.previous_hash }}</a>
+                                        {% else %}
+                                        Genesis Block
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Timestamp:</th>
+                                    <td>{{ block.timestamp | datetime }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <th>Validator:</th>
+                                    <td>
+                                        <a href="/address/{{ block.validator }}">{{ block.validator }}</a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Size:</th>
+                                    <td>{{ block.size }} bytes</td>
+                                </tr>
+                                <tr>
+                                    <th>Transaction Count:</th>
+                                    <td>{{ block.transactions | length }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">Transactions</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Hash</th>
+                                <th>From</th>
+                                <th>To</th>
+                                <th>Amount</th>
+                                <th>Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tx in block.transactions %}
+                            <tr>
+                                <td>
+                                    <a href="/transaction/{{ tx.hash }}">{{ tx.hash[:16] }}...</a>
+                                </td>
+                                <td>
+                                    {% if tx.sender == "0" %}
+                                    System (Block Reward)
+                                    {% else %}
+                                    <a href="/address/{{ tx.sender }}">{{ tx.sender[:8] }}...</a>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="/address/{{ tx.recipient }}">{{ tx.recipient[:8] }}...</a>
+                                </td>
+                                <td>{{ tx.amount }} BT2C</td>
+                                <td>{{ tx.timestamp | datetime }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,47 @@
+{
+    "network": {
+        "chain_id": "bt2c-mainnet-1",
+        "type": "testnet",
+        "name": "bt2c-testnet",
+        "version": "1.0.0",
+        "validator": {
+            "name": "validator1",
+            "address": "bt2c1validator1address",
+            "private_key": "0x123...",
+            "public_key": "0x789...",
+            "power": 1000000
+        },
+        "listen_addr": "0.0.0.0:26656",
+        "external_addr": "",
+        "seeds": [],
+        "persistent_peers": ["tcp://validator2:26657"]
+    },
+    "block_production": {
+        "enabled": true,
+        "block_time": 5,
+        "max_transactions": 100,
+        "max_block_size": 1048576,
+        "produce_empty_blocks": true
+    },
+    "api": {
+        "host": "0.0.0.0",
+        "port": 8081
+    },
+    "metrics": {
+        "enabled": true,
+        "host": "0.0.0.0",
+        "port": 8081
+    },
+    "database": {
+        "host": "postgres",
+        "port": 5432,
+        "name": "bt2c",
+        "user": "bt2c",
+        "password": "bt2c"
+    },
+    "redis": {
+        "host": "redis",
+        "port": 6379,
+        "db": 0
+    }
+}

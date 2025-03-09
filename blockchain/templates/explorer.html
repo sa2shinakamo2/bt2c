@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BT2C Explorer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .block-card {
+            margin-bottom: 1rem;
+        }
+        .transaction-row:hover {
+            background-color: #f8f9fa;
+        }
+        .block-number {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        .timestamp {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        .hash {
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+        .tab-content {
+            padding-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">BT2C Blockchain</a>
+            <div class="navbar-nav">
+                <a class="nav-link" href="/explorer">Explorer</a>
+                <a class="nav-link" href="/validators">Validators</a>
+                <a class="nav-link" href="/network">Network</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <h2>Blockchain Explorer</h2>
+        
+        <ul class="nav nav-tabs mt-4" id="explorerTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="blocks-tab" data-bs-toggle="tab" data-bs-target="#blocks" type="button">
+                    Blocks
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="transactions-tab" data-bs-toggle="tab" data-bs-target="#transactions" type="button">
+                    Transactions
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="explorerTabContent">
+            <div class="tab-pane fade show active" id="blocks">
+                <div class="row" id="blocks-container">
+                    <!-- Blocks will be inserted here -->
+                </div>
+            </div>
+            <div class="tab-pane fade" id="transactions">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Hash</th>
+                                <th>Block</th>
+                                <th>From</th>
+                                <th>To</th>
+                                <th>Amount</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactions-container">
+                            <!-- Transactions will be inserted here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function fetchBlocks() {
+            fetch('/blocks/data')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('blocks-container');
+                    container.innerHTML = '';
+                    
+                    data.blocks.forEach(block => {
+                        const card = document.createElement('div');
+                        card.className = 'col-md-6 block-card';
+                        card.innerHTML = `
+                            <div class="card">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <span class="block-number">#${block.height}</span>
+                                    <span class="timestamp">${new Date(block.timestamp * 1000).toLocaleString()}</span>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-2">
+                                        <small>Hash:</small><br>
+                                        <span class="hash">${block.hash}</span>
+                                    </div>
+                                    <div class="mb-2">
+                                        <small>Proposer:</small><br>
+                                        <span class="hash">${block.proposer}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span>Transactions: ${block.tx_count}</span>
+                                        <span>Size: ${(block.size / 1024).toFixed(2)} KB</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        container.appendChild(card);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function fetchTransactions() {
+            fetch('/transactions/data')
+                .then(response => response.json())
+                .then(data => {
+                    const container = document.getElementById('transactions-container');
+                    container.innerHTML = '';
+                    
+                    data.transactions.forEach(tx => {
+                        const row = document.createElement('tr');
+                        row.className = 'transaction-row';
+                        row.innerHTML = `
+                            <td><span class="hash">${tx.hash}</span></td>
+                            <td>${tx.block_height}</td>
+                            <td><span class="hash">${tx.from}</span></td>
+                            <td><span class="hash">${tx.to}</span></td>
+                            <td>${tx.amount} BT2C</td>
+                            <td>${new Date(tx.timestamp * 1000).toLocaleString()}</td>
+                        `;
+                        container.appendChild(row);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Fetch initially and every 10 seconds
+        fetchBlocks();
+        fetchTransactions();
+        setInterval(fetchBlocks, 10000);
+        setInterval(fetchTransactions, 10000);
+
+        // Setup tab switching
+        document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(button => {
+            button.addEventListener('click', event => {
+                event.preventDefault();
+                const targetId = event.target.getAttribute('data-bs-target').substring(1);
+                document.querySelectorAll('.tab-pane').forEach(pane => {
+                    pane.classList.remove('show', 'active');
+                });
+                document.getElementById(targetId).classList.add('show', 'active');
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.classList.remove('active');
+                });
+                event.target.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

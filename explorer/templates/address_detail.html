@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}BT2C Explorer - Address {{ address[:8] }}...{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item active">Address</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title mb-0">Address Details</h3>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h4 class="text-break">{{ address }}</h4>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <th>Balance:</th>
+                                    <td>{{ balance }} BT2C</td>
+                                </tr>
+                                <tr>
+                                    <th>Total Transactions:</th>
+                                    <td>{{ transactions | length }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-sm">
+                            <tbody>
+                                <tr>
+                                    <th>Validator Status:</th>
+                                    <td>
+                                        {% if is_validator %}
+                                        <span class="badge bg-success">Active Validator</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Not a Validator</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% if is_validator %}
+                                <tr>
+                                    <th>Staked Amount:</th>
+                                    <td>{{ staked_amount }} BT2C</td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">Transactions</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Block</th>
+                                <th>Hash</th>
+                                <th>Type</th>
+                                <th>From/To</th>
+                                <th>Amount</th>
+                                <th>Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in transactions %}
+                            <tr>
+                                <td>
+                                    <a href="/block/{{ item.block.hash }}">#{{ item.block.index }}</a>
+                                </td>
+                                <td class="text-truncate" style="max-width: 150px;">
+                                    {{ item.transaction.hash }}
+                                </td>
+                                <td>
+                                    {% if item.transaction.sender == address %}
+                                    <span class="badge bg-danger">OUT</span>
+                                    {% else %}
+                                    <span class="badge bg-success">IN</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if item.transaction.sender == address %}
+                                    To: <a href="/address/{{ item.transaction.recipient }}">{{ item.transaction.recipient[:8] }}...</a>
+                                    {% else %}
+                                    From: 
+                                    {% if item.transaction.sender == "0" %}
+                                    System (Block Reward)
+                                    {% else %}
+                                    <a href="/address/{{ item.transaction.sender }}">{{ item.transaction.sender[:8] }}...</a>
+                                    {% endif %}
+                                    {% endif %}
+                                </td>
+                                <td>{{ item.transaction.amount }} BT2C</td>
+                                <td>{{ item.transaction.timestamp | datetime }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

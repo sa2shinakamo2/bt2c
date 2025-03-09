@@ -1,0 +1,12 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'bt2c_validators'
+    static_configs:
+      - targets:
+        - 'bt2c-validator1-1:8081'
+        - 'bt2c-validator2-1:8082'
+    metrics_path: '/metrics'
+    scheme: 'http'

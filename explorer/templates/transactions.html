@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}BT2C Explorer - Transactions{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1>Transactions</h1>
+        <p class="lead">Browse all transactions on the BT2C blockchain</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Hash</th>
+                                <th>From</th>
+                                <th>To</th>
+                                <th>Amount</th>
+                                <th>Block</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for tx in data.transactions %}
+                            <tr>
+                                <td class="text-truncate" style="max-width: 150px;">
+                                    <a href="/transaction/{{ tx.hash }}" class="text-decoration-none">{{ tx.hash }}</a>
+                                </td>
+                                <td class="text-truncate" style="max-width: 150px;">
+                                    <a href="/address/{{ tx.sender }}" class="text-decoration-none">{{ tx.sender }}</a>
+                                </td>
+                                <td class="text-truncate" style="max-width: 150px;">
+                                    <a href="/address/{{ tx.recipient }}" class="text-decoration-none">{{ tx.recipient }}</a>
+                                </td>
+                                <td>{{ tx.amount }} BT2C</td>
+                                <td>
+                                    <a href="/block/{{ tx.block_index }}" class="text-decoration-none">{{ tx.block_index }}</a>
+                                </td>
+                                <td>{{ tx.timestamp }}</td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center">No transactions found</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if data.pagination.pages > 1 %}
+                <nav aria-label="Transaction list navigation">
+                    <ul class="pagination justify-content-center mb-0">
+                        {% if data.pagination.page > 1 %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ data.pagination.page - 1 }}" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        {% for p in range(1, data.pagination.pages + 1) %}
+                        <li class="page-item {% if p == data.pagination.page %}active{% endif %}">
+                            <a class="page-link" href="?page={{ p }}">{{ p }}</a>
+                        </li>
+                        {% endfor %}
+
+                        {% if data.pagination.page < data.pagination.pages %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ data.pagination.page + 1 }}" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

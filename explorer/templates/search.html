@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block title %}BT2C Explorer - Search Results{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <h2>Search Results</h2>
+            <p class="lead">Results for: {{ query }}</p>
+        </div>
+    </div>
+
+    {% if results.blocks %}
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Blocks</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Height</th>
+                                    <th>Hash</th>
+                                    <th>Timestamp</th>
+                                    <th>Transactions</th>
+                                    <th>Validator</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for block in results.blocks %}
+                                <tr>
+                                    <td>
+                                        <a href="/block/{{ block.hash }}">{{ block.index }}</a>
+                                    </td>
+                                    <td class="text-truncate" style="max-width: 200px;">
+                                        <a href="/block/{{ block.hash }}">{{ block.hash|hash }}</a>
+                                    </td>
+                                    <td>{{ block.timestamp|datetime }}</td>
+                                    <td>{{ block.transactions|length }}</td>
+                                    <td>
+                                        <a href="/address/{{ block.validator }}">{{ block.validator|hash }}</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if results.transactions %}
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Transactions</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Hash</th>
+                                    <th>From</th>
+                                    <th>To</th>
+                                    <th>Amount</th>
+                                    <th>Block</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for tx in results.transactions %}
+                                <tr>
+                                    <td class="text-truncate" style="max-width: 200px;">
+                                        <a href="/transaction/{{ tx.hash }}">{{ tx.hash|hash }}</a>
+                                    </td>
+                                    <td class="text-truncate" style="max-width: 150px;">
+                                        <a href="/address/{{ tx.sender }}">{{ tx.sender|hash }}</a>
+                                    </td>
+                                    <td class="text-truncate" style="max-width: 150px;">
+                                        <a href="/address/{{ tx.recipient }}">{{ tx.recipient|hash }}</a>
+                                    </td>
+                                    <td>{{ tx.amount }} BT2C</td>
+                                    <td>
+                                        <a href="/block/{{ tx.block_hash }}">{{ tx.block_height }}</a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if results.addresses %}
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Addresses</h4>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Address</th>
+                                    <th>Type</th>
+                                    <th>Balance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for addr in results.addresses %}
+                                <tr>
+                                    <td class="text-truncate" style="max-width: 200px;">
+                                        <a href="/address/{{ addr.address }}">{{ addr.address|hash }}</a>
+                                    </td>
+                                    <td>{{ addr.type|title }}</td>
+                                    <td>{{ addr.balance }} BT2C</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if not results.blocks and not results.transactions and not results.addresses %}
+    <div class="row">
+        <div class="col-md-12">
+            <div class="alert alert-info">
+                No results found for your search query.
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

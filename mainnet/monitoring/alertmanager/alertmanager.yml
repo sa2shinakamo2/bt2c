@@ -1,0 +1,29 @@
+{
+  "global": {
+    "resolve_timeout": "5m"
+  },
+  "route": {
+    "group_by": [
+      "alertname"
+    ],
+    "group_wait": "30s",
+    "group_interval": "5m",
+    "repeat_interval": "12h",
+    "receiver": "email-notifications"
+  },
+  "receivers": [
+    {
+      "name": "email-notifications",
+      "email_configs": [
+        {
+          "to": "alerts@bt2c.network",
+          "from": "alertmanager@bt2c.network",
+          "smarthost": "smtp.example.com:587",
+          "auth_username": "alertmanager@bt2c.network",
+          "auth_identity": "alertmanager@bt2c.network",
+          "auth_password": "secure_password"
+        }
+      ]
+    }
+  ]
+}

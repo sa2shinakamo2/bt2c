@@ -1,0 +1,16 @@
+[Unit]
+Description=BT2C Validator Node
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=bt2c
+WorkingDirectory=/opt/bt2c/mainnet/validators/validator1
+ExecStart=/usr/local/bin/docker-compose up
+ExecStop=/usr/local/bin/docker-compose down
+
+[Install]
+WantedBy=multi-user.target

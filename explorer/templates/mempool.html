@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}BT2C Explorer - Mempool{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <h2>Mempool</h2>
+            <p class="lead">Pending transactions waiting to be included in blocks</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Hash</th>
+                                    <th>From</th>
+                                    <th>To</th>
+                                    <th>Amount</th>
+                                    <th>Fee</th>
+                                    <th>Age</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for tx in transactions %}
+                                <tr>
+                                    <td class="text-truncate" style="max-width: 200px;">
+                                        {{ tx.hash|hash }}
+                                    </td>
+                                    <td class="text-truncate" style="max-width: 150px;">
+                                        <a href="/address/{{ tx.sender }}">{{ tx.sender|hash }}</a>
+                                    </td>
+                                    <td class="text-truncate" style="max-width: 150px;">
+                                        <a href="/address/{{ tx.recipient }}">{{ tx.recipient|hash }}</a>
+                                    </td>
+                                    <td>{{ tx.amount }} BT2C</td>
+                                    <td>{{ tx.fee }} BT2C</td>
+                                    <td>{{ tx.timestamp|datetime }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
