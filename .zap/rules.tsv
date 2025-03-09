@@ -1,0 +1,26 @@
+10020	IGNORE	Too many redirects
+10021	IGNORE	X-Content-Type-Options header missing
+10037	WARN	Server Leaks Information via "X-Powered-By" HTTP Response Header Field(s)
+10038	WARN	Content Security Policy (CSP) Header Not Set
+10063	WARN	Feature Policy Header Not Set
+10096	WARN	Timestamp Disclosure
+10098	WARN	Cross-Domain JavaScript Source File Inclusion
+10109	IGNORE	Modern Web Application
+90022	ERROR	Application Error Disclosure
+90033	ERROR	Loosely Scoped Cookie
+100000	ERROR	Client-side SQL Injection
+100001	ERROR	SQL Injection
+100002	ERROR	Cross-Site Scripting (XSS)
+100003	ERROR	Buffer Overflow
+100004	ERROR	Directory Traversal
+100005	ERROR	Command Injection
+100006	ERROR	LDAP Injection
+100007	ERROR	Format String Error
+100008	ERROR	XML Injection
+100009	ERROR	XXE Injection
+100010	ERROR	CSRF
+100011	ERROR	Session Fixation
+100012	ERROR	Cryptographic Issues
+100013	ERROR	Information Disclosure
+100014	ERROR	Authentication Issues
+100015	ERROR	Authorization Issues

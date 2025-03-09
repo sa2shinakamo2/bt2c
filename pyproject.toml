@@ -1,0 +1,25 @@
+[tool.bandit]
+exclude_dirs = ["tests", "venv", ".git", "__pycache__"]
+skips = ["B101"]  # Skip assert statements in tests
+
+[tool.bandit.assert_used]
+skips = ["*_test.py", "test_*.py"]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q --cov=. --cov-report=xml"
+testpaths = ["tests"]
+
+[tool.black]
+line-length = 88
+target-version = ['py39']
+include = '\.pyi?$'
+
+[tool.pylint]
+max-line-length = 88
+disable = ["C0111", "R0903"]
+ignore = ["CVS", ".git", "*.pyc", "*.egg-info"]
+
+[tool.safety]
+ignore-cvss-severity-below = 7  # Only alert on high and critical severity
+ignore-ids = []  # Add any false positive IDs here
