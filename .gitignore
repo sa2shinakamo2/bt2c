@@ -48,6 +48,29 @@ logs/
 *.db
 *.sqlite3
 
+# Security sensitive files
+*.pem
+*.key
+*.crt
+*.csr
+*.srl
+*.p12
+*.pfx
+*.keystore
+*private*
+*secret*
+wallet.json
+.env*
+config.json
+credentials.json
+*.password
+*.token
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+known_hosts
+
 # Distribution / packaging
 .Python
 env/
