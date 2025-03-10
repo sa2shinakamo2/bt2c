@@ -129,6 +129,126 @@ npm start
                 </div>
             </div>
 
+            <!-- Validator Section -->
+            <div id="validator" class="bg-white shadow overflow-hidden sm:rounded-lg mb-8">
+                <div class="px-4 py-5 sm:px-6">
+                    <h2 class="text-lg leading-6 font-medium text-gray-900">
+                        Becoming a Validator
+                    </h2>
+                </div>
+                <div class="border-t border-gray-200">
+                    <div class="px-4 py-5 sm:p-6">
+                        <div class="mb-8">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Requirements</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <h4 class="font-medium text-gray-900">Hardware</h4>
+                                    <ul class="mt-2 list-disc list-inside text-gray-600">
+                                        <li>4 CPU cores</li>
+                                        <li>8GB RAM</li>
+                                        <li>100GB SSD storage</li>
+                                        <li>10Mbps+ internet connection</li>
+                                    </ul>
+                                </div>
+                                <div class="bg-gray-50 p-4 rounded-lg">
+                                    <h4 class="font-medium text-gray-900">Staking</h4>
+                                    <ul class="mt-2 list-disc list-inside text-gray-600">
+                                        <li>Minimum stake: 1 BT2C</li>
+                                        <li>First node bonus: 100 BT2C</li>
+                                        <li>Regular rewards: 1 BT2C per node</li>
+                                        <li>Distribution: Every 2 weeks</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-8">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Quick Start Guide</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <h4 class="font-medium text-gray-900">1. Set Up Your Environment</h4>
+                                    <pre class="language-bash mt-2"><code># Update and install dependencies
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl git build-essential
+
+# Install Docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo usermod -aG docker $USER</code></pre>
+                                </div>
+
+                                <div>
+                                    <h4 class="font-medium text-gray-900">2. Get the Code</h4>
+                                    <pre class="language-bash mt-2"><code># Clone repository
+git clone https://github.com/sa2shinakamo2/bt2c.git
+cd bt2c
+
+# Set up environment
+cp env.template .env</code></pre>
+                                </div>
+
+                                <div>
+                                    <h4 class="font-medium text-gray-900">3. Configure Your Node</h4>
+                                    <pre class="language-bash mt-2"><code># Edit .env file with your settings
+NODE_NAME=your-node-name
+NODE_PORT=3000
+NODE_HOST=0.0.0.0</code></pre>
+                                </div>
+
+                                <div>
+                                    <h4 class="font-medium text-gray-900">4. Start Your Node</h4>
+                                    <pre class="language-bash mt-2"><code># Build and start
+docker-compose up -d
+
+# Check logs
+docker-compose logs -f</code></pre>
+                                </div>
+
+                                <div>
+                                    <h4 class="font-medium text-gray-900">5. Register as Validator</h4>
+                                    <pre class="language-bash mt-2"><code># Register node (replace with your details)
+curl -X POST http://localhost:3000/api/v1/validator/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "validatorAddress": "your-wallet-address",
+    "stake": "1000000000000000000"
+  }'</code></pre>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-8">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Monitoring</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <h4 class="font-medium text-gray-900">Basic Commands</h4>
+                                    <pre class="language-bash mt-2"><code># Check node status
+curl http://localhost:3000/api/v1/health
+
+# View validator status
+curl http://localhost:3000/api/v1/validator/status
+
+# Check sync status
+curl http://localhost:3000/api/v1/sync/status</code></pre>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Additional Resources</h3>
+                            <div class="space-y-2">
+                                <p class="text-gray-600">For more detailed information, check out our comprehensive guides:</p>
+                                <ul class="list-disc list-inside text-gray-600">
+                                    <li><a href="https://github.com/sa2shinakamo2/bt2c/blob/main/docs/VALIDATOR_GUIDE.md" class="text-indigo-600 hover:text-indigo-800">Complete Validator Guide</a></li>
+                                    <li><a href="https://discord.gg/bt2c" class="text-indigo-600 hover:text-indigo-800">Join our Discord for Support</a></li>
+                                    <li><a href="https://github.com/sa2shinakamo2/bt2c/issues" class="text-indigo-600 hover:text-indigo-800">Report Technical Issues</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- API Reference -->
             <div id="api" class="bg-white shadow overflow-hidden sm:rounded-lg">
                 <div class="px-4 py-5 sm:px-6">
