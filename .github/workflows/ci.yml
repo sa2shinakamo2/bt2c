@@ -1,4 +1,4 @@
-name: CI/CD
+name: CI/CD Pipeline
 
 on:
   push:
@@ -24,24 +24,22 @@ jobs:
       working-directory: website
       run: npm ci
 
+    - name: Run tests
+      working-directory: website
+      run: npm test
+
     - name: Build website
       working-directory: website
       run: npm run build
 
-    - name: Check for Netlify credentials
-      id: check-netlify
-      run: |
-        if [ "${{ secrets.NETLIFY_AUTH_TOKEN }}" != "" ] && [ "${{ secrets.NETLIFY_SITE_ID }}" != "" ]; then
-          echo "has_credentials=true" >> $GITHUB_OUTPUT
-        else
-          echo "has_credentials=false" >> $GITHUB_OUTPUT
-        fi
-
     - name: Deploy to Netlify
-      if: steps.check-netlify.outputs.has_credentials == 'true'
+      if: github.ref == 'refs/heads/main'
+      env:
+        NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+        NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
       run: |
         npm install -g netlify-cli
-        netlify deploy --prod --dir=website/dist --auth="${{ secrets.NETLIFY_AUTH_TOKEN }}" --site="${{ secrets.NETLIFY_SITE_ID }}"
+        netlify deploy --dir=website/dist --prod --auth="${{ secrets.NETLIFY_AUTH_TOKEN }}" --site="${{ secrets.NETLIFY_SITE_ID }}"
       timeout-minutes: 1
 
     - name: Set up Python
