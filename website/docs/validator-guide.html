@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validator Guide - bit2coin</title>
+    <link rel="stylesheet" href="../css/tailwind.css">
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="stylesheet" href="../css/prism.css">
+    <script src="../js/prism.js" defer></script>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <a href="/">
+                            <img class="h-8 w-auto" src="../images/logo.svg" alt="BT2C">
+                        </a>
+                    </div>
+                    <div class="hidden md:ml-6 md:flex md:space-x-8">
+                        <a href="/" class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-700">Home</a>
+                        <a href="/validators.html" class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-700">Validators</a>
+                        <a href="/explorer.html" class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-700">Explorer</a>
+                        <a href="/docs.html" class="inline-flex items-center px-1 pt-1 border-b-2 border-indigo-500 text-sm font-medium text-gray-900">Documentation</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div class="px-4 py-5 sm:p-6">
+            <h1 class="text-3xl font-bold text-gray-900 mb-8">Validator Guide</h1>
+
+            <!-- Table of Contents -->
+            <div class="bg-white shadow sm:rounded-lg mb-8 p-6">
+                <h2 class="text-xl font-semibold mb-4">Contents</h2>
+                <nav class="space-y-2">
+                    <a href="#prerequisites" class="block text-gray-600 hover:text-gray-900">Prerequisites</a>
+                    <a href="#installation" class="block text-gray-600 hover:text-gray-900">Installation</a>
+                    <a href="#configuration" class="block text-gray-600 hover:text-gray-900">Configuration</a>
+                    <a href="#running" class="block text-gray-600 hover:text-gray-900">Running Your Node</a>
+                    <a href="#staking" class="block text-gray-600 hover:text-gray-900">Staking</a>
+                    <a href="#monitoring" class="block text-gray-600 hover:text-gray-900">Monitoring</a>
+                </nav>
+            </div>
+
+            <!-- Prerequisites -->
+            <section id="prerequisites" class="bg-white shadow sm:rounded-lg mb-8">
+                <div class="px-4 py-5 sm:p-6">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">Prerequisites</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h3 class="font-medium text-gray-900 mb-2">Hardware Requirements</h3>
+                            <ul class="space-y-2 text-gray-600">
+                                <li>• 4 CPU cores</li>
+                                <li>• 8GB RAM</li>
+                                <li>• 100GB SSD storage</li>
+                                <li>• 10Mbps+ internet connection</li>
+                            </ul>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h3 class="font-medium text-gray-900 mb-2">Software Requirements</h3>
+                            <ul class="space-y-2 text-gray-600">
+                                <li>• Ubuntu 20.04 LTS (recommended)</li>
+                                <li>• Docker</li>
+                                <li>• Git</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Installation -->
+            <section id="installation" class="bg-white shadow sm:rounded-lg mb-8">
+                <div class="px-4 py-5 sm:p-6">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">Installation</h2>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="font-medium text-gray-900 mb-2">1. Update System</h3>
+                            <pre class="language-bash rounded-lg"><code>sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl git build-essential</code></pre>
+                        </div>
+
+                        <div>
+                            <h3 class="font-medium text-gray-900 mb-2">2. Install Docker</h3>
+                            <pre class="language-bash rounded-lg"><code>curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo usermod -aG docker $USER</code></pre>
+                            <p class="mt-2 text-sm text-gray-500">Log out and back in for the group changes to take effect.</p>
+                        </div>
+
+                        <div>
+                            <h3 class="font-medium text-gray-900 mb-2">3. Clone Repository</h3>
+                            <pre class="language-bash rounded-lg"><code>git clone https://github.com/sa2shinakamo2/bt2c.git
+cd bt2c
+cp env.template .env</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Configuration -->
+            <section id="configuration" class="bg-white shadow sm:rounded-lg mb-8">
+                <div class="px-4 py-5 sm:p-6">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">Configuration</h2>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="font-medium text-gray-900 mb-2">Environment Setup</h3>
+                            <p class="mb-4 text-gray-600">Edit your .env file with the following settings:</p>
+                            <pre class="language-bash rounded-lg"><code># Node Configuration
+NODE_NAME=your-node-name
+NODE_PORT=3000
+NODE_HOST=0.0.0.0
+
+# Network Configuration
+NETWORK=mainnet
+P2P_PORT=6001</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Running Your Node -->
+            <section id="running" class="bg-white shadow sm:rounded-lg mb-8">
+                <div class="px-4 py-5 sm:p-6">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">Running Your Node</h2>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="font-medium text-gray-900 mb-2">Start the Node</h3>
+                            <pre class="language-bash rounded-lg"><code>docker-compose up -d
+docker-compose logs -f</code></pre>
+                        </div>
+
+                        <div class="bg-yellow-50 p-4 rounded-lg">
+                            <p class="text-yellow-700">⚠️ Important: Your node will need to fully sync with the network before you can start validating. This may take several hours.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Staking -->
+            <section id="staking" class="bg-white shadow sm:rounded-lg mb-8">
+                <div class="px-4 py-5 sm:p-6">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">Staking</h2>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="font-medium text-gray-900 mb-2">Register as Validator</h3>
+                            <pre class="language-bash rounded-lg"><code>curl -X POST http://localhost:3000/api/v1/validator/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "validatorAddress": "your-wallet-address",
+    "stake": "1000000000000000000"
+  }'</code></pre>
+                            <p class="mt-2 text-sm text-gray-500">Note: The stake amount is in wei (1 BT2C = 10^18 wei)</p>
+                        </div>
+
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <h4 class="font-medium text-blue-900 mb-2">Distribution Period Rewards</h4>
+                            <ul class="space-y-2 text-blue-700">
+                                <li>• First node (developer): 100 BT2C</li>
+                                <li>• Other validators: 1 BT2C each</li>
+                                <li>• Duration: First 2 weeks after launch</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Monitoring -->
+            <section id="monitoring" class="bg-white shadow sm:rounded-lg mb-8">
+                <div class="px-4 py-5 sm:p-6">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-6">Monitoring</h2>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <h3 class="font-medium text-gray-900 mb-2">Check Node Status</h3>
+                            <pre class="language-bash rounded-lg"><code># Health check
+curl http://localhost:3000/api/v1/health
+
+# Validator status
+curl http://localhost:3000/api/v1/validator/status
+
+# Sync status
+curl http://localhost:3000/api/v1/sync/status</code></pre>
+                        </div>
+
+                        <div>
+                            <h3 class="font-medium text-gray-900 mb-2">View Logs</h3>
+                            <pre class="language-bash rounded-lg"><code>docker-compose logs -f --tail=100</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 md:flex md:items-center md:justify-between lg:px-8">
+            <div class="flex justify-center space-x-6 md:order-2">
+                <a href="https://github.com/sa2shinakamo2/bt2c" class="text-gray-400 hover:text-gray-500">
+                    <span class="sr-only">GitHub</span>
+                    <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                        <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd" />
+                    </svg>
+                </a>
+            </div>
+            <div class="mt-8 md:mt-0 md:order-1">
+                <p class="text-center text-base text-gray-400">
+                    &copy; 2025 BT2C. All rights reserved.
+                </p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>bit2coin - Sustainable Blockchain Technology</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="./css/tailwind.css">
     <link rel="stylesheet" href="./css/styles.css">
     <!-- Add favicon -->
     <link rel="icon" type="image/png" href="./images/favicon.png">
@@ -32,13 +32,10 @@
                         <a href="/" class="inline-flex items-center px-1 pt-1 border-b-2 border-indigo-500 text-sm font-medium leading-5 text-gray-900">Home</a>
                         <a href="/validators.html" class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 hover:text-gray-700 hover:border-gray-300">Become a Validator</a>
                         <a href="/explorer.html" class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 hover:text-gray-700 hover:border-gray-300">Explorer</a>
-                        <a href="/docs.html" class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 hover:text-gray-700 hover:border-gray-300">Documentation</a>
+                        <a href="/docs.html" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-600 hover:text-indigo-500">
+                            Documentation
+                        </a>
                     </div>
-                </div>
-                <div class="flex items-center">
-                    <a href="/wallet.html" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                        Create Wallet
-                    </a>
                 </div>
             </div>
         </div>
@@ -49,24 +46,29 @@
         <div class="max-w-7xl mx-auto">
             <div class="relative z-10 pb-8 bg-white sm:pb-16 md:pb-20 lg:max-w-2xl lg:w-full lg:pb-28 xl:pb-32">
                 <main class="mt-10 mx-auto max-w-7xl px-4 sm:mt-12 sm:px-6 md:mt-16 lg:mt-20 lg:px-8 xl:mt-28">
-                    <div class="sm:text-center lg:text-left">
-                        <h1 class="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
-                            <span class="block xl:inline">Welcome to the</span>
-                            <span class="block text-indigo-600 xl:inline">bit2coin Network</span>
-                        </h1>
-                        <p class="mt-3 text-base text-gray-500 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
-                            Join the next generation of proof-of-stake blockchain technology. Stake your coins, become a validator, and earn rewards while securing the network.
-                        </p>
-                        <div class="mt-5 sm:mt-8 sm:flex sm:justify-center lg:justify-start">
-                            <div class="rounded-md shadow">
-                                <a href="/validators.html" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:text-lg md:px-10">
-                                    Get Started
-                                </a>
+                    <div class="max-w-4xl mx-auto text-center">
+                        <h1 class="text-4xl font-bold mb-6">BT2C (Bit2Coin)</h1>
+                        <p class="text-xl mb-8">A decentralized digital store of value, built on Bitcoin's proven principles</p>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                            <div class="bg-white p-6 rounded-lg shadow-md">
+                                <h3 class="text-xl font-semibold mb-4">Store of Value</h3>
+                                <ul class="text-left list-disc pl-6">
+                                    <li>Fixed maximum supply of 21,000,000 BT2C</li>
+                                    <li>Halving mechanism to ensure scarcity</li>
+                                    <li>Built for long-term value preservation</li>
+                                    <li>Resistant to inflation and market manipulation</li>
+                                </ul>
                             </div>
-                            <div class="mt-3 sm:mt-0 sm:ml-3">
-                                <a href="/docs.html" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200 md:py-4 md:text-lg md:px-10">
-                                    Learn More
-                                </a>
+                            
+                            <div class="bg-white p-6 rounded-lg shadow-md">
+                                <h3 class="text-xl font-semibold mb-4">Pure Validation</h3>
+                                <ul class="text-left list-disc pl-6">
+                                    <li>Focused on secure transaction validation</li>
+                                    <li>No governance or proposal voting</li>
+                                    <li>Stake-weighted validator selection</li>
+                                    <li>Decentralized network of validators</li>
+                                </ul>
                             </div>
                         </div>
                     </div>
@@ -87,32 +89,42 @@
 
             <div class="mt-10">
                 <div class="space-y-10 md:space-y-0 md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-10">
-                    <!-- Feature 1 -->
-                    <div class="relative">
+                    <!-- Validator Path -->
+                    <div class="relative bg-white p-6 rounded-lg shadow-lg">
                         <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white">
-                            <!-- Shield icon -->
                             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                             </svg>
                         </div>
-                        <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Secure Staking</p>
-                        <p class="mt-2 ml-16 text-base text-gray-500">
-                            Stake your bit2coin tokens securely and earn rewards for helping secure the network.
-                        </p>
+                        <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Become a Validator</p>
+                        <ul class="mt-2 ml-16 space-y-2 text-base text-gray-500">
+                            <li>• Participate in network consensus</li>
+                            <li>• Earn exclusive distribution period rewards</li>
+                            <li>• Receive regular block validation rewards</li>
+                            <li>• Minimum stake: 1 BT2C</li>
+                        </ul>
+                        <div class="mt-4 ml-16">
+                            <a href="/validators.html" class="text-indigo-600 hover:text-indigo-500">Learn more about becoming a validator →</a>
+                        </div>
                     </div>
 
-                    <!-- Feature 2 -->
-                    <div class="relative">
+                    <!-- Standalone Wallet -->
+                    <div class="relative bg-white p-6 rounded-lg shadow-lg">
                         <div class="absolute flex items-center justify-center h-12 w-12 rounded-md bg-indigo-500 text-white">
-                            <!-- Chart icon -->
                             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
                             </svg>
                         </div>
-                        <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Real-time Analytics</p>
-                        <p class="mt-2 ml-16 text-base text-gray-500">
-                            Monitor your staking rewards and network participation in real-time.
-                        </p>
+                        <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Create a Wallet</p>
+                        <ul class="mt-2 ml-16 space-y-2 text-base text-gray-500">
+                            <li>• Store BT2C as a store of value</li>
+                            <li>• Easy-to-use command line interface</li>
+                            <li>• Secure storage and transactions</li>
+                            <li>• Upgrade to validator anytime</li>
+                        </ul>
+                        <div class="mt-4 ml-16">
+                            <a href="/docs.html#wallet-setup" class="text-indigo-600 hover:text-indigo-500">Learn more about wallet creation →</a>
+                        </div>
                     </div>
                 </div>
             </div>
