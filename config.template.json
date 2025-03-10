@@ -1,0 +1,25 @@
+{
+  "server": {
+    "port": 3000,
+    "host": "localhost"
+  },
+  "database": {
+    "host": "localhost",
+    "port": 5432,
+    "name": "bt2c_db",
+    "user": "YOUR_DB_USER",
+    "password": "***REMOVED***"
+  },
+  "blockchain": {
+    "minStake": 1,
+    "distributionPeriod": 14,
+    "firstNodeReward": 100,
+    "subsequentNodeReward": 1
+  },
+  "security": {
+    "jwtSecret": "YOUR_JWT_SECRET",
+    "sessionTimeout": 3600,
+    "rateLimitRequests": 100,
+    "rateLimitWindowMs": 900000
+  }
+}
