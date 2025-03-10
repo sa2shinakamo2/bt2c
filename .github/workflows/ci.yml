@@ -1,10 +1,14 @@
-name: CI/CD Pipeline
+name: BT2C CI/CD Pipeline
 
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+
+env:
+  NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+  NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
 
 jobs:
   build-and-deploy:
@@ -34,34 +38,21 @@ jobs:
 
     - name: Deploy to Netlify
       if: github.ref == 'refs/heads/main'
-      uses: nwtgck/actions-netlify@v2.0
-      with:
-        publish-dir: './website/dist'
-        production-branch: main
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        deploy-message: 'Deploy from GitHub Actions'
-        enable-pull-request-comment: true
-        enable-commit-comment: true
-        overwrites-pull-request-comment: true
       env:
-        NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-        NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-      timeout-minutes: 1
+        NETLIFY_AUTH_TOKEN: ${{ env.NETLIFY_AUTH_TOKEN }}
+        NETLIFY_SITE_ID: ${{ env.NETLIFY_SITE_ID }}
+      run: |
+        npm install netlify-cli -g
+        netlify deploy --prod --dir=website/dist
 
     - name: Deploy preview to Netlify
       if: github.event_name == 'pull_request'
-      uses: nwtgck/actions-netlify@v2.0
       env:
-        NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-        NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-      with:
-        publish-dir: './website/dist'
-        production-branch: main
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        deploy-message: 'Deploy preview from GitHub Actions'
-        enable-pull-request-comment: true
-        enable-commit-comment: true
-        overwrites-pull-request-comment: true
+        NETLIFY_AUTH_TOKEN: ${{ env.NETLIFY_AUTH_TOKEN }}
+        NETLIFY_SITE_ID: ${{ env.NETLIFY_SITE_ID }}
+      run: |
+        npm install netlify-cli -g
+        netlify deploy --alias=preview-${{ github.event.pull_request.number }} --dir=website/dist
 
     - name: Set up Python
       uses: actions/setup-python@v4
