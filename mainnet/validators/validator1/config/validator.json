@@ -1,0 +1,44 @@
+{
+  "server": {
+    "port": 8000,
+    "host": "0.0.0.0",
+    "ssl": false
+  },
+  "database": {
+    "host": "postgres",
+    "port": 5432,
+    "name": "bt2c",
+    "user": "bt2c",
+    "password": "secure_password"
+  },
+  "redis": {
+    "host": "redis",
+    "port": 6379,
+    "db": 0
+  },
+  "blockchain": {
+    "minStake": 1.0,
+    "network": "mainnet",
+    "nodeId": "validator1",
+    "walletAddress": "047131f8d029094a7936186821349dc919fab66ff281efd18cb4229356b8c763a81001b0c7d65eebc5099acf480ace9a91fa344e988756baab5b191b47fff86ef9",
+    "block_reward": 21.0,
+    "halving_blocks": 210000,
+    "max_supply": 21000000,
+    "initial_distribution_period": 1209600,
+    "developer_reward": 100.0,
+    "validator_reward": 1.0
+  },
+  "security": {
+    "jwtSecret": "validator1_jwt_secret",
+    "sessionTimeout": 3600,
+    "rateLimitRequests": 100,
+    "rateLimitWindowMs": 900000,
+    "enable_ssl": false
+  },
+  "validation": {
+    "stake_weight_enabled": true,
+    "min_blocks_per_day": 100,
+    "max_missed_blocks": 50,
+    "jail_duration": 86400
+  }
+}

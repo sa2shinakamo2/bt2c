@@ -24,7 +24,6 @@ class ValidatorStats:
     uptime: float = 100.0
     commission_earned: float = 0
     delegated_amount: float = 0
-    voting_power: float = 0
     rank: int = 0
 
 @dataclass
@@ -191,10 +190,6 @@ class ValidatorSet:
             old_stake = self.validators[address]
             self.validators[address] = new_stake
             
-            # Update voting power
-            total_stake = sum(self.validators.values())
-            self.stats[address].voting_power = new_stake / total_stake
-            
             # Update active set if necessary
             self._update_active_set()
             
@@ -290,7 +285,7 @@ class ValidatorSet:
             return None
             
     def select_validator(self) -> Optional[str]:
-        """Select a validator for the next block using VRF.
+        """Select a validator for the next block using VRF and stake-weighted probability.
         
         Returns:
             Optional[str]: Selected validator address
@@ -299,25 +294,79 @@ class ValidatorSet:
             if not self.active_set:
                 return None
                 
-            # Get random seed
-            seed = str(time.time()).encode()
+            # Calculate total stake of active validators
+            active_stakes = {v: self.validators[v] for v in self.active_set}
+            total_stake = sum(active_stakes.values())
             
-            # Select validator using VRF
-            selected = self.vrf.select_weighted(
-                self.active_set,
-                [self.validators[v] for v in self.active_set],
-                seed
-            )
+            # Calculate probability weights based on stake
+            weights = {v: stake/total_stake for v, stake in active_stakes.items()}
+            
+            # Generate VRF seed
+            current_time = int(time.time())
+            seed = self.vrf.generate_seed(current_time)
+            
+            # Use VRF with stake-weighted probability
+            selected = None
+            vrf_value = self.vrf.hash_to_range(seed)
+            cumulative_prob = 0
+            
+            for validator, weight in weights.items():
+                cumulative_prob += weight
+                if vrf_value <= cumulative_prob:
+                    selected = validator
+                    break
             
             if selected:
                 logger.info("validator_selected",
-                           address=selected[:8])
+                           address=selected[:8],
+                           stake=self.validators[selected],
+                           probability=weights[selected])
                            
+                # Update validator stats
+                self.stats[selected].blocks_proposed += 1
+                self.stats[selected].last_proposed = time.time()
+                
             return selected
             
         except Exception as e:
-            logger.error("select_validator_error", error=str(e))
+            logger.error("select_validator_error",
+                        error=str(e))
             return None
+            
+    def _update_active_set(self):
+        """Update the active validator set based on stake and status."""
+        try:
+            # Get all validators that meet minimum requirements
+            qualified = [
+                v for v in self.validators
+                if (self.validators[v] >= self.config.min_stake and
+                    self.status[v] != ValidatorStatus.JAILED and
+                    self.status[v] != ValidatorStatus.TOMBSTONED)
+            ]
+            
+            # Sort by stake for ranking
+            qualified.sort(key=lambda x: self.validators[x], reverse=True)
+            
+            # Update ranks
+            for i, validator in enumerate(qualified):
+                self.stats[validator].rank = i + 1
+            
+            # Update active set
+            self.active_set = qualified
+            self.last_set_update = time.time()
+            
+            # Update metrics
+            self.metrics.active_validator_count.labels(
+                network=self.network_type.value
+            ).set(len(self.active_set))
+            
+            logger.info("active_set_updated",
+                       active_count=len(self.active_set),
+                       total_count=len(self.validators))
+                       
+        except Exception as e:
+            logger.error("update_active_set_error",
+                        error=str(e))
             
     def slash_validator(self, address: str, reason: str, evidence: Dict) -> bool:
         """Slash a validator for misbehavior.
@@ -426,50 +475,6 @@ class ValidatorSet:
                         address=address[:8],
                         error=str(e))
             return False
-            
-    def _update_active_set(self):
-        """Update the active validator set."""
-        try:
-            now = time.time()
-            
-            # Only update every hour unless empty
-            if self.active_set and now - self.last_set_update < 3600:
-                return
-                
-            self.last_set_update = now
-            
-            # Sort validators by stake
-            sorted_validators = sorted(
-                self.validators.items(),
-                key=lambda x: x[1],
-                reverse=True
-            )
-            
-            # Select top validators
-            self.active_set = []
-            for addr, stake in sorted_validators:
-                if len(self.active_set) >= self.config.max_validators:
-                    break
-                    
-                if (stake >= self.config.min_stake and
-                    self.status[addr] not in [ValidatorStatus.JAILED, ValidatorStatus.TOMBSTONED]):
-                    self.active_set.append(addr)
-                    self.status[addr] = ValidatorStatus.ACTIVE
-                    
-            # Update ranks
-            for i, addr in enumerate(self.active_set):
-                self.stats[addr].rank = i + 1
-                
-            # Update metrics
-            self.metrics.active_validator_count.labels(
-                network=self.network_type.value
-            ).set(len(self.active_set))
-            
-            logger.info("active_set_updated",
-                       count=len(self.active_set))
-                       
-        except Exception as e:
-            logger.error("update_active_set_error", error=str(e))
             
     def get_validator_info(self, address: str) -> Optional[Dict]:
         """Get comprehensive validator information.
@@ -603,17 +608,18 @@ if __name__ == "__main__":
             return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
         # Start the server
+        ssl_enabled = config["server"].get("ssl", False)
         logger.info("starting_server",
                    host="0.0.0.0",
                    port=8000,
-                   ssl=True)
+                   ssl=ssl_enabled)
 
         uvicorn.run(
             app,
             host="0.0.0.0",
             port=8000,
-            ssl_keyfile=config["security"]["key_path"],
-            ssl_certfile=config["security"]["cert_path"],
+            ssl_keyfile=config["security"]["key_path"] if ssl_enabled else None,
+            ssl_certfile=config["security"]["cert_path"] if ssl_enabled else None,
             log_level=log_level.lower(),
             access_log=True
         )
