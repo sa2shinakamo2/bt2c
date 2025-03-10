@@ -15,6 +15,21 @@ class ValidatorConfig(BaseModel):
     public_key: str
     power: int
 
+class BlockchainParameters(BaseModel):
+    max_supply: int = 21000000
+    block_reward: float = 21.0
+    halving_blocks: int = 210000
+    min_stake: float = 1.0
+    initial_distribution_period: int = 1209600  # 2 weeks in seconds
+    developer_reward: float = 100.0
+    validator_reward: float = 1.0
+
+class ValidatorStates(str, Enum):
+    ACTIVE = "active"
+    INACTIVE = "inactive"
+    JAILED = "jailed"
+    TOMBSTONED = "tombstoned"
+
 class NetworkConfig(BaseModel):
     chain_id: str
     validator: ValidatorConfig
@@ -25,6 +40,7 @@ class NetworkConfig(BaseModel):
     type: NetworkType
     name: str
     version: str
+    parameters: BlockchainParameters = BlockchainParameters()
 
 class BlockProductionConfig(BaseModel):
     enabled: bool
@@ -62,21 +78,45 @@ class BT2CConfig:
             "block_time": 10,  # 10 seconds per block
             "ecosystem_reserve_address": "bt2c1ecosystem000000000000000000000000000",
             "community_pool_address": "bt2c1community0000000000000000000000000",
-            "MINIMUM_STAKE": 1.0,  # Mainnet stake requirement
+            "parameters": {
+                "max_supply": 21000000,
+                "block_reward": 21.0,
+                "halving_blocks": 210000,
+                "min_stake": 1.0,
+                "initial_distribution_period": 1209600,
+                "developer_reward": 100.0,
+                "validator_reward": 1.0
+            }
         },
         NetworkType.TESTNET: {
             "chain_id": "bt2c-testnet-1",
             "block_time": 5,  # 5 seconds per block
             "ecosystem_reserve_address": "bt2c1ecosystem000000000000000000000000000",
             "community_pool_address": "bt2c1community0000000000000000000000000",
-            "MINIMUM_STAKE": 1.0,  # Testnet stake requirement same as mainnet
+            "parameters": {
+                "max_supply": 21000000,
+                "block_reward": 21.0,
+                "halving_blocks": 210000,
+                "min_stake": 1.0,
+                "initial_distribution_period": 1209600,
+                "developer_reward": 100.0,
+                "validator_reward": 1.0
+            }
         },
         NetworkType.DEVNET: {
             "chain_id": "bt2c-devnet-1",
             "block_time": 1,  # 1 second per block
             "ecosystem_reserve_address": "bt2c1ecosystem000000000000000000000000000",
             "community_pool_address": "bt2c1community0000000000000000000000000",
-            "MINIMUM_STAKE": 0.1,  # Lower stake requirement for devnet
+            "parameters": {
+                "max_supply": 21000000,
+                "block_reward": 21.0,
+                "halving_blocks": 210000,
+                "min_stake": 0.1,  # Lower stake requirement for devnet
+                "initial_distribution_period": 1209600,
+                "developer_reward": 100.0,
+                "validator_reward": 1.0
+            }
         }
     }
     

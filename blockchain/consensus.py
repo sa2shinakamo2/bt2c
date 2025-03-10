@@ -1,18 +1,85 @@
 from typing import List, Optional, Tuple, Dict
 import time
 import structlog
+import hashlib
+import hmac
+import random
 from .block import Block
-from .config import NetworkType, BT2CConfig
+from .config import NetworkType, BT2CConfig, ValidatorStates
 from .metrics import BlockchainMetrics
 
 logger = structlog.get_logger()
+
+class ProofOfScale:
+    """Proof of Scale consensus mechanism with stake-weighted validator selection"""
+    
+    def __init__(self, network_type: NetworkType):
+        self.config = BT2CConfig.get_config(network_type)
+        self.vrf_seed = None
+        self.update_vrf_seed()
+    
+    def update_vrf_seed(self):
+        """Update VRF seed for random selection"""
+        current_time = int(time.time())
+        self.vrf_seed = hashlib.sha256(str(current_time).encode()).digest()
+    
+    def compute_vrf(self, validator_pubkey: str) -> bytes:
+        """Compute VRF output for validator selection"""
+        return hmac.new(self.vrf_seed, validator_pubkey.encode(), hashlib.sha256).digest()
+    
+    def select_validator(self, validators: Dict[str, float]) -> Optional[str]:
+        """Select validator using stake-weighted probability and VRF
+        
+        Args:
+            validators: Dict mapping validator public keys to their stake amounts
+            
+        Returns:
+            Selected validator's public key or None if no valid validators
+        """
+        if not validators:
+            return None
+            
+        total_stake = sum(validators.values())
+        if total_stake <= 0:
+            return None
+            
+        # Calculate weighted probabilities using VRF
+        weights = {}
+        for pubkey, stake in validators.items():
+            vrf_value = int.from_bytes(self.compute_vrf(pubkey), 'big')
+            # Combine VRF with stake weight
+            weights[pubkey] = (stake / total_stake) * (vrf_value / (2**256 - 1))
+            
+        # Select validator with highest weight
+        return max(weights.items(), key=lambda x: x[1])[0]
 
 class ConsensusManager:
     def __init__(self, network_type: NetworkType, metrics: BlockchainMetrics):
         self.network_type = network_type
         self.metrics = metrics
         self.config = BT2CConfig.get_config(network_type)
+        self.pos = ProofOfScale(network_type)
         
+    def get_next_validator(self, active_validators: Dict[str, Dict]) -> Optional[str]:
+        """Get next validator for block production using stake-weighted selection
+        
+        Args:
+            active_validators: Dict mapping validator public keys to their info
+                             containing stake amount and state
+        
+        Returns:
+            Selected validator's public key or None if no valid validators
+        """
+        # Filter active validators with sufficient stake
+        eligible_validators = {
+            pubkey: info["stake"] 
+            for pubkey, info in active_validators.items()
+            if (info["state"] == ValidatorStates.ACTIVE and 
+                info["stake"] >= self.config["parameters"]["min_stake"])
+        }
+        
+        return self.pos.select_validator(eligible_validators)
+
     def resolve_fork(self, chain1: List[Block], chain2: List[Block]) -> List[Block]:
         """Resolve a fork between two competing chains using a combination of:
         1. Chain length (longest chain)
