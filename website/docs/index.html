@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BT2C Documentation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <h1 class="text-4xl font-bold mb-8">BT2C Documentation</h1>
+        
+        <div class="grid md:grid-cols-4 gap-6">
+            <!-- Navigation Sidebar -->
+            <div class="md:col-span-1">
+                <nav class="sticky top-4">
+                    <ul class="space-y-2">
+                        <li><a href="#getting-started" class="text-blue-600 hover:text-blue-800">Getting Started</a></li>
+                        <li><a href="#requirements" class="text-blue-600 hover:text-blue-800">Requirements</a></li>
+                        <li><a href="#validator-setup" class="text-blue-600 hover:text-blue-800">Validator Setup</a></li>
+                        <li><a href="#rewards" class="text-blue-600 hover:text-blue-800">Rewards</a></li>
+                        <li><a href="#monitoring" class="text-blue-600 hover:text-blue-800">Monitoring</a></li>
+                        <li><a href="#api" class="text-blue-600 hover:text-blue-800">API Reference</a></li>
+                    </ul>
+                </nav>
+            </div>
+
+            <!-- Main Content -->
+            <div class="md:col-span-3 space-y-8">
+                <!-- Getting Started -->
+                <section id="getting-started">
+                    <h2 class="text-2xl font-semibold mb-4">Getting Started</h2>
+                    <p class="mb-4">BT2C is a proof-of-stake blockchain that allows users to participate in network validation and earn rewards. This guide will help you get started with running a BT2C validator node.</p>
+                </section>
+
+                <!-- Requirements -->
+                <section id="requirements">
+                    <h2 class="text-2xl font-semibold mb-4">Requirements</h2>
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <h3 class="text-xl font-medium mb-3">Hardware Requirements</h3>
+                        <ul class="list-disc list-inside space-y-2">
+                            <li>CPU: 4 cores or more</li>
+                            <li>RAM: 8GB minimum</li>
+                            <li>Storage: 100GB SSD</li>
+                            <li>Network: Stable internet connection (100 Mbps+)</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- Validator Setup -->
+                <section id="validator-setup">
+                    <h2 class="text-2xl font-semibold mb-4">Validator Setup</h2>
+                    <div class="bg-white p-6 rounded-lg shadow-sm space-y-4">
+                        <h3 class="text-xl font-medium mb-3">Installation Steps</h3>
+                        <div class="bg-gray-50 p-4 rounded">
+                            <pre class="whitespace-pre-wrap"><code># Clone the repository
+git clone https://github.com/bt2c/node.git
+
+# Enter the directory
+cd node
+
+# Install dependencies
+npm install
+
+# Configure your node
+cp config.template.json config.json
+# Edit config.json with your settings
+
+# Start the validator
+npm run validator</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Rewards -->
+                <section id="rewards">
+                    <h2 class="text-2xl font-semibold mb-4">Rewards</h2>
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <ul class="list-disc list-inside space-y-2">
+                            <li>Minimum stake: 1 BT2C</li>
+                            <li>Distribution period: Every 2 weeks</li>
+                            <li>First node reward: 100 BT2C</li>
+                            <li>Subsequent nodes: 1 BT2C each</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- Monitoring -->
+                <section id="monitoring">
+                    <h2 class="text-2xl font-semibold mb-4">Monitoring</h2>
+                    <div class="bg-white p-6 rounded-lg shadow-sm space-y-4">
+                        <h3 class="text-xl font-medium mb-3">Common Commands</h3>
+                        <div class="bg-gray-50 p-4 rounded">
+                            <pre class="whitespace-pre-wrap"><code># Check node status
+npm run status
+
+# View logs
+npm run logs
+
+# Check sync status
+npm run sync-status</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- API Reference -->
+                <section id="api">
+                    <h2 class="text-2xl font-semibold mb-4">API Reference</h2>
+                    <div class="bg-white p-6 rounded-lg shadow-sm space-y-4">
+                        <h3 class="text-xl font-medium mb-3">REST Endpoints</h3>
+                        <table class="min-w-full">
+                            <thead>
+                                <tr class="bg-gray-50">
+                                    <th class="px-4 py-2 text-left">Endpoint</th>
+                                    <th class="px-4 py-2 text-left">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="px-4 py-2 font-mono text-sm">GET /api/v1/blocks/:height</td>
+                                    <td class="px-4 py-2">Get block information</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-4 py-2 font-mono text-sm">GET /api/v1/transactions/:hash</td>
+                                    <td class="px-4 py-2">Get transaction details</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-4 py-2 font-mono text-sm">GET /api/v1/accounts/:address</td>
+                                    <td class="px-4 py-2">Get account information</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
