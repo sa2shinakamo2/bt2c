@@ -8,6 +8,9 @@ on:
   schedule:
     - cron: '0 0 * * *'  # Run daily at midnight
 
+env:
+  SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
 jobs:
   security-scan:
     runs-on: ubuntu-latest
@@ -71,13 +74,12 @@ jobs:
         uses: github/codeql-action/analyze@v2
 
       # Dependency scanning
-      - name: Run Snyk to check for vulnerabilities
-        uses: snyk/actions/node@master
-        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+      - name: Run Snyk security scan
+        uses: snyk/actions/python@master
         env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          SNYK_TOKEN: ${{ env.SNYK_TOKEN }}
         with:
-          args: --severity-threshold=high
+          command: monitor
 
       # OWASP ZAP scan for web vulnerabilities
       - name: OWASP ZAP Full Scan
