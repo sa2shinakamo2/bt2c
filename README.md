@@ -6,10 +6,10 @@ BT2C is a Proof of Stake (PoS) cryptocurrency implementation inspired by Bitcoin
 
 - **Consensus Mechanism**: Proof of Stake (PoS)
 - **Minimum Stake**: 1 BT2C required to become a validator
-- **Distribution Period**: 2 weeks
-- **First Node Reward**: 100 BT2C
-- **Subsequent Nodes**: 1 BT2C each
-- **Block Reward**: 21 BT2C per block (halves every 4 years)
+- **Initial Distribution**: First 2 weeks after launch
+- **Developer Node Reward**: 100 BT2C (first ever node)
+- **Initial Validator Reward**: 1 BT2C (for nodes joining in first 2 weeks)
+- **Block Reward**: 21 BT2C per block (halves every 4 years), instant distribution
 - **Total Supply**: 21 million BT2C
 
 ## Project Structure
@@ -131,5 +131,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Contact
 
 - Website: https://bt2c.net
-- GitHub: [Your GitHub Profile]
-- Email: [Your Email]
