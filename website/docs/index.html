@@ -31,7 +31,74 @@
                 <!-- Getting Started -->
                 <section id="getting-started">
                     <h2 class="text-2xl font-semibold mb-4">Getting Started</h2>
-                    <p class="mb-4">BT2C is a proof-of-stake blockchain that allows users to participate in network validation and earn rewards. This guide will help you get started with running a BT2C validator node.</p>
+                    <div class="bg-white p-6 rounded-lg shadow-sm space-y-4">
+                        <p>BT2C is a proof-of-stake blockchain that allows users to participate in network validation and earn rewards. This guide will help you get started with BT2C.</p>
+
+                        <h3 class="text-xl font-medium mb-3">Prerequisites</h3>
+                        <ul class="list-disc pl-5 mb-6">
+                            <li>Basic understanding of blockchain technology</li>
+                            <li>Computer with minimum requirements:
+                                <ul class="list-disc pl-5 mt-2">
+                                    <li>4 CPU cores</li>
+                                    <li>8GB RAM</li>
+                                    <li>100GB SSD storage</li>
+                                    <li>Stable internet connection</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                        <h3 class="text-xl font-medium mb-3">Installation Steps</h3>
+                        <div class="bg-gray-50 p-4 rounded">
+                            <pre class="whitespace-pre-wrap"><code># Clone the repository
+git clone https://github.com/sa2shinakamo2/bt2c.git
+
+# Enter the directory
+cd bt2c
+
+# Install dependencies
+npm install
+
+# Configure your node
+cp config.template.json config.json
+# Edit config.json with your settings
+
+# Start the validator
+npm run validator</code></pre>
+                        </div>
+
+                        <!-- Validator Setup -->
+                        <h3 class="text-xl font-medium mb-3">Validator Setup</h3>
+                        <div class="bg-gray-50 p-4 rounded">
+                            <p class="mb-4">To become a validator, you need:</p>
+                            <ul class="list-disc pl-5">
+                                <li>Minimum stake: 1 BT2C</li>
+                                <li>Distribution period: 2 weeks</li>
+                                <li>First node reward: 100 BT2C</li>
+                                <li>Subsequent nodes: 1 BT2C each</li>
+                            </ul>
+                        </div>
+
+                        <!-- API Reference -->
+                        <h3 class="text-xl font-medium mb-3">API Reference</h3>
+                        <div class="bg-gray-50 p-4 rounded">
+                            <h4 class="font-medium mb-2">REST API Endpoints</h4>
+                            <ul class="space-y-2">
+                                <li><code>GET /api/v1/blocks/:height</code> - Get block information</li>
+                                <li><code>GET /api/v1/transactions/:hash</code> - Get transaction details</li>
+                                <li><code>GET /api/v1/accounts/:address</code> - Get account information</li>
+                            </ul>
+                        </div>
+
+                        <!-- Need Help -->
+                        <h3 class="text-xl font-medium mb-3">Need Help?</h3>
+                        <div class="bg-gray-50 p-4 rounded">
+                            <ul class="space-y-2">
+                                <li>• Join our <a href="https://discord.gg/bt2c" class="text-indigo-600 hover:text-indigo-800">Discord</a> for community support</li>
+                                <li>• Check our <a href="https://github.com/sa2shinakamo2/bt2c/blob/main/docs/VALIDATOR_GUIDE.md" class="text-indigo-600 hover:text-indigo-800">Complete Guide</a></li>
+                                <li>• Report issues on <a href="https://github.com/sa2shinakamo2/bt2c/issues" class="text-indigo-600 hover:text-indigo-800">GitHub</a></li>
+                            </ul>
+                        </div>
+                    </div>
                 </section>
 
                 <!-- Requirements -->

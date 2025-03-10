@@ -73,7 +73,7 @@ jobs:
       # Dependency scanning
       - name: Run Snyk to check for vulnerabilities
         uses: snyk/actions/node@master
-        if: ${{ secrets.SNYK_TOKEN != '' }}
+        if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
