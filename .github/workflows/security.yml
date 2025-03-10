@@ -71,7 +71,17 @@ jobs:
         uses: github/codeql-action/analyze@v2
 
       # Dependency scanning
+      - name: Check for Snyk token
+        id: check-snyk
+        run: |
+          if [ "${{ secrets.SNYK_TOKEN }}" != "" ]; then
+            echo "has_token=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_token=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Run Snyk to check for vulnerabilities
+        if: steps.check-snyk.outputs.has_token == 'true'
         uses: snyk/actions/node@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
