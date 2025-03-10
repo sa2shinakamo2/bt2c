@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BT2C - Become a Validator</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="./css/tailwind.css">
     <link rel="stylesheet" href="./css/styles.css">
+    <link rel="icon" type="image/png" href="./images/favicon.png">
+    <meta name="description" content="Become a validator on the BT2C network. Learn about requirements, rewards, and how to get started.">
 </head>
 <body class="bg-gray-50">
     <!-- Navigation -->
@@ -26,8 +28,8 @@
                     </div>
                 </div>
                 <div class="flex items-center">
-                    <a href="/wallet.html" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                        Create Wallet
+                    <a href="/docs.html" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-600 hover:text-indigo-500">
+                        Documentation
                     </a>
                 </div>
             </div>
@@ -47,7 +49,7 @@
                 </p>
                 <div class="mt-5 max-w-md mx-auto sm:flex sm:justify-center md:mt-8">
                     <div class="rounded-md shadow">
-                        <a href="/docs/VALIDATOR_GUIDE.md" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:text-lg md:px-10">
+                        <a href="/docs/validator-guide.html" class="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
                             View Full Guide
                         </a>
                     </div>
@@ -233,6 +235,115 @@
         </div>
     </div>
 
+    <!-- Exclusive Distribution Period Section -->
+    <div class="bg-white">
+        <div class="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:py-24 lg:px-8">
+            <div class="lg:text-center">
+                <h2 class="text-base text-indigo-600 font-semibold tracking-wide uppercase">Become a Validator</h2>
+                <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                    Join the BT2C Network
+                </p>
+                <p class="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
+                    Participate in securing the network and earn exclusive rewards during the initial distribution period.
+                </p>
+            </div>
+
+            <div class="mt-10">
+                <div class="space-y-10 md:space-y-0 md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-10">
+                    <!-- Distribution Period Card -->
+                    <div class="bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
+                        <div class="px-4 py-5 sm:p-6">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">Exclusive Distribution Period</h3>
+                            <div class="mt-4">
+                                <ul class="list-disc pl-5 space-y-2 text-gray-600">
+                                    <li>First 2 weeks after launch</li>
+                                    <li>Developer node (first node) receives 100 BT2C</li>
+                                    <li>Other validator nodes receive 1 BT2C each</li>
+                                    <li class="font-semibold text-indigo-600">Only available to validator nodes</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Regular Rewards Card -->
+                    <div class="bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
+                        <div class="px-4 py-5 sm:p-6">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900">Regular Block Rewards</h3>
+                            <div class="mt-4">
+                                <ul class="list-disc pl-5 space-y-2 text-gray-600">
+                                    <li>Instant rewards after block validation</li>
+                                    <li>Similar to Bitcoin's reward system</li>
+                                    <li>Minimum stake: 1 BT2C</li>
+                                    <li>Continuous earning opportunity</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Validator Documentation -->
+    <div class="bg-white">
+        <div class="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:py-24 lg:px-8">
+            <div class="max-w-4xl mx-auto px-4 py-8">
+                <h1 class="text-4xl font-bold mb-8">BT2C Validator Guide</h1>
+                
+                <div class="bg-gray-100 p-6 rounded-lg mb-8">
+                    <h2 class="text-2xl font-bold mb-4">Getting Started</h2>
+                    <div class="bg-gray-100 p-6 rounded-lg mb-8">
+                        <h3 class="text-xl font-semibold mb-2">Prerequisites</h3>
+                        <ul class="list-disc pl-6 mb-4">
+                            <li>Git installed</li>
+                            <li>Docker and Docker Compose installed</li>
+                            <li>Minimum 1 BT2C for staking</li>
+                        </ul>
+
+                        <h3 class="text-xl font-semibold mb-2">Clone Repository</h3>
+                        <div class="bg-gray-800 text-white p-4 rounded mb-4 font-mono">
+                            git clone https://github.com/sa2shinakamo2/bt2c.git
+                        </div>
+
+                        <h3 class="text-xl font-semibold mb-2">About BT2C</h3>
+                        <p class="mb-4">BT2C (Bit2Coin) is designed as a digital store of value, following Bitcoin's proven principles:</p>
+                        <ul class="list-disc pl-6 mb-4">
+                            <li>Fixed supply: 21,000,000 BT2C</li>
+                            <li>Block reward halving: Every 210,000 blocks</li>
+                            <li>Focus: Long-term value preservation</li>
+                            <li>Validation: Pure transaction processing without governance overhead</li>
+                        </ul>
+
+                        <h3 class="text-xl font-semibold mb-2">Validator Selection</h3>
+                        <p class="mb-4">BT2C uses a stake-weighted validator selection process that balances decentralization with incentives:</p>
+                        <ul class="list-disc pl-6 mb-4">
+                            <li>All active validators have a chance to propose blocks</li>
+                            <li>Selection probability is proportional to stake amount</li>
+                            <li>Higher stake means higher chance of earning rewards</li>
+                            <li>Verifiable Random Function (VRF) ensures fair and unpredictable selection</li>
+                        </ul>
+
+                        <h3 class="text-xl font-semibold mb-2">Initial Distribution Period (First 2 Weeks)</h3>
+                        <ul class="list-disc pl-6 mb-4">
+                            <li>Developer node (first ever node): 100 BT2C one-time reward</li>
+                            <li>Other validator nodes: 1 BT2C one-time reward for joining during this period</li>
+                            <li>Note: Only validator nodes are eligible for distribution period rewards</li>
+                            <li>Standalone wallet holders cannot participate in the initial distribution</li>
+                        </ul>
+
+                        <h3 class="text-xl font-semibold mb-2">Validator States</h3>
+                        <ul class="list-disc pl-6 mb-4">
+                            <li><strong>Active:</strong> Validator is currently participating in block validation and can receive rewards</li>
+                            <li><strong>Inactive:</strong> Validator is registered but not currently participating (e.g., offline or insufficient stake)</li>
+                            <li><strong>Jailed:</strong> Validator is temporarily suspended due to missing too many blocks. Can be unjailed after a penalty period</li>
+                            <li><strong>Tombstoned:</strong> Validator is permanently banned due to severe protocol violations (e.g., attempted double-signing or network attacks)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Get Started Section -->
     <div class="bg-white">
         <div class="max-w-7xl mx-auto text-center py-12 px-4 sm:px-6 lg:py-16 lg:px-8">
@@ -241,16 +352,12 @@
                 <span class="block">Start your journey today.</span>
             </h2>
             <div class="mt-8 flex justify-center">
-                <div class="inline-flex rounded-md shadow">
-                    <a href="/docs/VALIDATOR_GUIDE.md" class="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                        View Full Setup Guide
-                    </a>
-                </div>
-                <div class="ml-3 inline-flex">
-                    <a href="https://discord.gg/bt2c" class="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-indigo-700 bg-indigo-100 hover:bg-indigo-200">
-                        Join Discord
-                    </a>
-                </div>
+                <a href="https://github.com/sa2shinakamo2/bt2c" target="_blank" rel="noopener noreferrer" class="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                    <svg class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd" />
+                    </svg>
+                    GitHub
+                </a>
             </div>
         </div>
     </div>
