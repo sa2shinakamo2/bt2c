@@ -1,0 +1,26 @@
+[build]
+  publish = "website"
+  command = "# no build command needed"
+
+[[redirects]]
+  from = "/explorer"
+  to = "/explorer/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/api/*"
+  to = "https://api.bt2c.net/api/:splat"
+  status = 200
+  force = true
+
+[build.environment]
+  NODE_VERSION = "18"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Content-Security-Policy = "default-src 'self' https://api.bt2c.net; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; font-src 'self' https://cdnjs.cloudflare.com; img-src 'self' data:;"
