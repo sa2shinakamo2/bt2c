@@ -34,20 +34,15 @@
         </div>
     </nav>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="explorer-container">
         <!-- Search Section -->
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-gray-900 mb-4">Blockchain Explorer</h1>
-            <div class="flex gap-2">
-                <input type="text" 
-                       id="search" 
-                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                       placeholder="Search by block height, transaction hash, or address..."
-                       autocomplete="off">
-                <button id="searchButton" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                    Search
-                </button>
-            </div>
+            <input type="text" 
+                   id="search" 
+                   class="search-box"
+                   placeholder="Search by block height, transaction hash, or address..."
+                   autocomplete="off">
         </div>
 
         <!-- Search Results -->
@@ -56,37 +51,40 @@
             <div id="resultsContent" class="space-y-4"></div>
         </div>
 
-        <!-- Network Stats -->
-        <div id="networkStats" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <!-- Stats will be inserted here by JavaScript -->
-        </div>
-
         <!-- Latest Data -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <!-- Latest Blocks -->
-            <div class="bg-white shadow rounded-lg p-6">
+            <div class="feature-card p-6">
                 <h2 class="text-xl font-semibold text-gray-900 mb-4">Latest Blocks</h2>
-                <div id="latestBlocks" class="space-y-4">
-                    <div class="animate-pulse">
-                        <div class="h-20 bg-gray-200 rounded"></div>
-                    </div>
-                </div>
+                <div id="latestBlocks" class="space-y-4"></div>
             </div>
 
-            <!-- Validators -->
-            <div class="bg-white shadow rounded-lg p-6">
-                <h2 class="text-xl font-semibold text-gray-900 mb-4">Active Validators</h2>
-                <div id="validators" class="space-y-4">
-                    <div class="animate-pulse">
-                        <div class="h-20 bg-gray-200 rounded"></div>
-                    </div>
-                </div>
+            <!-- Latest Transactions -->
+            <div class="feature-card p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">Latest Transactions</h2>
+                <div id="latestTransactions" class="space-y-4"></div>
+            </div>
+        </div>
+
+        <!-- Network Stats -->
+        <div class="stats-grid mt-8">
+            <div class="stat-card">
+                <dt class="text-sm font-medium text-gray-500">Total Blocks</dt>
+                <dd id="totalBlocks" class="mt-1 text-3xl font-semibold text-indigo-600">Loading...</dd>
+            </div>
+            <div class="stat-card">
+                <dt class="text-sm font-medium text-gray-500">Active Validators</dt>
+                <dd id="activeValidators" class="mt-1 text-3xl font-semibold text-indigo-600">Loading...</dd>
+            </div>
+            <div class="stat-card">
+                <dt class="text-sm font-medium text-gray-500">Total Transactions</dt>
+                <dd id="totalTransactions" class="mt-1 text-3xl font-semibold text-indigo-600">Loading...</dd>
             </div>
         </div>
     </div>
 
     <!-- Footer -->
-    <footer class="bg-white">
+    <footer class="bg-white mt-12">
         <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 md:flex md:items-center md:justify-between lg:px-8">
             <div class="flex justify-center space-x-6 md:order-2">
                 <a href="https://github.com/sa2shinakamo2/bt2c" class="text-gray-400 hover:text-gray-500">
@@ -97,7 +95,9 @@
                 </a>
             </div>
             <div class="mt-8 md:mt-0 md:order-1">
-                <p class="text-center text-base text-gray-400">&copy; 2025 BT2C. All rights reserved.</p>
+                <p class="text-center text-base text-gray-400">
+                    &copy; 2025 BT2C. All rights reserved.
+                </p>
             </div>
         </div>
     </footer>

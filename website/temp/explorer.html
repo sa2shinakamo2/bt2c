@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BT2C Explorer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-100">
+    <div id="app" class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow">
+            <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between h-16">
+                    <div class="flex flex-1 items-center justify-between">
+                        <div class="flex items-center">
+                            <a href="/" class="text-2xl font-bold text-blue-600">BT2C</a>
+                            <div class="hidden sm:flex sm:ml-6 sm:space-x-8">
+                                <a href="/" class="text-gray-500 hover:text-gray-900 inline-flex items-center px-1 pt-1 text-sm font-medium">Home</a>
+                                <a href="/explorer" class="border-blue-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium" aria-current="page">Explorer</a>
+                                <a href="/validators" class="text-gray-500 hover:text-gray-900 inline-flex items-center px-1 pt-1 text-sm font-medium">Become a Validator</a>
+                                <a href="/docs" class="text-gray-500 hover:text-gray-900 inline-flex items-center px-1 pt-1 text-sm font-medium">Documentation</a>
+                            </div>
+                        </div>
+                        <!-- Mobile menu button -->
+                        <div class="sm:hidden">
+                            <button @click="mobileMenuOpen = !mobileMenuOpen" type="button" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500" aria-controls="mobile-menu" :aria-expanded="mobileMenuOpen">
+                                <span class="sr-only">Open main menu</span>
+                                <i class="fas fa-bars text-xl"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Mobile menu -->
+                <div class="sm:hidden" id="mobile-menu" v-show="mobileMenuOpen">
+                    <div class="pt-2 pb-3 space-y-1">
+                        <a href="/" class="text-gray-500 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">Home</a>
+                        <a href="/explorer" class="bg-blue-50 border-blue-500 text-blue-700 block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Explorer</a>
+                        <a href="/validators" class="text-gray-500 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">Become a Validator</a>
+                        <a href="/docs" class="text-gray-500 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">Documentation</a>
+                    </div>
+                </div>
+            </nav>
+        </header>
+
+        <!-- Main Content -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <!-- Network Stats -->
+            <div class="bg-white shadow rounded-lg p-6 mb-8">
+                <h2 class="text-xl font-semibold mb-4">Network Statistics</h2>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="p-4 bg-blue-50 rounded-lg">
+                        <div class="text-sm text-gray-500">Current Height</div>
+                        <div class="text-2xl font-bold text-blue-600">{{ stats.currentHeight }}</div>
+                    </div>
+                    <div class="p-4 bg-green-50 rounded-lg">
+                        <div class="text-sm text-gray-500">Total Supply</div>
+                        <div class="text-2xl font-bold text-green-600">{{ stats.totalSupply }} BT2C</div>
+                        <div class="text-xs text-gray-500">Max: 21,000,000 BT2C</div>
+                    </div>
+                    <div class="p-4 bg-purple-50 rounded-lg">
+                        <div class="text-sm text-gray-500">Active Validators</div>
+                        <div class="text-2xl font-bold text-purple-600">{{ stats.activeValidators }}</div>
+                    </div>
+                    <div class="p-4 bg-yellow-50 rounded-lg">
+                        <div class="text-sm text-gray-500">Block Reward</div>
+                        <div class="text-2xl font-bold text-yellow-600">{{ stats.blockReward }} BT2C</div>
+                        <div class="text-xs text-gray-500">Halves every 210,000 blocks</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Latest Blocks -->
+            <div class="bg-white shadow rounded-lg p-6 mb-8">
+                <h2 class="text-xl font-semibold mb-4">Latest Blocks</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Height</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hash</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Validator</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reward</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Txs</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr v-for="block in blocks" :key="block.height" class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-blue-600 font-medium">
+                                    {{ block.height }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
+                                    {{ truncateHash(block.hash) }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ formatTime(block.timestamp) }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">
+                                    {{ truncateHash(block.validator) }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span :class="{
+                                        'px-2 py-1 text-sm font-medium rounded': true,
+                                        'bg-purple-100 text-purple-800': block.height === 0 && block.reward === 100,
+                                        'bg-green-100 text-green-800': block.height === 0 && block.reward === 1,
+                                        'text-gray-500': block.height > 0
+                                    }">
+                                        {{ block.reward }} BT2C
+                                        <span v-if="block.height === 0 && block.reward === 100" class="text-xs">(Developer)</span>
+                                        <span v-if="block.height === 0 && block.reward === 1" class="text-xs">(Early)</span>
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ block.transactions ? block.transactions.length : 0 }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Active Validators -->
+            <div class="bg-white shadow rounded-lg p-6">
+                <h2 class="text-xl font-semibold mb-4">Active Validators</h2>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Balance</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Staked</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Join Date</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <tr v-for="validator in validators" :key="validator.address" class="hover:bg-gray-50">
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono">
+                                    {{ truncateHash(validator.address) }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ validator.balance }} BT2C
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ validator.staked }} BT2C
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span :class="{
+                                        'px-2 py-1 text-xs font-medium rounded-full': true,
+                                        'bg-green-100 text-green-800': validator.state === 'ACTIVE',
+                                        'bg-red-100 text-red-800': validator.state === 'JAILED',
+                                        'bg-yellow-100 text-yellow-800': validator.state === 'TOMBSTONED',
+                                        'bg-gray-100 text-gray-800': validator.state === 'INACTIVE'
+                                    }">
+                                        {{ validator.state }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    {{ formatTime(validator.join_time) }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const { createApp } = Vue
+        const API_BASE = window.location.hostname.includes('bt2c.net')
+            ? 'https://api.bt2c.net'
+            : 'http://localhost:8001';
+
+        createApp({
+            data() {
+                return {
+                    stats: {
+                        currentHeight: 0,
+                        totalSupply: 0,
+                        activeValidators: 0,
+                        blockReward: 21 // Initial block reward as per BT2C protocol
+                    },
+                    blocks: [],
+                    validators: [],
+                    mobileMenuOpen: false
+                }
+            },
+            methods: {
+                truncateHash(hash) {
+                    if (!hash) return '';
+                    return `${hash.slice(0, 8)}...${hash.slice(-8)}`;
+                },
+                formatTime(timestamp) {
+                    if (!timestamp) return '';
+                    const date = new Date(timestamp);
+                    return date.toLocaleString();
+                },
+                calculateBlockReward(height) {
+                    // BT2C follows Bitcoin's halving schedule: every 210,000 blocks
+                    const halvings = Math.floor(height / 210000);
+                    return 21 / Math.pow(2, halvings);
+                },
+                async fetchData() {
+                    try {
+                        // Fetch latest blocks
+                        const blocksResponse = await fetch(`${API_BASE}/api/v1/blocks`);
+                        const blocksData = await blocksResponse.json();
+                        this.blocks = blocksData.blocks;
+                        
+                        if (this.blocks.length > 0) {
+                            this.stats.currentHeight = this.blocks[0].height;
+                            this.stats.blockReward = this.calculateBlockReward(this.stats.currentHeight);
+                            
+                            // Calculate total supply (max 21,000,000 BT2C)
+                            this.stats.totalSupply = Math.min(
+                                this.blocks.reduce((sum, block) => sum + block.reward, 0),
+                                21000000
+                            );
+                        }
+
+                        // Fetch validator status
+                        const statusResponse = await fetch(`${API_BASE}/api/v1/validator/status`);
+                        const statusData = await statusResponse.json();
+                        this.stats.activeValidators = statusData.active_validators || 0;
+
+                        // Get unique validator addresses
+                        const validatorAddresses = [...new Set(this.blocks.map(block => block.validator))];
+
+                        // Fetch validator details
+                        this.validators = await Promise.all(
+                            validatorAddresses.map(async (address) => {
+                                try {
+                                    const response = await fetch(`${API_BASE}/api/v1/balance/${address}`);
+                                    const data = await response.json();
+                                    return {
+                                        address,
+                                        ...data
+                                    };
+                                } catch (error) {
+                                    console.error(`Error fetching validator ${address}:`, error);
+                                    return {
+                                        address,
+                                        balance: 0,
+                                        staked: 0,
+                                        state: 'INACTIVE'
+                                    };
+                                }
+                            })
+                        );
+                    } catch (error) {
+                        console.error('Error fetching data:', error);
+                    }
+                }
+            },
+            mounted() {
+                this.fetchData();
+                // Refresh data every 10 seconds
+                setInterval(this.fetchData, 10000);
+            }
+        }).mount('#app')
+    </script>
+</body>
+</html>

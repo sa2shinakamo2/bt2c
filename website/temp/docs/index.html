@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BT2C Documentation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body class="bg-gray-50">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <h1 class="text-4xl font-bold mb-8">BT2C Documentation</h1>
+        
+        <div class="grid md:grid-cols-4 gap-6">
+            <!-- Navigation Sidebar -->
+            <div class="md:col-span-1">
+                <nav class="sticky top-4">
+                    <ul class="space-y-2">
+                        <li><a href="#getting-started" class="text-blue-600 hover:text-blue-800">Getting Started</a></li>
+                        <li><a href="#requirements" class="text-blue-600 hover:text-blue-800">Requirements</a></li>
+                        <li><a href="#validator-setup" class="text-blue-600 hover:text-blue-800">Validator Setup</a></li>
+                        <li><a href="#rewards" class="text-blue-600 hover:text-blue-800">Rewards</a></li>
+                        <li><a href="#monitoring" class="text-blue-600 hover:text-blue-800">Monitoring</a></li>
+                        <li><a href="#api" class="text-blue-600 hover:text-blue-800">API Reference</a></li>
+                    </ul>
+                </nav>
+            </div>
+
+            <!-- Main Content -->
+            <div class="md:col-span-3 space-y-8">
+                <!-- Getting Started -->
+                <section id="getting-started">
+                    <h2 class="text-2xl font-semibold mb-4">Getting Started</h2>
+                    <div class="bg-white p-6 rounded-lg shadow-sm space-y-4">
+                        <p>BT2C is a proof-of-stake blockchain that allows users to participate in network validation and earn rewards. This guide will help you get started with BT2C.</p>
+
+                        <h3 class="text-xl font-medium mb-3">Prerequisites</h3>
+                        <ul class="list-disc pl-5 mb-6">
+                            <li>Basic understanding of blockchain technology</li>
+                            <li>Computer with minimum requirements:
+                                <ul class="list-disc pl-5 mt-2">
+                                    <li>4 CPU cores</li>
+                                    <li>8GB RAM</li>
+                                    <li>100GB SSD storage</li>
+                                    <li>Stable internet connection</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                        <h3 class="text-xl font-medium mb-3">Installation Steps</h3>
+                        <div class="bg-gray-50 p-4 rounded">
+                            <pre class="whitespace-pre-wrap"><code># Clone the repository
+git clone https://github.com/sa2shinakamo2/bt2c.git
+
+# Enter the directory
+cd bt2c
+
+# Install dependencies
+npm install
+
+# Configure your node
+cp config.template.json config.json
+# Edit config.json with your settings
+
+# Start the validator
+npm run validator</code></pre>
+                        </div>
+
+                        <!-- Validator Setup -->
+                        <h3 class="text-xl font-medium mb-3">Validator Setup</h3>
+                        <div class="bg-gray-50 p-4 rounded">
+                            <p class="mb-4">To become a validator, you need:</p>
+                            <ul class="list-disc pl-5">
+                                <li>Minimum stake: 1 BT2C</li>
+                                <li>Initial distribution period: First 2 weeks after launch</li>
+                                <li>Developer node (first node) reward: 100 BT2C</li>
+                                <li>Initial validator reward: 1 BT2C (during first 2 weeks)</li>
+                                <li>Block validation rewards: Instant after each block (like Bitcoin)</li>
+                            </ul>
+                        </div>
+
+                        <!-- Node Requirements -->
+                        <h3 class="text-xl font-medium mb-3 mt-6">Hardware Requirements</h3>
+                        <div class="bg-gray-50 p-4 rounded">
+                            <ul class="list-disc pl-5">
+                                <li>4 CPU cores</li>
+                                <li>8GB RAM</li>
+                                <li>100GB SSD storage</li>
+                                <li>Stable internet connection</li>
+                            </ul>
+                        </div>
+
+                        <!-- Reward Structure -->
+                        <h3 class="text-xl font-medium mb-3 mt-6">Reward Structure</h3>
+                        <div class="bg-gray-50 p-4 rounded">
+                            <h4 class="font-medium mb-2">Initial Distribution (First 2 Weeks)</h4>
+                            <ul class="list-disc pl-5 mb-4">
+                                <li>Developer node (first ever node): 100 BT2C one-time reward</li>
+                                <li>All other validator nodes: 1 BT2C for joining during this period</li>
+                            </ul>
+                            <h4 class="font-medium mb-2">Regular Block Rewards</h4>
+                            <ul class="list-disc pl-5">
+                                <li>Instant rewards after each successful block validation</li>
+                                <li>Similar to Bitcoin's block reward system</li>
+                                <li>Must maintain active validator status</li>
+                            </ul>
+                        </div>
+
+                        <!-- API Reference -->
+                        <h3 class="text-xl font-medium mb-3">API Reference</h3>
+                        <div class="bg-gray-50 p-4 rounded">
+                            <h4 class="font-medium mb-2">REST API Endpoints</h4>
+                            <ul class="space-y-2">
+                                <li><code>GET /api/v1/blocks/:height</code> - Get block information</li>
+                                <li><code>GET /api/v1/transactions/:hash</code> - Get transaction details</li>
+                                <li><code>GET /api/v1/accounts/:address</code> - Get account information</li>
+                            </ul>
+                        </div>
+
+                        <!-- GitHub -->
+                        <h3 class="text-xl font-medium mb-3">Report issues on <a href="https://github.com/sa2shinakamo2/bt2c/issues" class="text-indigo-600 hover:text-indigo-800">GitHub</a></h3>
+                    </div>
+                </section>
+
+                <!-- Requirements -->
+                <section id="requirements">
+                    <h2 class="text-2xl font-semibold mb-4">Requirements</h2>
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <h3 class="text-xl font-medium mb-3">Hardware Requirements</h3>
+                        <ul class="list-disc list-inside space-y-2">
+                            <li>CPU: 4 cores or more</li>
+                            <li>RAM: 8GB minimum</li>
+                            <li>Storage: 100GB SSD</li>
+                            <li>Network: Stable internet connection (100 Mbps+)</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- Validator Setup -->
+                <section id="validator-setup">
+                    <h2 class="text-2xl font-semibold mb-4">Validator Setup</h2>
+                    <div class="bg-white p-6 rounded-lg shadow-sm space-y-4">
+                        <h3 class="text-xl font-medium mb-3">Installation Steps</h3>
+                        <div class="bg-gray-50 p-4 rounded">
+                            <pre class="whitespace-pre-wrap"><code># Clone the repository
+git clone https://github.com/sa2shinakamo2/bt2c.git
+
+# Enter the directory
+cd bt2c
+
+# Install dependencies
+npm install
+
+# Configure your node
+cp config.template.json config.json
+# Edit config.json with your settings
+
+# Start the validator
+npm run validator</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Rewards -->
+                <section id="rewards">
+                    <h2 class="text-2xl font-semibold mb-4">Rewards</h2>
+                    <div class="bg-white p-6 rounded-lg shadow-sm">
+                        <ul class="list-disc list-inside space-y-2">
+                            <li>Minimum stake: 1 BT2C</li>
+                            <li>Initial distribution period: First 2 weeks after launch</li>
+                            <li>Developer node (first node) reward: 100 BT2C</li>
+                            <li>Initial validator reward: 1 BT2C (during first 2 weeks)</li>
+                            <li>Block validation rewards: Instant after each block (like Bitcoin)</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- Monitoring -->
+                <section id="monitoring">
+                    <h2 class="text-2xl font-semibold mb-4">Monitoring</h2>
+                    <div class="bg-white p-6 rounded-lg shadow-sm space-y-4">
+                        <h3 class="text-xl font-medium mb-3">Common Commands</h3>
+                        <div class="bg-gray-50 p-4 rounded">
+                            <pre class="whitespace-pre-wrap"><code># Check node status
+npm run status
+
+# View logs
+npm run logs
+
+# Check sync status
+npm run sync-status</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- API Reference -->
+                <section id="api">
+                    <h2 class="text-2xl font-semibold mb-4">API Reference</h2>
+                    <div class="bg-white p-6 rounded-lg shadow-sm space-y-4">
+                        <h3 class="text-xl font-medium mb-3">REST Endpoints</h3>
+                        <table class="min-w-full">
+                            <thead>
+                                <tr class="bg-gray-50">
+                                    <th class="px-4 py-2 text-left">Endpoint</th>
+                                    <th class="px-4 py-2 text-left">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="px-4 py-2 font-mono text-sm">GET /api/v1/blocks/:height</td>
+                                    <td class="px-4 py-2">Get block information</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-4 py-2 font-mono text-sm">GET /api/v1/transactions/:hash</td>
+                                    <td class="px-4 py-2">Get transaction details</td>
+                                </tr>
+                                <tr>
+                                    <td class="px-4 py-2 font-mono text-sm">GET /api/v1/accounts/:address</td>
+                                    <td class="px-4 py-2">Get account information</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
