@@ -1,0 +1,50 @@
+{
+    "wallet_address": "***REMOVED***",
+    "stake_amount": 1.0,
+    "network": {
+        "listen_addr": "0.0.0.0:26656",
+        "external_addr": "***REMOVED***:26656",
+        "seeds": [
+            "seed1.bt2c.net:26656",
+            "seed2.bt2c.net:26656"
+        ],
+        "max_connections": 100,
+        "rate_limit": 100
+    },
+    "validator": {
+        "name": "***REMOVED***",
+        "description": "YOUR_VALIDATOR_DESCRIPTION",
+        "website": "YOUR_WEBSITE",
+        "security_contact": "***REMOVED***"
+    },
+    "consensus": {
+        "block_time": 60,
+        "timeout_commit": 5000,
+        "timeout_propose": 3000,
+        "timeout_prevote": 1000,
+        "timeout_precommit": 1000,
+        "timeout_propose_delta": 500,
+        "timeout_vote_delta": 500
+    },
+    "monitoring": {
+        "prometheus_enabled": true,
+        "prometheus_port": 26660,
+        "grafana_enabled": true,
+        "grafana_port": 3000,
+        "alert_email": "***REMOVED***"
+    },
+    "storage": {
+        "db_backend": "postgres",
+        "db_host": "localhost",
+        "db_port": 5432,
+        "db_name": "bt2c_validator",
+        "db_user": "bt2c",
+        "db_password": "***REMOVED***"
+    },
+    "logging": {
+        "level": "info",
+        "format": "json",
+        "output": "file",
+        "log_file": "/var/log/bt2c/validator.log"
+    }
+}
