@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BT2C - Become a Validator</title>
-    <link rel="stylesheet" href="./css/tailwind.css">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="./css/styles.css">
-    <link rel="icon" type="image/png" href="./images/favicon.png">
-    <meta name="description" content="Become a validator on the BT2C network. Learn about requirements, rewards, and how to get started.">
 </head>
 <body class="bg-gray-50">
     <!-- Navigation -->
@@ -16,20 +14,28 @@
             <div class="flex justify-between h-16">
                 <div class="flex">
                     <div class="flex-shrink-0 flex items-center">
-                        <a href="/">
-                            <img class="h-8 w-auto" src="images/logo.svg" alt="BT2C">
+                        <a href="index.html" class="flex items-center">
+                            <div class="flex">
+                                <svg class="h-8 w-8 text-indigo-600" viewBox="0 0 24 24">
+                                    <path d="M12 2L2 19h20L12 2z" fill="currentColor"/>
+                                </svg>
+                                <svg class="h-8 w-8 text-indigo-600 -ml-4" viewBox="0 0 24 24">
+                                    <path d="M12 2L2 19h20L12 2z" fill="currentColor"/>
+                                </svg>
+                            </div>
+                            <span class="ml-2 text-xl font-semibold text-gray-900">BT2C</span>
                         </a>
                     </div>
                     <div class="hidden md:ml-6 md:flex md:space-x-8">
-                        <a href="/" class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 hover:text-gray-700 hover:border-gray-300">Home</a>
-                        <a href="/validators.html" class="inline-flex items-center px-1 pt-1 border-b-2 border-indigo-500 text-sm font-medium leading-5 text-gray-900">Become a Validator</a>
-                        <a href="/explorer.html" class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 hover:text-gray-700 hover:border-gray-300">Explorer</a>
-                        <a href="/docs.html" class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 hover:text-gray-700 hover:border-gray-300">Documentation</a>
+                        <a href="index.html" class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 hover:text-gray-700 hover:border-gray-300">Home</a>
+                        <a href="docs.html#validator-guide" class="inline-flex items-center px-1 pt-1 border-b-2 border-indigo-500 text-sm font-medium leading-5 text-gray-900">Become a Validator</a>
+                        <a href="explorer.html" class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 hover:text-gray-700 hover:border-gray-300">Explorer</a>
+                        <a href="docs.html" class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-500 hover:text-gray-700 hover:border-gray-300">Documentation</a>
                     </div>
                 </div>
                 <div class="flex items-center">
-                    <a href="/docs.html" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-indigo-600 hover:text-indigo-500">
-                        Documentation
+                    <a href="/docs.html#wallet-setup" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                        Create Wallet
                     </a>
                 </div>
             </div>
@@ -37,78 +43,103 @@
     </nav>
 
     <!-- Hero Section -->
-    <div class="bg-white">
-        <div class="max-w-7xl mx-auto py-16 px-4 sm:py-24 sm:px-6 lg:px-8">
-            <div class="text-center">
-                <h1 class="text-4xl font-extrabold tracking-tight text-gray-900 sm:text-5xl md:text-6xl">
-                    <span class="block">Become a BT2C</span>
-                    <span class="block text-indigo-600">Network Validator</span>
-                </h1>
-                <p class="mt-3 max-w-md mx-auto text-base text-gray-500 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
-                    Join the BT2C network as a validator, help secure the blockchain, and earn rewards for your contribution.
-                </p>
-                <div class="mt-5 max-w-md mx-auto sm:flex sm:justify-center md:mt-8">
-                    <div class="rounded-md shadow">
-                        <a href="/docs/validator-guide.html" class="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-                            View Full Guide
-                        </a>
-                    </div>
+    <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        <div class="text-center">
+            <h1 class="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
+                Become a BT2C<br>
+                <span class="text-indigo-600">Network Validator</span>
+            </h1>
+            <p class="mt-3 max-w-md mx-auto text-base text-gray-500 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
+                Join the BT2C network as a validator, help secure the blockchain, and earn rewards for your contribution.
+            </p>
+            <div class="mt-5 max-w-md mx-auto sm:flex sm:justify-center md:mt-8">
+                <div class="rounded-md shadow">
+                    <a href="docs.html#validator-guide" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:text-lg md:px-10">
+                        View Full Guide
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Requirements Section -->
-    <div class="bg-gray-50 pt-12 sm:pt-16">
+    <!-- Validator Requirements -->
+    <div class="bg-white py-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="max-w-4xl mx-auto text-center">
-                <h2 class="text-3xl font-extrabold text-gray-900 sm:text-4xl">
+            <div class="text-center">
+                <h2 id="requirements" class="text-3xl font-extrabold text-gray-900">
                     Validator Requirements
                 </h2>
-                <p class="mt-3 text-xl text-gray-500 sm:mt-4">
+                <p class="mt-4 text-lg text-gray-500">
                     Everything you need to get started as a validator
                 </p>
             </div>
-        </div>
-        <div class="mt-10 pb-12 bg-white sm:pb-16">
-            <div class="relative">
-                <div class="absolute inset-0 h-1/2 bg-gray-50"></div>
-                <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="max-w-4xl mx-auto">
-                        <dl class="rounded-lg bg-white shadow-lg sm:grid sm:grid-cols-4">
-                            <div class="flex flex-col border-b border-gray-100 p-6 text-center sm:border-0 sm:border-r">
-                                <dt class="order-2 mt-2 text-lg leading-6 font-medium text-gray-500">
-                                    Minimum Stake
-                                </dt>
-                                <dd class="order-1 text-5xl font-extrabold text-indigo-600">
-                                    1 BT2C
-                                </dd>
+
+            <div class="mt-10">
+                <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+                    <!-- Hardware Requirements -->
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-8 w-8 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"/>
+                                    </svg>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-lg font-medium text-gray-900">Hardware</h3>
+                                    <ul class="mt-2 text-base text-gray-500">
+                                        <li>• 4 CPU cores</li>
+                                        <li>• 8GB RAM</li>
+                                        <li>• 100GB SSD storage</li>
+                                        <li>• Stable internet connection</li>
+                                    </ul>
+                                </div>
                             </div>
-                            <div class="flex flex-col border-t border-b border-gray-100 p-6 text-center sm:border-0 sm:border-l sm:border-r">
-                                <dt class="order-2 mt-2 text-lg leading-6 font-medium text-gray-500">
-                                    CPU Cores
-                                </dt>
-                                <dd class="order-1 text-5xl font-extrabold text-indigo-600">
-                                    4
-                                </dd>
+                        </div>
+                    </div>
+
+                    <!-- Software Requirements -->
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-8 w-8 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                    </svg>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-lg font-medium text-gray-900">Software</h3>
+                                    <ul class="mt-2 text-base text-gray-500">
+                                        <li>• Linux/macOS/Windows</li>
+                                        <li>• Docker</li>
+                                        <li>• Node.js 16+</li>
+                                        <li>• Git</li>
+                                    </ul>
+                                </div>
                             </div>
-                            <div class="flex flex-col border-t border-gray-100 p-6 text-center sm:border-0 sm:border-l">
-                                <dt class="order-2 mt-2 text-lg leading-6 font-medium text-gray-500">
-                                    RAM
-                                </dt>
-                                <dd class="order-1 text-5xl font-extrabold text-indigo-600">
-                                    8GB
-                                </dd>
+                        </div>
+                    </div>
+
+                    <!-- Staking Requirements -->
+                    <div class="bg-white overflow-hidden shadow rounded-lg">
+                        <div class="px-4 py-5 sm:p-6">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-8 w-8 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                </div>
+                                <div class="ml-4">
+                                    <h3 class="text-lg font-medium text-gray-900">Staking</h3>
+                                    <ul class="mt-2 text-base text-gray-500">
+                                        <li>• Minimum stake: 1.0 BT2C</li>
+                                        <li>• Early validator reward: 1.0 BT2C</li>
+                                        <li>• Developer node reward: 100 BT2C</li>
+                                        <li>• Distribution period: 14 days</li>
+                                    </ul>
+                                </div>
                             </div>
-                            <div class="flex flex-col border-t border-gray-100 p-6 text-center sm:border-0 sm:border-l">
-                                <dt class="order-2 mt-2 text-lg leading-6 font-medium text-gray-500">
-                                    Storage
-                                </dt>
-                                <dd class="order-1 text-5xl font-extrabold text-indigo-600">
-                                    100GB
-                                </dd>
-                            </div>
-                        </dl>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -131,7 +162,7 @@
                         <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Create Wallet</p>
                     </dt>
                     <dd class="mt-2 ml-16 text-base text-gray-500">
-                        Get the minimum required 1 BT2C token to start validating. Join during the first 2 weeks to receive the initial validator reward.
+                        Set up your BT2C wallet and secure your private keys
                     </dd>
                 </div>
 
@@ -143,7 +174,7 @@
                         <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Acquire Tokens</p>
                     </dt>
                     <dd class="mt-2 ml-16 text-base text-gray-500">
-                        Get the minimum required 1 BT2C token to start validating. First node earns 100 BT2C bonus.
+                        Get the minimum required BT2C tokens
                     </dd>
                 </div>
 
@@ -155,7 +186,7 @@
                         <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Setup Node</p>
                     </dt>
                     <dd class="mt-2 ml-16 text-base text-gray-500">
-                        Install and configure your validator node using our detailed guide. Requires Linux (Ubuntu 20.04 recommended).
+                        Install and configure your validator node
                     </dd>
                 </div>
 
@@ -167,7 +198,7 @@
                         <p class="ml-16 text-lg leading-6 font-medium text-gray-900">Start Validating</p>
                     </dt>
                     <dd class="mt-2 ml-16 text-base text-gray-500">
-                        Begin validating blocks and earn rewards instantly after each block validation, just like Bitcoin.
+                        Begin validating blocks and earning rewards
                     </dd>
                 </div>
             </dl>
@@ -180,54 +211,55 @@
             <div>
                 <h2 class="text-base font-semibold text-indigo-600 uppercase tracking-wide">Validator Rewards</h2>
                 <p class="mt-2 text-3xl font-extrabold text-gray-900">Earn for securing the network</p>
-                <p class="mt-4 text-lg text-gray-500">
-                    Join the BT2C network as a validator and earn rewards for your contribution to network security.
-                </p>
+                <p class="mt-4 text-lg text-gray-500">As a validator, you'll earn rewards for:</p>
             </div>
             <div class="mt-12 lg:mt-0 lg:col-span-2">
-                <dl class="space-y-10 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-x-6 sm:gap-y-10">
+                <dl class="space-y-10 sm:space-y-0 sm:grid sm:grid-cols-2 sm:grid-rows-2 sm:grid-flow-col sm:gap-x-6 sm:gap-y-10 lg:gap-x-8">
                     <div class="relative">
                         <dt>
                             <svg class="absolute h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                             </svg>
-                            <p class="ml-10 text-lg leading-6 font-medium text-gray-900">Initial Distribution Period</p>
+                            <p class="ml-10 text-lg leading-6 font-medium text-gray-900">Block Validation</p>
                         </dt>
                         <dd class="mt-2 ml-10 text-base text-gray-500">
-                            First 2 weeks after project launch. Every validator node receives 1 BT2C for joining during this period.
+                            Earn rewards for validating new blocks
                         </dd>
                     </div>
+
                     <div class="relative">
                         <dt>
                             <svg class="absolute h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                             </svg>
-                            <p class="ml-10 text-lg leading-6 font-medium text-gray-900">Developer Node Reward</p>
+                            <p class="ml-10 text-lg leading-6 font-medium text-gray-900">Transaction Fees</p>
                         </dt>
                         <dd class="mt-2 ml-10 text-base text-gray-500">
-                            The first ever node (developer node) receives 100 BT2C as a one-time developer reward.
+                            Collect fees from processed transactions
                         </dd>
                     </div>
+
                     <div class="relative">
                         <dt>
                             <svg class="absolute h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                             </svg>
-                            <p class="ml-10 text-lg leading-6 font-medium text-gray-900">Block Validation Rewards</p>
+                            <p class="ml-10 text-lg leading-6 font-medium text-gray-900">Staking Rewards</p>
                         </dt>
                         <dd class="mt-2 ml-10 text-base text-gray-500">
-                            Earn rewards immediately after each successful block validation, similar to Bitcoin's reward system.
+                            Earn interest on your staked tokens
                         </dd>
                     </div>
+
                     <div class="relative">
                         <dt>
                             <svg class="absolute h-6 w-6 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                             </svg>
-                            <p class="ml-10 text-lg leading-6 font-medium text-gray-900">Minimum Stake</p>
+                            <p class="ml-10 text-lg leading-6 font-medium text-gray-900">Network Governance</p>
                         </dt>
                         <dd class="mt-2 ml-10 text-base text-gray-500">
-                            Stake at least 1 BT2C to participate in network validation.
+                            Participate in network decisions
                         </dd>
                     </div>
                 </dl>
@@ -235,129 +267,24 @@
         </div>
     </div>
 
-    <!-- Exclusive Distribution Period Section -->
-    <div class="bg-white">
-        <div class="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:py-24 lg:px-8">
-            <div class="lg:text-center">
-                <h2 class="text-base text-indigo-600 font-semibold tracking-wide uppercase">Become a Validator</h2>
-                <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
-                    Join the BT2C Network
-                </p>
-                <p class="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
-                    Participate in securing the network and earn exclusive rewards during the initial distribution period.
-                </p>
-            </div>
-
-            <div class="mt-10">
-                <div class="space-y-10 md:space-y-0 md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-10">
-                    <!-- Distribution Period Card -->
-                    <div class="bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
-                        <div class="px-4 py-5 sm:p-6">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900">Exclusive Distribution Period</h3>
-                            <div class="mt-4">
-                                <ul class="list-disc pl-5 space-y-2 text-gray-600">
-                                    <li>First 2 weeks after launch</li>
-                                    <li>Developer node (first node) receives 100 BT2C</li>
-                                    <li>Other validator nodes receive 1 BT2C each</li>
-                                    <li class="font-semibold text-indigo-600">Only available to validator nodes</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Regular Rewards Card -->
-                    <div class="bg-white overflow-hidden shadow rounded-lg divide-y divide-gray-200">
-                        <div class="px-4 py-5 sm:p-6">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900">Regular Block Rewards</h3>
-                            <div class="mt-4">
-                                <ul class="list-disc pl-5 space-y-2 text-gray-600">
-                                    <li>Instant rewards after block validation</li>
-                                    <li>Similar to Bitcoin's reward system</li>
-                                    <li>Minimum stake: 1 BT2C</li>
-                                    <li>Continuous earning opportunity</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Validator Documentation -->
-    <div class="bg-white">
-        <div class="max-w-7xl mx-auto py-16 px-4 sm:px-6 lg:py-24 lg:px-8">
-            <div class="max-w-4xl mx-auto px-4 py-8">
-                <h1 class="text-4xl font-bold mb-8">BT2C Validator Guide</h1>
-                
-                <div class="bg-gray-100 p-6 rounded-lg mb-8">
-                    <h2 class="text-2xl font-bold mb-4">Getting Started</h2>
-                    <div class="bg-gray-100 p-6 rounded-lg mb-8">
-                        <h3 class="text-xl font-semibold mb-2">Prerequisites</h3>
-                        <ul class="list-disc pl-6 mb-4">
-                            <li>Git installed</li>
-                            <li>Docker and Docker Compose installed</li>
-                            <li>Minimum 1 BT2C for staking</li>
-                        </ul>
-
-                        <h3 class="text-xl font-semibold mb-2">Clone Repository</h3>
-                        <div class="bg-gray-800 text-white p-4 rounded mb-4 font-mono">
-                            git clone https://github.com/sa2shinakamo2/bt2c.git
-                        </div>
-
-                        <h3 class="text-xl font-semibold mb-2">About BT2C</h3>
-                        <p class="mb-4">BT2C (Bit2Coin) is designed as a digital store of value, following Bitcoin's proven principles:</p>
-                        <ul class="list-disc pl-6 mb-4">
-                            <li>Fixed supply: 21,000,000 BT2C</li>
-                            <li>Block reward halving: Every 210,000 blocks</li>
-                            <li>Focus: Long-term value preservation</li>
-                            <li>Validation: Pure transaction processing without governance overhead</li>
-                        </ul>
-
-                        <h3 class="text-xl font-semibold mb-2">Validator Selection</h3>
-                        <p class="mb-4">BT2C uses a stake-weighted validator selection process that balances decentralization with incentives:</p>
-                        <ul class="list-disc pl-6 mb-4">
-                            <li>All active validators have a chance to propose blocks</li>
-                            <li>Selection probability is proportional to stake amount</li>
-                            <li>Higher stake means higher chance of earning rewards</li>
-                            <li>Verifiable Random Function (VRF) ensures fair and unpredictable selection</li>
-                        </ul>
-
-                        <h3 class="text-xl font-semibold mb-2">Initial Distribution Period (First 2 Weeks)</h3>
-                        <ul class="list-disc pl-6 mb-4">
-                            <li>Developer node (first ever node): 100 BT2C one-time reward</li>
-                            <li>Other validator nodes: 1 BT2C one-time reward for joining during this period</li>
-                            <li>Note: Only validator nodes are eligible for distribution period rewards</li>
-                            <li>Standalone wallet holders cannot participate in the initial distribution</li>
-                        </ul>
-
-                        <h3 class="text-xl font-semibold mb-2">Validator States</h3>
-                        <ul class="list-disc pl-6 mb-4">
-                            <li><strong>Active:</strong> Validator is currently participating in block validation and can receive rewards</li>
-                            <li><strong>Inactive:</strong> Validator is registered but not currently participating (e.g., offline or insufficient stake)</li>
-                            <li><strong>Jailed:</strong> Validator is temporarily suspended due to missing too many blocks. Can be unjailed after a penalty period</li>
-                            <li><strong>Tombstoned:</strong> Validator is permanently banned due to severe protocol violations (e.g., attempted double-signing or network attacks)</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Get Started Section -->
-    <div class="bg-white">
-        <div class="max-w-7xl mx-auto text-center py-12 px-4 sm:px-6 lg:py-16 lg:px-8">
-            <h2 class="text-3xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+    <!-- CTA Section -->
+    <div class="bg-indigo-50">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-24 lg:px-8 lg:flex lg:items-center lg:justify-between">
+            <h2 class="text-3xl font-extrabold tracking-tight text-gray-900 md:text-4xl">
                 <span class="block">Ready to become a validator?</span>
-                <span class="block">Start your journey today.</span>
+                <span class="block text-indigo-600">Start your journey today.</span>
             </h2>
-            <div class="mt-8 flex justify-center">
-                <a href="https://github.com/sa2shinakamo2/bt2c" target="_blank" rel="noopener noreferrer" class="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    <svg class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd" />
-                    </svg>
-                    GitHub
-                </a>
+            <div class="mt-8 flex lg:mt-0 lg:flex-shrink-0">
+                <div class="inline-flex rounded-md shadow">
+                    <a href="/docs.html#validator" class="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
+                        Get Started
+                    </a>
+                </div>
+                <div class="ml-3 inline-flex rounded-md shadow">
+                    <a href="/docs.html" class="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-indigo-600 bg-white hover:bg-indigo-50">
+                        Learn More
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -373,8 +300,10 @@
                     </svg>
                 </a>
             </div>
-            <div class="mt-8 md:mt-0 md:order-1">
-                <p class="text-center text-base text-gray-400">&copy; 2025 BT2C. All rights reserved.</p>
+            <div class="mt-8 text-center md:order-1">
+                <p class="text-center text-base text-gray-400">
+                    &copy; 2025 BT2C. All rights reserved.
+                </p>
             </div>
         </div>
     </footer>

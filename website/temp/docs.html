@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation - bit2coin</title>
+    <link rel="stylesheet" href="./css/tailwind.css">
+    <link rel="stylesheet" href="./css/styles.css">
+    <link rel="stylesheet" href="./css/prism.css">
+    <script src="./js/prism.js" defer></script>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex justify-between h-16">
+                <div class="flex">
+                    <div class="flex-shrink-0 flex items-center">
+                        <a href="/">
+                            <img class="h-8 w-auto" src="images/logo.svg" alt="BT2C">
+                        </a>
+                    </div>
+                    <div class="hidden md:ml-6 md:flex md:space-x-8">
+                        <a href="/" class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-700">Home</a>
+                        <a href="/validators.html" class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-700">Validators</a>
+                        <a href="/explorer.html" class="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-700">Explorer</a>
+                        <a href="/docs.html" class="inline-flex items-center px-1 pt-1 border-b-2 border-indigo-500 text-sm font-medium text-gray-900">Documentation</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <!-- Table of Contents -->
+        <div class="bg-white shadow sm:rounded-lg mb-8">
+            <div class="px-4 py-5 sm:p-6">
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Documentation</h2>
+                <nav class="space-y-2">
+                    <a href="#wallet-setup" class="block text-gray-600 hover:text-gray-900">Wallet Setup</a>
+                    <a href="#staking" class="block text-gray-600 hover:text-gray-900">Staking Guide</a>
+                    <a href="#validator-setup" class="block text-gray-600 hover:text-gray-900">Validator Setup</a>
+                    <a href="#requirements" class="block text-gray-600 hover:text-gray-900">Requirements</a>
+                    <a href="#rewards" class="block text-gray-600 hover:text-gray-900">Rewards Structure</a>
+                    <a href="#monitoring" class="block text-gray-600 hover:text-gray-900">Monitoring</a>
+                    <a href="#troubleshooting" class="block text-gray-600 hover:text-gray-900">Troubleshooting</a>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Wallet Setup -->
+        <section id="wallet-setup" class="bg-white shadow sm:rounded-lg mb-8">
+            <div class="px-4 py-5 sm:p-6">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">Wallet Setup</h2>
+                <div class="space-y-6">
+                    <div>
+                        <h4 class="font-medium text-gray-900 mb-2">Create a New Wallet</h4>
+                        <pre class="language-bash rounded-lg"><code># Install BT2C CLI tool
+curl -fsSL https://bt2c.net/install.sh | sh
+
+# Create a new wallet
+bt2c wallet create</code></pre>
+                        <div class="mt-4 bg-yellow-50 p-4 rounded-lg">
+                            <p class="text-yellow-700">⚠️ Important: Save your recovery phrase in a secure location. You will need this to recover your wallet if needed.</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="font-medium text-gray-900 mb-2">Check Wallet Balance</h4>
+                        <pre class="language-bash rounded-lg"><code>bt2c wallet balance</code></pre>
+                    </div>
+
+                    <div>
+                        <h4 class="font-medium text-gray-900 mb-2">Send BT2C</h4>
+                        <pre class="language-bash rounded-lg"><code>bt2c wallet send --to ADDRESS --amount AMOUNT</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Staking Guide -->
+        <section id="staking" class="bg-white shadow sm:rounded-lg mb-8">
+            <div class="px-4 py-5 sm:p-6">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">Staking Guide</h2>
+                <div class="space-y-6">
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h4 class="font-medium text-gray-900 mb-2">Staking Requirements</h4>
+                        <ul class="space-y-2 text-gray-600">
+                            <li>• Minimum stake: 1 BT2C</li>
+                            <li>• Wallet must be fully synced</li>
+                            <li>• Stable internet connection recommended</li>
+                        </ul>
+                        <div class="mt-4 bg-yellow-50 p-4 rounded-lg">
+                            <p class="text-yellow-700">⚠️ Important: To participate in the initial distribution period (first 2 weeks), you must set up a validator node. Standalone wallet staking will only be eligible for regular block rewards after the distribution period.</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h4 class="font-medium text-gray-900 mb-2">Start Staking</h4>
+                        <pre class="language-bash rounded-lg"><code># Stake your BT2C
+bt2c stake --amount 1</code></pre>
+                    </div>
+
+                    <div>
+                        <h4 class="font-medium text-gray-900 mb-2">Check Staking Status</h4>
+                        <pre class="language-bash rounded-lg"><code>bt2c stake status</code></pre>
+                    </div>
+
+                    <div>
+                        <h4 class="font-medium text-gray-900 mb-2">Unstake</h4>
+                        <pre class="language-bash rounded-lg"><code>bt2c unstake --amount 1</code></pre>
+                    </div>
+
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <p class="text-blue-700">💡 Want to become a validator? Once you have staked at least 1 BT2C, you can follow the Validator Setup guide below to run a validator node.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Validator Setup -->
+        <section id="validator-setup" class="bg-white shadow sm:rounded-lg mb-8">
+            <div class="px-4 py-5 sm:p-6">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">Validator Setup Guide</h2>
+                
+                <!-- Requirements Section -->
+                <div id="requirements" class="mb-8">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">System Requirements</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h4 class="font-medium text-gray-900">Hardware</h4>
+                            <ul class="mt-2 space-y-2 text-gray-600">
+                                <li>• 4 CPU cores</li>
+                                <li>• 8GB RAM</li>
+                                <li>• 100GB SSD storage</li>
+                                <li>• 10Mbps+ internet connection</li>
+                            </ul>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h4 class="font-medium text-gray-900">Software</h4>
+                            <ul class="mt-2 space-y-2 text-gray-600">
+                                <li>• Ubuntu 20.04 LTS (recommended)</li>
+                                <li>• Docker</li>
+                                <li>• Git</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rewards Section -->
+                <div id="rewards" class="mb-8">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Rewards Structure</h3>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h5 class="font-semibold mb-2">Initial Distribution Period (First 2 Weeks)</h5>
+                        <ul class="space-y-2 text-gray-600">
+                            <li>• Developer node (first ever node): 100 BT2C one-time reward</li>
+                            <li>• All other validator nodes: 1 BT2C for joining during this period</li>
+                            <li class="text-red-600">• Note: Only validator nodes are eligible for distribution period rewards. Standalone wallet holders cannot participate in the initial distribution.</li>
+                        </ul>
+                        <h5 class="font-semibold mb-2 mt-4">Regular Block Rewards</h5>
+                        <ul class="space-y-2 text-gray-600">
+                            <li>• Instant rewards after each block validation</li>
+                            <li>• Similar to Bitcoin's reward system</li>
+                            <li>• Minimum stake: 1 BT2C</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Installation Steps -->
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Installation Steps</h3>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <h4 class="font-medium text-gray-900 mb-2">1. Prepare Your Server</h4>
+                            <pre class="language-bash rounded-lg"><code>sudo apt update && sudo apt upgrade -y
+sudo apt install -y curl git build-essential
+
+# Install Docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+sudo usermod -aG docker $USER</code></pre>
+                        </div>
+
+                        <div>
+                            <h4 class="font-medium text-gray-900 mb-2">2. Get the Code</h4>
+                            <pre class="language-bash rounded-lg"><code>git clone https://github.com/sa2shinakamo2/bt2c.git
+cd bt2c
+cp env.template .env</code></pre>
+                        </div>
+
+                        <div>
+                            <h4 class="font-medium text-gray-900 mb-2">3. Configure Your Node</h4>
+                            <pre class="language-bash rounded-lg"><code># Edit .env file
+NODE_NAME=your-node-name
+NODE_PORT=3000
+NODE_HOST=0.0.0.0</code></pre>
+                        </div>
+
+                        <div>
+                            <h4 class="font-medium text-gray-900 mb-2">4. Start Your Node</h4>
+                            <pre class="language-bash rounded-lg"><code>docker-compose up -d
+docker-compose logs -f</code></pre>
+                        </div>
+
+                        <div>
+                            <h4 class="font-medium text-gray-900 mb-2">5. Register as Validator</h4>
+                            <pre class="language-bash rounded-lg"><code>curl -X POST http://localhost:3000/api/v1/validator/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "validatorAddress": "your-wallet-address",
+    "stake": "1000000000000000000"
+  }'</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Monitoring Section -->
+                <div id="monitoring" class="mb-8">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Monitoring Your Node</h3>
+                    <div class="space-y-4">
+                        <div>
+                            <h4 class="font-medium text-gray-900 mb-2">Health Checks</h4>
+                            <pre class="language-bash rounded-lg"><code># Check node status
+curl http://localhost:3000/api/v1/health
+
+# View validator status
+curl http://localhost:3000/api/v1/validator/status
+
+# Check sync status
+curl http://localhost:3000/api/v1/sync/status</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Troubleshooting Section -->
+                <div id="troubleshooting" class="mb-8">
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Troubleshooting</h3>
+                    <div class="space-y-4">
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h4 class="font-medium text-gray-900">Common Issues</h4>
+                            <div class="mt-4 space-y-4">
+                                <div>
+                                    <p class="font-medium text-gray-700">Node Not Syncing</p>
+                                    <pre class="language-bash mt-2 rounded-lg"><code># Restart the node
+docker-compose restart</code></pre>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-gray-700">Connection Issues</p>
+                                    <ul class="mt-2 space-y-2 text-gray-600">
+                                        <li>• Check firewall settings</li>
+                                        <li>• Verify port 3000 is open</li>
+                                        <li>• Ensure stable internet connection</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Support Section -->
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-900 mb-4">Need Help?</h3>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <ul class="space-y-2 text-gray-600">
+                            <li>• Report issues on <a href="https://github.com/sa2shinakamo2/bt2c/issues" class="text-indigo-600 hover:text-indigo-800">GitHub</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white mt-12">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 md:flex md:items-center md:justify-between lg:px-8">
+            <div class="flex justify-center space-x-6 md:order-2">
+                <a href="https://github.com/sa2shinakamo2/bt2c" class="text-gray-400 hover:text-gray-500">
+                    <span class="sr-only">GitHub</span>
+                    <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                        <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"/>
+                    </svg>
+                </a>
+            </div>
+            <div class="mt-8 md:mt-0 md:order-1">
+                <p class="text-center text-base text-gray-400">
+                    &copy; 2025 BT2C. All rights reserved.
+                </p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
