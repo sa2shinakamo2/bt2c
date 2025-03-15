@@ -12,6 +12,7 @@ BT2C is a next-generation blockchain platform designed to provide a secure, scal
 - Block Time: 300 seconds (5 minutes)
 - Halving Period: 4 years (126,144,000 seconds)
 - Minimum Block Reward: 0.00000001 BT2C
+- Recommended Initial Price: $0.08 per BT2C
 
 ### 1.2 Validator Incentives
 - Developer Node Reward: 1000 BT2C (one-time reward for first mainnet validator)
