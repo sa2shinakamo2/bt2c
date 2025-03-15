@@ -1,29 +1,18 @@
-FROM python:3.12-slim
+FROM python:3.9-slim
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copy project files
-COPY . /app/
-
-# Install Python dependencies
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Create necessary directories
-RUN mkdir -p /data /config /certs
+COPY . .
 
-# Set environment variables
-ENV PYTHONPATH=/app
-ENV NODE_TYPE=validator
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+# Make scripts executable
+RUN chmod +x run_validator.py block_creator.py
 
-# Expose ports
-EXPOSE 8000 26656
+EXPOSE 8334 9092 8081
 
-# Start the validator node
-CMD ["python", "-m", "blockchain.validator", "--config", "/config/validator.json"]
+# Use a shell script to start both processes
+RUN echo '#!/bin/bash\npython run_validator.py & \nsleep 10\npython block_creator.py\n' > start.sh && chmod +x start.sh
+
+CMD ["./start.sh"]
