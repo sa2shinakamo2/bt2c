@@ -1,15 +1,18 @@
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Annotated, Union
 import time
 import json
 import base64
 import structlog
 from enum import Enum
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict, model_validator, validator, field_validator
 from .config import NetworkType
-from .wallet import SATOSHI, Wallet
+from .wallet import Wallet
+from .constants import SATOSHI
 import hashlib
 from Crypto.Hash import SHA256
 from Crypto.Signature import pkcs1_15
+from Crypto.PublicKey import RSA
+from decimal import Decimal
 
 logger = structlog.get_logger()
 
@@ -17,32 +20,129 @@ class TransactionType(str, Enum):
     TRANSFER = "transfer"
     STAKE = "stake"
     UNSTAKE = "unstake"
-    REWARD = "reward"
+    VALIDATOR = "validator"  # Validator registration
+    REWARD = "reward"  # Validator rewards
+    DEVELOPER = "developer"  # Developer node rewards
 
 class TransactionStatus(str, Enum):
     PENDING = "pending"
     CONFIRMED = "confirmed"
     FAILED = "failed"
 
+class TransactionFinality(str, Enum):
+    PENDING = "pending"
+    TENTATIVE = "tentative"  # 1-2 confirmations
+    PROBABLE = "probable"    # 3-5 confirmations
+    FINAL = "final"          # 6+ confirmations
+
 class TransactionData(BaseModel):
     type: TransactionType
     payload: Dict[str, Any]
 
 class Transaction(BaseModel):
-    """Represents a transaction in the blockchain."""
+    """A transaction in the BT2C blockchain."""
     
-    sender: str
-    recipient: str
-    amount: float = Field(..., ge=0)  # Amount must be non-negative
-    timestamp: int = Field(default_factory=lambda: int(time.time()))
+    sender_address: str
+    recipient_address: str
+    amount: Decimal = Field(..., ge=0)  # Amount must be non-negative
+    timestamp: int  # Required field, should be provided (for compatibility)
     signature: Optional[str] = None
-    network_type: NetworkType
-    nonce: Optional[int] = None
-    fee: float = Field(default=SATOSHI)  # Default fee is 1 sa2shi
+    network_type: NetworkType = NetworkType.MAINNET
+    nonce: int = 0
+    fee: Decimal = Decimal(str(SATOSHI))  # Default fee is 1 sa2shi
     tx_type: TransactionType = TransactionType.TRANSFER
     payload: Optional[Dict[str, Any]] = None
     status: TransactionStatus = TransactionStatus.PENDING
+    finality: TransactionFinality = TransactionFinality.PENDING
+    hash: Optional[str] = None
+
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+        validate_assignment=True,
+        extra='forbid'
+    )
     
+    def __init__(self, **data):
+        super().__init__(**data)
+
+    @field_validator('amount')
+    @classmethod
+    def validate_amount(cls, v: Decimal) -> Decimal:
+        """Validate transaction amount."""
+        if v <= 0:
+            raise ValueError("Transaction amount must be positive")
+        return v
+
+    @field_validator('fee')
+    @classmethod
+    def validate_fee(cls, v: Decimal) -> Decimal:
+        """Validate transaction fee."""
+        if v < SATOSHI:
+            raise ValueError(f"Fee must be at least {SATOSHI} sa2shi")
+        return v
+
+    def set_fee(self, fee: Decimal):
+        """Set transaction fee."""
+        self.fee = Decimal(str(fee))
+        self.hash = self._calculate_hash()
+
+    def _calculate_hash(self) -> str:
+        """Calculate transaction hash."""
+        tx_dict = {
+            'sender': self.sender_address,
+            'recipient': self.recipient_address,
+            'amount': str(self.amount),
+            'fee': str(self.fee),
+            'timestamp': self.timestamp,
+            'network_type': self.network_type.value,
+            'nonce': self.nonce,
+            'tx_type': self.tx_type.value
+        }
+        if self.payload:
+            tx_dict['payload'] = self.payload
+        tx_bytes = json.dumps(tx_dict, sort_keys=True).encode()
+        return hashlib.sha256(tx_bytes).hexdigest()
+
+    def sign(self, private_key: str):
+        """Sign transaction with private key."""
+        if not self.hash:
+            self.hash = self._calculate_hash()
+        signer = pkcs1_15.new(RSA.importKey(private_key))
+        h = SHA256.new(self.hash.encode())
+        self.signature = base64.b64encode(signer.sign(h)).decode()
+
+    def verify(self) -> bool:
+        """Verify transaction signature."""
+        if not self.signature:
+            return False
+
+        try:
+            # Get public key from sender address
+            public_key = RSA.importKey(base64.b64decode(self.sender_address))
+            verifier = pkcs1_15.new(public_key)
+            h = SHA256.new(self.hash.encode())
+            return verifier.verify(h, base64.b64decode(self.signature))
+        except:
+            return False
+
+    def to_dict(self) -> Dict:
+        """Convert transaction to dictionary format."""
+        return {
+            'sender': self.sender_address,
+            'recipient': self.recipient_address,
+            'amount': str(self.amount),
+            'fee': str(self.fee),
+            'timestamp': self.timestamp,
+            'network_type': self.network_type.value,
+            'nonce': self.nonce,
+            'tx_type': self.tx_type.value,
+            'payload': self.payload,
+            'hash': self.hash,
+            'signature': self.signature,
+            'status': self.status.value,
+            'finality': self.finality.value
+        }
+
     def calculate_fee(self, tx_size_bytes: int = 250) -> float:
         """Calculate transaction fee based on size"""
         base_fee = tx_size_bytes * SATOSHI  # 1 sa2shi per byte
@@ -57,10 +157,6 @@ class Transaction(BaseModel):
         """Validate the transaction"""
         try:
             # Basic validation
-            if self.amount <= 0:
-                logger.error("invalid_amount", amount=self.amount)
-                return False
-                
             if self.fee < SATOSHI:
                 logger.error("fee_too_low", fee=self.fee)
                 return False
@@ -77,7 +173,7 @@ class Transaction(BaseModel):
                         return False
                         
                 elif self.tx_type == TransactionType.STAKE:
-                    if self.amount < 16:
+                    if self.amount < Decimal('16'):
                         logger.error("stake_amount_too_low", amount=self.amount)
                         return False
                     if sender_wallet.balance < total_amount:
@@ -92,110 +188,43 @@ class Transaction(BaseModel):
             logger.error("validation_error", error=str(e))
             return False
     
-    def sign(self, private_key) -> None:
-        """Sign the transaction with sender's private key."""
-        tx_hash = self.calculate_hash()
-        
-        # Create the signature
-        hash_obj = SHA256.new(tx_hash.encode())
-        signature = pkcs1_15.new(private_key).sign(hash_obj)
-        
-        self.signature = base64.b64encode(signature).decode()
-        
-    def verify(self, public_key) -> bool:
-        """Verify the transaction signature."""
-        if not self.signature or self.sender == "0" * 64:  # Skip for coinbase
-            return True
-            
-        try:
-            # Verify the signature
-            hash_obj = SHA256.new(self.calculate_hash().encode())
-            signature = base64.b64decode(self.signature)
-            pkcs1_15.new(public_key).verify(hash_obj, signature)
-            
-            # Verify amount and fee are valid
-            if self.amount < 0 or self.fee < SATOSHI:
-                return False
-                
-            return True
-        except (ValueError, TypeError):
-            return False
-            
-    def calculate_hash(self) -> str:
-        """Calculate transaction hash for signing."""
-        tx_dict = {
-            "sender": self.sender,
-            "recipient": self.recipient,
-            "amount": self.amount,
-            "timestamp": self.timestamp,
-            "nonce": self.nonce,
-            "fee": self.fee,
-            "tx_type": self.tx_type,
-            "payload": self.payload
-        }
-        tx_string = json.dumps(tx_dict, sort_keys=True)
-        return hashlib.sha256(tx_string.encode()).hexdigest()
-        
-    def to_dict(self) -> Dict:
-        """Convert transaction to dictionary format"""
-        return {
-            "sender": self.sender,
-            "recipient": self.recipient,
-            "amount": self.amount,
-            "timestamp": self.timestamp,
-            "network_type": self.network_type.value,
-            "nonce": self.nonce,
-            "fee": self.fee,
-            "tx_type": self.tx_type.value,
-            "payload": self.payload,
-            "status": self.status.value
-        }
-        
     @classmethod
-    def create_transfer(cls, 
-                       sender_wallet: Wallet,
-                       recipient_address: str,
-                       amount: float,
-                       network_type: NetworkType) -> 'Transaction':
-        """Create a transfer transaction"""
-        tx = cls(
-            sender=sender_wallet.address,
-            recipient=recipient_address,
+    def create_transaction(cls, sender_address: str, recipient_address: str, amount: Decimal) -> 'Transaction':
+        """Factory method to create a transaction with current timestamp."""
+        return cls(
+            sender_address=sender_address,
+            recipient_address=recipient_address,
             amount=amount,
-            network_type=network_type,
-            tx_type=TransactionType.TRANSFER
+            timestamp=int(time.time())
+        )
+
+    @classmethod
+    def create_transfer(cls, sender: str, recipient: str, amount: Union[Decimal, str, float]) -> 'Transaction':
+        """Create a new transfer transaction."""
+        return cls(
+            sender_address=sender,
+            recipient_address=recipient,
+            amount=Decimal(str(amount)),
+            network_type=NetworkType.MAINNET,
         )
         
-        # Calculate and set fee
-        tx.fee = tx.calculate_fee()
-        
-        # Validate and sign
-        if not tx.validate(sender_wallet):
-            raise ValueError("Invalid transaction")
-            
-        tx.sign(sender_wallet.private_key)
-        return tx
-        
     @classmethod
-    def create_stake(cls,
-                    validator_wallet: Wallet,
-                    amount: float,
-                    network_type: NetworkType) -> 'Transaction':
+    def create_stake(cls, validator_wallet: Wallet, amount: Decimal, network_type: NetworkType) -> 'Transaction':
         """Create a stake transaction"""
-        if amount < 16:
+        if amount < Decimal('16'):
             raise ValueError("Minimum stake is 16 BT2C")
             
         tx = cls(
-            sender=validator_wallet.address,
-            recipient=validator_wallet.address,  # Self-stake
-            amount=amount,
+            sender_address=validator_wallet.address,
+            recipient_address=validator_wallet.address,  # Self-stake
+            amount=Decimal(str(amount)),
             network_type=network_type,
             tx_type=TransactionType.STAKE,
             payload={"stake_action": "create"}
         )
         
         # Calculate and set fee
-        tx.fee = tx.calculate_fee()
+        tx.set_fee(Decimal(str(tx.calculate_fee())))
         
         # Validate and sign
         if not tx.validate(validator_wallet):
