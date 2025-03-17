@@ -79,6 +79,9 @@ const token = createToken(userId, validatorAddress);
 - Double-spend prevention
 - Amount validation
 - Address format verification
+- Nonce validation for replay attack prevention
+- Transaction finality rules (6+ confirmations for final status)
+- Mempool cleanup to prevent double-processing
 
 ```javascript
 // Example transaction validation
@@ -97,8 +100,40 @@ const validateTransaction = async (transaction) => {
     if (!verifySignature(transaction)) {
         throw new Error('Invalid signature');
     }
+    
+    // Verify nonce
+    const expectedNonce = await getNextNonce(transaction.sender);
+    if (transaction.nonce !== expectedNonce) {
+        throw new Error(`Invalid nonce: expected ${expectedNonce}, got ${transaction.nonce}`);
+    }
+    
+    // Check for double-spend
+    if (await isTransactionSpent(transaction.hash)) {
+        throw new Error('Transaction has already been spent');
+    }
 };
 ```
+
+### Transaction Finality States
+BT2C defines four transaction finality states:
+
+1. **Pending**: Transaction is in the mempool but not yet included in a block
+2. **Tentative**: Transaction has 1-2 confirmations
+3. **Probable**: Transaction has 3-5 confirmations
+4. **Final**: Transaction has 6+ confirmations
+
+Applications should wait for "Final" status before considering high-value transactions complete.
+
+### Nonce Validation
+- Each address has an associated nonce counter
+- Transactions must use strictly increasing nonces
+- Prevents replay attacks by rejecting duplicate nonces
+- Maintains transaction order integrity
+
+### Double-Spend Prevention
+- Tracks all spent transaction hashes
+- Rejects any transaction attempt that reuses a spent hash
+- Cleans up mempool after block creation to prevent double-processing
 
 ## Server Security
 

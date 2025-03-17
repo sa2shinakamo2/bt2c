@@ -1,29 +1,16 @@
-# BT2C (Bit2Coin)
+# BT2C (Bit2Coin) Node
 
-A decentralized digital store of value, built on Bitcoin's proven principles with pure transaction validation.
+BT2C is a decentralized blockchain platform following Bitcoin's minimalist design principles.
 
-## Core Features
+## Hardware Requirements
 
-### Store of Value
-- Fixed maximum supply: 21,000,000 BT2C
-- Block reward halving every 210,000 blocks
-- Built for long-term value preservation
-- Resistant to inflation and market manipulation
-
-### Pure Validation
-- Focused on secure transaction processing
-- No governance or proposal voting
-- Stake-weighted validator selection
-- Decentralized network of validators
+Minimum requirements for running a node:
+- 2 CPU cores
+- 2GB RAM
+- 50GB storage
+- Internet connection
 
 ## Quick Start
-
-### Prerequisites
-- Git
-- Docker & Docker Compose
-- Minimum 1 BT2C for staking (if running a validator)
-
-### Installation
 
 1. Clone the repository:
 ```bash
@@ -33,272 +20,76 @@ cd bt2c
 
 2. Install Python dependencies:
 ```bash
-python -m pip install -r requirements.txt
+python3 -m pip install -r requirements.txt
 ```
 
-3. Configure your node (for validators only):
+3. Start the node:
 ```bash
-cd mainnet/validators/validator1/config
-# Edit validator.json with your settings
+python3 scripts/install.py
+~/.bt2c/bt2cd
 ```
 
-4. Start your node (for validators only):
-```bash
-docker-compose up -d validator
-```
-
-### Standalone Wallet Usage
-
-The BT2C CLI includes a standalone wallet feature for managing your BT2C:
-
-1. Create a new wallet:
-```bash
-./standalone_wallet.py create
-```
-This generates a 24-word seed phrase - store it safely!
-
-2. Check wallet balance:
-```bash
-./standalone_wallet.py balance --address ***REMOVED***
-```
-
-3. Recover an existing wallet:
-```bash
-./standalone_wallet.py recover
-```
-
-4. List all wallets:
-```bash
-./standalone_wallet.py list
-```
-
-Important: Always backup your seed phrase and keep it secure. If lost, your wallet cannot be recovered.
-
-## Validator Node Setup
-
-### Prerequisites
-- Minimum 1.0 BT2C for staking
-- Docker & Docker Compose
-- 2048-bit RSA key pair
-- Reliable internet connection
-- Recommended: 4 CPU cores, 8GB RAM, 100GB SSD
-
-### Initial Setup
-
-1. Create or recover your BT2C wallet:
-```bash
-./standalone_wallet.py create  # or 'recover' if you have an existing wallet
-```
-
-2. Configure validator settings:
-```bash
-cd mainnet/validators/validator1/config
-cp validator.json.example validator.json
-```
-
-3. Edit `validator.json` with your settings:
-```json
-{
-    "wallet_address": "***REMOVED***",
-    "stake_amount": 1.0,  # Minimum required stake
-    "network": {
-        "listen_addr": "0.0.0.0:26656",
-        "external_addr": "***REMOVED***:26656",
-        "seeds": ["seed1.bt2c.net:26656", "seed2.bt2c.net:26656"]
-    }
-}
-```
-
-4. Start the validator services:
-```bash
-docker-compose up -d validator prometheus grafana
-```
-
-5. Monitor your validator:
-```bash
-# View logs
-docker-compose logs -f validator
-
-# Access metrics dashboard
-open http://localhost:3000  # Grafana dashboard
-```
-
-### Validator Rewards
-
-- First 14 days (Distribution Period):
-  * Developer node: 100 BT2C (one-time, first validator only)
-  * Early validator reward: 1.0 BT2C (one-time)
-  * All distribution period rewards are automatically staked
-
-- Regular Operation:
-  * Dynamic APY calculation based on:
-    - Total network stake
-    - Individual stake amount
-    - Validator performance metrics:
-      * Block validation accuracy
-      * Network uptime
-      * Response time
-      * Transaction throughput
-    - Network participation duration
-  * Higher rewards for consistent performance
-  * Long-term participation incentives
-
-### Staking Rules
-
-- Minimum stake: 1.0 BT2C
-- No fixed minimum staking period
-- Flexible staking and unstaking (maintain 1.0 BT2C minimum)
-- Rewards continue until unstaking is processed
-
-### Unstaking Process
-
-1. Submit withdrawal request:
-```bash
-docker-compose exec validator ./cli.sh unstake --amount <AMOUNT>
-```
-
-2. Wait for processing:
-- Requests enter an exit queue
-- Processing time varies with network conditions
-- Longer wait times during high exit volume
-- Continue earning rewards until processed
-
-### Performance Monitoring
-
-Access key metrics at `http://localhost:3000`:
-- Block validation accuracy
-- Network uptime
-- Response time
-- Transaction throughput
-
-### Reputation System
-
-Your validator's reputation affects rewards and validator selection:
-
-1. Performance Metrics:
-   - Block validation accuracy
-   - Network uptime and response time
-   - Transaction processing efficiency
-   - Historical participation quality
-
-2. Impact on Operations:
-   - Higher reputation = Better block creation priority
-   - Increased chances of validator selection
-   - Reputation-based reward multipliers
-   - Priority in unstaking queue
-
-3. Reputation Features:
-   - Scores persist across staking/unstaking cycles
-   - Publicly visible for transparency
-   - Dynamic weighting based on network conditions
-   - Real-time performance tracking
-
-### Validator States
-
-Your validator can be in one of these states:
-
-1. Active:
-   - Participating in validation
-   - Earning rewards
-   - Contributing to network security
-
-2. Inactive:
-   - Registered but not participating
-   - No rewards earned
-   - Can be reactivated
-
-3. Jailed:
-   - Temporarily suspended for missing blocks
-   - Must wait for unjail period
-   - Reputation impact
-
-4. Tombstoned:
-   - Permanently banned for severe violations
-   - Cannot be reactivated
-   - Stake can still be withdrawn
-
-Monitor your validator state via:
-```bash
-docker-compose exec validator ./cli.sh status
-```
-
-### Security Best Practices
-
-1. Key Management:
-   - Backup your seed phrase securely
-   - Use hardware security modules when possible
-   - Rotate operator keys regularly
-
-2. Network Security:
-   - Configure firewall rules
-   - Use SSL/TLS encryption
-   - Enable rate limiting (default: 100 req/min)
-
-3. Monitoring:
-   - Set up alerts for downtime
-   - Monitor system resources
-   - Track validator performance metrics
-
-4. Recovery:
-   - Keep secure backups
-   - Document recovery procedures
-   - Test recovery process regularly
+That's it! Your node will:
+- Initialize the blockchain
+- Connect to the P2P network
+- Start validating if you have sufficient stake
 
 ## Network Parameters
 
-### Block Rewards
-- Initial block reward: 21 BT2C
-- Halving interval: 210,000 blocks
-- Maximum supply: 21,000,000 BT2C
+- Block time: 5 minutes
+- Minimum stake: 1.0 BT2C
+- Maximum supply: 21M BT2C
+- Initial block reward: 21.0 BT2C
+- Halving period: 4 years
+- Distribution period: 14 days
 
-### Network Infrastructure
+## Validator Rewards
 
-1. Mainnet Domains:
-   - Main network: bt2c.net
-   - API endpoint: api.bt2c.net
-   - Block explorer: bt2c.net/explorer
-
-2. Network Parameters:
-   - Target block time: 60s
-   - Dynamic transaction fees
-   - Rate limiting: 100 req/min
-   - SSL/TLS encryption required
-
-3. API Services:
-   - RESTful API: https://api.bt2c.net
-   - WebSocket: wss://api.bt2c.net/ws
-   - Explorer API: https://bt2c.net/explorer/api
-
-4. Seed Nodes:
-   ```
-   seed1.bt2c.net:26656
-   seed2.bt2c.net:26656
-   ```
-
-### Initial Distribution Period (First 2 Weeks)
-- Developer node reward: 100 BT2C (one-time)
-- Other validator rewards: 1 BT2C each (one-time)
-- Only validator nodes eligible for distribution rewards
-
-### Validator States
-- Active: Participating in validation, eligible for rewards
-- Inactive: Registered but not participating
-- Jailed: Temporarily suspended for missing blocks
-- Tombstoned: Permanently banned for severe violations
-
-## Documentation
-- [Validator Guide](/website/validators.html)
-- [Wallet Setup](/website/docs.html#wallet-setup)
-- [API Reference](/website/docs/api.html)
+- Early validator reward: 1.0 BT2C
+- Developer node reward: 100 BT2C (first validator only)
+- All rewards are automatically staked
+- Distribution period: 14 days
 
 ## Security
-- Always backup your private keys
-- Use secure communication channels
-- Monitor your validator's performance
-- Follow security best practices
 
-## Contributing
-We welcome contributions! Please read our [Contributing Guidelines](CONTRIBUTING.md) before submitting pull requests.
+- 2048-bit RSA keys
+- BIP39 seed phrases (256-bit)
+- BIP44 HD wallets
+- Password-protected storage
+- SSL/TLS encryption
+
+## Security Features
+
+BT2C implements several security measures to ensure transaction integrity and prevent attacks:
+
+- **Nonce Validation**: Each transaction from a sender must use a strictly increasing nonce, preventing replay attacks
+- **Double-Spend Protection**: Transactions are tracked to prevent the same funds from being spent multiple times
+- **Transaction Finality**: Clear rules define when a transaction is considered final (6+ confirmations)
+- **Mempool Cleanup**: Transactions are removed from the pending pool once included in a block
+- **2048-bit RSA Keys**: Strong cryptographic signatures ensure transaction authenticity
+- **BIP39 Seed Phrases**: 256-bit entropy for wallet generation
+- **BIP44 HD Wallets**: Hierarchical deterministic wallet structure
+
+## Recent Updates
+
+See [CHANGELOG.md](CHANGELOG.md) for a complete list of changes.
+
+- **v1.1.0 (March 2025)**: Enhanced security with nonce validation, double-spend protection, and transaction finality rules
+- **v1.0.0 (February 2025)**: Initial mainnet release
+
+## Configuration
+
+Default configuration is stored in `~/.bt2c/bt2c.conf`. You can override it by passing a custom config file:
+```bash
+~/.bt2c/bt2cd --config /path/to/config
+```
+
+## Support
+
+For technical support:
+- GitHub Issues: [Report a bug](https://github.com/sa2shinakamo2/bt2c/issues)
+- Documentation: [Wiki](https://github.com/sa2shinakamo2/bt2c/wiki)
 
 ## License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+MIT License - see [LICENSE](LICENSE) file for details
