@@ -1,8 +1,9 @@
-# BT2C (Bit2Coin) Whitepaper
-Version 1.0 - March 2025
+# BT2C: A Pure Cryptocurrency Implementation with Reputation-Based Proof of Stake
+Version 1.2 (March 19, 2025)
 
 ## Abstract
-BT2C (Bit2Coin) is a next-generation digital store of value that combines Bitcoin's proven economic model with an energy-efficient Proof of Stake consensus mechanism. Built on a foundation of security, scalability, and decentralization, BT2C implements a unique reputation-based validator system while maintaining Bitcoin's core principles of fixed supply and periodic reward halving.
+
+This paper introduces BT2C (bit2coin), a cryptocurrency designed to function as a pure medium of exchange and store of value without the overhead of smart contracts or decentralized applications. We present a novel reputation-based Proof of Stake (rPoS) consensus mechanism that addresses the energy consumption concerns of Proof of Work while maintaining security properties through cryptographic verification and economic incentives. BT2C implements a deterministic issuance schedule with a fixed maximum supply, combined with a flexible staking model that optimizes for network security and validator participation. This paper outlines the technical architecture, cryptographic foundations, consensus rules, and economic model of the BT2C network.
 
 ## Table of Contents
 1. Introduction
@@ -66,7 +67,7 @@ BT2C represents a significant evolution in digital store of value assets, addres
 - Network synchronization
 
 ### 4.2 Block Production
-- Target block time: 60 seconds
+- Target block time: 300 seconds (5 minutes)
 - Dynamic difficulty adjustment
 - Merkle tree transaction verification
 - Block reward distribution
@@ -128,7 +129,7 @@ BT2C represents a significant evolution in digital store of value assets, addres
 - Distribution period: 14 days
 
 ### 7.2 Performance Metrics
-- Target block time: 60 seconds
+- Target block time: 300 seconds (5 minutes)
 - Transaction throughput: Scalable based on demand
 - Network latency: Optimized for global distribution
 - State synchronization: Fast node bootstrapping
