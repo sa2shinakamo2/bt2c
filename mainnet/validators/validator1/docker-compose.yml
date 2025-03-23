@@ -1,75 +1,57 @@
-version: '3.8'
-
+version: '3'
 services:
   validator:
     build:
-      context: ./context
-      dockerfile: ../Dockerfile
-    container_name: bt2c-validator-validator1
-    volumes:
-      - ./context:/app/context
-      - ./data:/data
-      - ./certs:/certs
-      - ./config:/config
+      context: .
+      dockerfile: Dockerfile
+    container_name: bt2c_validator
+    restart: always
     ports:
-      - "8000:8000"
-      - "26656:26656"
+      - "8334:8334"
+      - "9092:9092"
+      - "3000:3000"
+      - "8081:8081"
+    volumes:
+      - ./config:/app/config
+      - bt2c_blockchain_data:/app/data
     environment:
-      - NODE_ID=validator1
-      - NETWORK=mainnet
-    depends_on:
-      - postgres
-      - redis
-    restart: unless-stopped
-
-  postgres:
-    image: postgres:15-alpine
-    container_name: bt2c-postgres-validator1
-    environment:
-      - POSTGRES_DB=bt2c
-      - POSTGRES_USER=bt2c
-      - POSTGRES_PASSWORD=secure_password
-    volumes:
-      - ./data/postgres:/var/lib/postgresql/data
-    ports:
-      - "5433:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U bt2c"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  redis:
-    image: redis:7-alpine
-    container_name: bt2c-redis-validator1
-    volumes:
-      - ./data/redis:/data
-    ports:
-      - "6380:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
+      - NODE_NAME=developer_node
+      - WALLET_ADDRESS=bt2c_4k3qn2qmiwjeqkhf44wtowxb
+      - STAKE_AMOUNT=1001.0
+      - LOG_LEVEL=info
+    command: python run_validator.py
+  
   prometheus:
     image: prom/prometheus:latest
-    container_name: bt2c-prometheus-validator1
-    volumes:
-      - ./metrics/prometheus.yml:/etc/prometheus/prometheus.yml
+    container_name: bt2c_prometheus
+    restart: always
     ports:
-      - "9092:9090"
-
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - bt2c_prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+  
   grafana:
     image: grafana/grafana:latest
-    container_name: bt2c-grafana-validator1
-    volumes:
-      - ./metrics/grafana:/var/lib/grafana
+    container_name: bt2c_grafana
+    restart: always
     ports:
       - "3002:3000"
+    volumes:
+      - ./config/grafana/provisioning:/etc/grafana/provisioning
+      - bt2c_grafana_data:/var/lib/grafana
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=secure_password
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
 
-networks:
-  default:
-    name: bt2c_validator1_network
+volumes:
+  bt2c_blockchain_data:
+    driver: local
+  bt2c_prometheus_data:
+    driver: local
+  bt2c_grafana_data:
+    driver: local

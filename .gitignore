@@ -47,6 +47,10 @@ logs/
 *.log
 *.db
 *.sqlite3
+backups/
+bt2c_*_backup_*.tar.gz
+bt2c_*_backup_*.tar.gz.sha256
+bt2c_*_backup_*.tar.gz.json
 
 # Security sensitive files
 *.pem
