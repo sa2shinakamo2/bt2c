@@ -3,6 +3,7 @@ import time
 import json
 import base64
 import structlog
+import aiohttp
 from enum import Enum
 from pydantic import BaseModel, Field, ConfigDict, model_validator, validator, field_validator
 from .config import NetworkType
@@ -101,8 +102,10 @@ class Transaction(BaseModel):
             raise ValueError(f"Invalid decimal format for transaction amount: {e}")
         except OverflowError as e:
             raise ValueError(f"Transaction amount causes numeric overflow: {e}")
-        except Exception as e:
-            raise ValueError(f"Error validating transaction amount: {e}")
+        except (TypeError, ArithmeticError) as e:
+            raise ValueError(f"Type or arithmetic error in amount validation: {e}")
+        except (ImportError, RuntimeError) as e:
+            raise RuntimeError(f"System error in amount validation: {e}")
 
     @field_validator('fee')
     @classmethod
@@ -132,8 +135,10 @@ class Transaction(BaseModel):
             raise ValueError(f"Invalid decimal format for fee: {e}")
         except OverflowError as e:
             raise ValueError(f"Fee value causes numeric overflow: {e}")
-        except Exception as e:
-            raise ValueError(f"Error validating transaction fee: {e}")
+        except (TypeError, ArithmeticError) as e:
+            raise ValueError(f"Type or arithmetic error in fee validation: {e}")
+        except (ImportError, RuntimeError) as e:
+            raise RuntimeError(f"System error in fee validation: {e}")
 
     def set_fee(self, fee: Union[Decimal, str, float, int]):
         """Set transaction fee with safe conversion and validation.
@@ -143,6 +148,8 @@ class Transaction(BaseModel):
             
         Raises:
             ValueError: If fee is invalid or exceeds limits
+            TypeError: If fee cannot be converted to Decimal
+            OverflowError: If fee causes numeric overflow
         """
         try:
             # Safely convert to Decimal
@@ -157,9 +164,12 @@ class Transaction(BaseModel):
         except InvalidOperation as e:
             logger.error("invalid_fee_format", error=str(e), fee=fee)
             raise ValueError(f"Invalid fee format: {e}")
-        except Exception as e:
-            logger.error("fee_setting_error", error=str(e), fee=fee)
-            raise ValueError(f"Error setting transaction fee: {e}")
+        except TypeError as e:
+            logger.error("invalid_fee_type", error=str(e), fee=fee, fee_type=type(fee).__name__)
+            raise TypeError(f"Fee cannot be converted to Decimal: {e}")
+        except OverflowError as e:
+            logger.error("fee_overflow", error=str(e), fee=fee)
+            raise OverflowError(f"Fee value causes numeric overflow: {e}")
 
     def _calculate_hash(self) -> str:
         """Calculate transaction hash."""
@@ -205,9 +215,13 @@ class Transaction(BaseModel):
             # Handle signature verification errors
             logger.error("pkcs1_15_error", error=str(e), transaction_hash=self.hash)
             return False
-        except Exception as e:
-            # Catch any other unexpected errors
-            logger.error("unexpected_verification_error", error=str(e), transaction_hash=self.hash)
+        except (KeyError, AttributeError) as e:
+            # Handle missing key or attribute errors
+            logger.error("verification_data_error", error=str(e), transaction_hash=self.hash)
+            return False
+        except (ImportError, RuntimeError) as e:
+            # Handle crypto library or runtime errors
+            logger.error("crypto_verification_error", error=str(e), transaction_hash=self.hash)
             return False
 
     def to_dict(self) -> Dict:
@@ -320,8 +334,14 @@ class Transaction(BaseModel):
         except OverflowError as e:
             logger.error("numeric_overflow_error", error=str(e))
             return False
-        except Exception as e:
-            logger.error("validation_error", error=str(e), exc_type=type(e).__name__)
+        except (KeyError, AttributeError) as e:
+            logger.error("validation_missing_attribute", error=str(e), attribute=str(e))
+            return False
+        except (TypeError, ValueError) as e:
+            logger.error("validation_type_error", error=str(e))
+            return False
+        except json.JSONDecodeError as e:
+            logger.error("validation_json_error", error=str(e))
             return False
     
     @classmethod
@@ -364,9 +384,15 @@ class Transaction(BaseModel):
         except OverflowError as e:
             logger.error("amount_overflow", error=str(e), amount=amount)
             raise ValueError(f"Amount value causes numeric overflow: {e}")
-        except Exception as e:
-            logger.error("transaction_creation_error", error=str(e), amount=amount)
-            raise ValueError(f"Error creating transaction: {e}")
+        except (TypeError, ValueError) as e:
+            logger.error("transaction_value_error", error=str(e), amount=amount)
+            raise ValueError(f"Invalid value in transaction creation: {e}")
+        except (KeyError, AttributeError) as e:
+            logger.error("transaction_attribute_error", error=str(e), amount=amount)
+            raise AttributeError(f"Missing or invalid attribute in transaction creation: {e}")
+        except json.JSONDecodeError as e:
+            logger.error("transaction_json_error", error=str(e), amount=amount)
+            raise ValueError(f"JSON formatting error in transaction creation: {e}")
 
     @classmethod
     def create_transfer(cls, sender: str, recipient: str, amount: Union[Decimal, str, float, int]) -> 'Transaction':
@@ -410,9 +436,15 @@ class Transaction(BaseModel):
         except OverflowError as e:
             logger.error("transfer_amount_overflow", error=str(e), amount=amount)
             raise ValueError(f"Transfer amount causes numeric overflow: {e}")
-        except Exception as e:
-            logger.error("transfer_creation_error", error=str(e), exc_type=type(e).__name__)
-            raise ValueError(f"Error creating transfer transaction: {e}")
+        except (TypeError, ValueError) as e:
+            logger.error("transfer_value_error", error=str(e), amount=amount)
+            raise ValueError(f"Invalid value in transfer creation: {e}")
+        except (KeyError, AttributeError) as e:
+            logger.error("transfer_attribute_error", error=str(e), amount=amount)
+            raise AttributeError(f"Missing or invalid attribute in transfer creation: {e}")
+        except json.JSONDecodeError as e:
+            logger.error("transfer_json_error", error=str(e), amount=amount)
+            raise ValueError(f"JSON formatting error in transfer creation: {e}")
         
     @classmethod
     def create_stake(cls, validator_wallet: Wallet, amount: Union[Decimal, str, float, int], network_type: NetworkType) -> 'Transaction':
@@ -475,6 +507,15 @@ class Transaction(BaseModel):
         except OverflowError as e:
             logger.error("stake_amount_overflow", error=str(e), amount=amount)
             raise ValueError(f"Stake amount causes numeric overflow: {e}")
-        except Exception as e:
-            logger.error("stake_creation_error", error=str(e), exc_type=type(e).__name__, amount=amount)
-            raise ValueError(f"Error creating stake transaction: {e}")
+        except (TypeError, ValueError) as e:
+            logger.error("stake_value_error", error=str(e), amount=amount)
+            raise ValueError(f"Invalid value in stake creation: {e}")
+        except (KeyError, AttributeError) as e:
+            logger.error("stake_attribute_error", error=str(e), amount=amount)
+            raise AttributeError(f"Missing or invalid attribute in stake creation: {e}")
+        except json.JSONDecodeError as e:
+            logger.error("stake_json_error", error=str(e), amount=amount)
+            raise ValueError(f"JSON formatting error in stake creation: {e}")
+        except aiohttp.ClientError as e:
+            logger.error("stake_network_error", error=str(e), amount=amount)
+            raise ConnectionError(f"Network error in stake creation: {e}")
