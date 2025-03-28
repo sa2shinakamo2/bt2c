@@ -61,8 +61,12 @@ class P2PNetwork:
                     if self.metrics:
                         self.metrics.active_validator_count.inc()
                     
-        except Exception as e:
-            logger.error("peer_connection_failed", peer=peer_addr, error=str(e))
+        except aiohttp.ClientError as e:
+            logger.error("peer_connection_failed", peer=peer_addr, error=str(e), error_type="client_error")
+        except asyncio.TimeoutError as e:
+            logger.error("peer_connection_timeout", peer=peer_addr, error=str(e))
+        except (ConnectionError, OSError) as e:
+            logger.error("peer_connection_network_error", peer=peer_addr, error=str(e))
     
     async def broadcast_block(self, block: dict):
         """Broadcast a block to all peers"""
@@ -79,8 +83,21 @@ class P2PNetwork:
                     elif self.metrics:
                         self.metrics.block_counter.inc()
                         self.metrics.block_size.observe(len(json.dumps(block)))
-            except Exception as e:
+            except aiohttp.ClientError as e:
                 logger.error("block_broadcast_failed",
+                           peer=peer,
+                           error=str(e),
+                           error_type="client_error")
+            except asyncio.TimeoutError as e:
+                logger.error("block_broadcast_timeout",
+                           peer=peer,
+                           error=str(e))
+            except (ConnectionError, OSError) as e:
+                logger.error("block_broadcast_network_error",
+                           peer=peer,
+                           error=str(e))
+            except json.JSONDecodeError as e:
+                logger.error("block_broadcast_json_error",
                            peer=peer,
                            error=str(e))
     
@@ -99,8 +116,21 @@ class P2PNetwork:
                     elif self.metrics:
                         self.metrics.transaction_counter.inc()
                         self.metrics.transaction_size.observe(len(json.dumps(transaction)))
-            except Exception as e:
+            except aiohttp.ClientError as e:
                 logger.error("transaction_broadcast_failed",
+                           peer=peer,
+                           error=str(e),
+                           error_type="client_error")
+            except asyncio.TimeoutError as e:
+                logger.error("transaction_broadcast_timeout",
+                           peer=peer,
+                           error=str(e))
+            except (ConnectionError, OSError) as e:
+                logger.error("transaction_broadcast_network_error",
+                           peer=peer,
+                           error=str(e))
+            except json.JSONDecodeError as e:
+                logger.error("transaction_broadcast_json_error",
                            peer=peer,
                            error=str(e))
     
@@ -117,8 +147,18 @@ class P2PNetwork:
                 # Wait before next iteration
                 await asyncio.sleep(5)
                 
-            except Exception as e:
-                logger.error("network_loop_error", error=str(e))
+            except asyncio.CancelledError:
+                # Handle normal task cancellation
+                logger.info("network_loop_cancelled")
+                break
+            except (aiohttp.ClientError, ConnectionError) as e:
+                logger.error("network_communication_error", error=str(e))
+                await asyncio.sleep(1)
+            except asyncio.TimeoutError as e:
+                logger.error("network_loop_timeout", error=str(e))
+                await asyncio.sleep(1)
+            except (KeyError, AttributeError) as e:
+                logger.error("network_loop_data_error", error=str(e))
                 await asyncio.sleep(1)
     
     async def _discover_peers(self):
@@ -130,8 +170,20 @@ class P2PNetwork:
                         peer_list = await resp.json()
                         for new_peer in peer_list:
                             await self.connect_peer(new_peer)
-            except Exception as e:
-                logger.error("peer_discovery_failed",
+            except aiohttp.ClientError as e:
+                logger.error("peer_discovery_request_failed",
+                           peer=peer,
+                           error=str(e))
+            except asyncio.TimeoutError as e:
+                logger.error("peer_discovery_timeout",
+                           peer=peer,
+                           error=str(e))
+            except json.JSONDecodeError as e:
+                logger.error("peer_discovery_invalid_json",
+                           peer=peer,
+                           error=str(e))
+            except (KeyError, TypeError, ValueError) as e:
+                logger.error("peer_discovery_invalid_data",
                            peer=peer,
                            error=str(e))
     
@@ -146,7 +198,19 @@ class P2PNetwork:
                             if self.metrics:
                                 self.metrics.block_counter.inc()
                                 self.metrics.block_size.observe(len(json.dumps(block)))
-            except Exception as e:
-                logger.error("block_sync_failed",
+            except aiohttp.ClientError as e:
+                logger.error("block_sync_request_failed",
+                           peer=peer,
+                           error=str(e))
+            except asyncio.TimeoutError as e:
+                logger.error("block_sync_timeout",
+                           peer=peer,
+                           error=str(e))
+            except json.JSONDecodeError as e:
+                logger.error("block_sync_invalid_json",
+                           peer=peer,
+                           error=str(e))
+            except (KeyError, TypeError, ValueError) as e:
+                logger.error("block_sync_invalid_data",
                            peer=peer,
                            error=str(e))
