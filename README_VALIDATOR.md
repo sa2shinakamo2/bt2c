@@ -13,22 +13,22 @@ Welcome to the BT2C validator network! This guide will help you quickly set up a
 - 1 BT2C token for staking
 
 ### Rewards Structure
-- First node bonus: 100 BT2C
-- Regular rewards: 1 BT2C per node
-- Distribution period: Every 2 weeks
+- Developer node reward: 1000 BT2C (first validator only)
+- Early validator reward: 1 BT2C per validator (distribution period)
+- Distribution period: 14 days from network relaunch (until April 6, 2025)
 - Required uptime: 95%
 
 ## 🔧 Setup Steps
 
 1. **Create Your Wallet**
    ```bash
-   # Visit our web wallet
-   https://bt2c.network/wallet
+   # Use the CLI wallet tool
+   python cli_wallet.py create --password your-secure-password
    
    # Save your:
-   - Private key
-   - Mnemonic phrase
+   - Seed phrase (24 words)
    - Wallet address
+   - Public key
    ```
 
 2. **Prepare Your Server**
@@ -57,13 +57,20 @@ Welcome to the BT2C validator network! This guide will help you quickly set up a
 
 4. **Configure Your Node**
    ```bash
-   # Edit .env file
-   nano .env
+   # Edit validator.json file
+   nano mainnet/validators/validator1/config/validator.json
    
    # Required settings:
-   NODE_NAME=your-node-name
-   NODE_PORT=3000
-   NODE_HOST=0.0.0.0
+   {
+     "node_name": "your-node-name",
+     "wallet_address": "your-wallet-address",
+     "stake_amount": 1.0,
+     "network": {
+       "listen_addr": "0.0.0.0:8334",
+       "external_addr": "0.0.0.0:8334",
+       "seeds": ["bt2c.network:8334"]
+     }
+   }
    ```
 
 5. **Start Your Node**
@@ -78,12 +85,9 @@ Welcome to the BT2C validator network! This guide will help you quickly set up a
 6. **Register as Validator**
    ```bash
    # Register node (replace with your details)
-   curl -X POST http://localhost:3000/api/v1/validator/register \
-     -H "Content-Type: application/json" \
-     -d '{
-       "validatorAddress": "your-wallet-address",
-       "stake": "1000000000000000000"
-     }'
+   docker-compose exec validator ./cli.sh register \
+     --wallet-address "your-wallet-address" \
+     --stake-amount 1.0
    ```
 
 ## 📊 Monitor Your Node
@@ -91,13 +95,13 @@ Welcome to the BT2C validator network! This guide will help you quickly set up a
 ### Basic Commands
 ```bash
 # Check node status
-curl http://localhost:3000/api/v1/health
+docker-compose exec validator ./cli.sh status
 
 # View validator status
-curl http://localhost:3000/api/v1/validator/status
+docker-compose exec validator ./cli.sh validator status
 
 # Check sync status
-curl http://localhost:3000/api/v1/sync/status
+docker-compose exec validator ./cli.sh sync status
 ```
 
 ### Common Issues
@@ -110,15 +114,15 @@ curl http://localhost:3000/api/v1/sync/status
 
 2. **Connection Issues**
    - Check firewall settings
-   - Verify port 3000 is open
+   - Verify port 8334 is open
    - Ensure stable internet connection
 
 ## 🔐 Security Best Practices
 
 1. **Key Management**
-   - Store private keys securely offline
+   - Store seed phrase securely offline
    - Use hardware wallet if possible
-   - Never share private keys
+   - Never share your seed phrase or private keys
 
 2. **System Security**
    ```bash
@@ -132,7 +136,7 @@ curl http://localhost:3000/api/v1/sync/status
 3. **Backup Important Files**
    ```bash
    # Backup configuration
-   cp .env .env.backup
+   cp mainnet/validators/validator1/config/validator.json validator.json.backup
    ```
 
 ## 📱 Stay Connected
