@@ -1,0 +1,7 @@
+{
+    "seed1": {
+        "host": "localhost",
+        "port": 8334,
+        "public_key": ""
+    }
+}
