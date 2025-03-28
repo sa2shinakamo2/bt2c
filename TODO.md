@@ -2,6 +2,10 @@
 
 This document outlines suggested improvements for the BT2C blockchain implementation.
 
+## Critical Fixes
+
+- **Installation Script Missing**: The README.md references `python3 scripts/install.py` in the Quick Start section, but this file doesn't exist in the repository. Create this installation script or update the README with correct installation instructions.
+
 ## Security Enhancements
 
 - Replace bare `except` blocks with specific exception handling in transaction verification
