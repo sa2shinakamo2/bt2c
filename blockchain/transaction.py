@@ -122,7 +122,17 @@ class Transaction(BaseModel):
             verifier = pkcs1_15.new(public_key)
             h = SHA256.new(self.hash.encode())
             return verifier.verify(h, base64.b64decode(self.signature))
-        except:
+        except (ValueError, TypeError) as e:
+            # Handle malformed data errors
+            logger.error("signature_verification_error", error=str(e), transaction_hash=self.hash)
+            return False
+        except pkcs1_15.pkcs1_15Error as e:
+            # Handle signature verification errors
+            logger.error("pkcs1_15_error", error=str(e), transaction_hash=self.hash)
+            return False
+        except Exception as e:
+            # Catch any other unexpected errors
+            logger.error("unexpected_verification_error", error=str(e), transaction_hash=self.hash)
             return False
 
     def to_dict(self) -> Dict:
