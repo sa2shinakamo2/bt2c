@@ -6,6 +6,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 from .transaction import Transaction
 from .config import NetworkType
+from .merkle import MerkleTree
 import structlog
 from Crypto.Hash import SHA256
 from Crypto.Signature import pkcs1_15
@@ -16,7 +17,7 @@ class Block(BaseModel):
     """Represents a block in the blockchain."""
     
     index: int = Field(default=0)
-    timestamp: float = time.time()
+    timestamp: float = Field(default_factory=lambda: time.time())
     transactions: List[Transaction] = []
     previous_hash: str
     hash: Optional[str] = Field(default="")
@@ -42,7 +43,7 @@ class Block(BaseModel):
             "merkle_root": self.merkle_root
         }
         block_string = json.dumps(block_dict, sort_keys=True)
-        return hashlib.sha256(block_string.encode()).hexdigest()
+        return hashlib.sha3_256(block_string.encode()).hexdigest()
     
     def sign(self, private_key) -> None:
         """Sign the block with the validator's private key."""
@@ -72,24 +73,20 @@ class Block(BaseModel):
     def _calculate_merkle_root(self) -> str:
         """Calculate the Merkle root of transactions."""
         if not self.transactions:
-            return hashlib.sha256(b"empty").hexdigest()
+            return hashlib.sha3_256(b"empty").hexdigest()
             
-        # Get transaction hashes
-        hashes = [tx.hash for tx in self.transactions]
+        # Convert transactions to bytes for Merkle tree
+        tx_bytes = [
+            hashlib.sha3_256(json.dumps(tx.dict()).encode()).digest()
+            for tx in self.transactions
+        ]
+
+        # Create Merkle tree and get root
+        merkle_tree = MerkleTree(tx_bytes)
+        root_bytes = merkle_tree.get_root()
         
-        # Keep hashing pairs until we have a single hash
-        while len(hashes) > 1:
-            if len(hashes) % 2 == 1:
-                hashes.append(hashes[-1])  # Duplicate last hash if odd number
-            
-            new_hashes = []
-            for i in range(0, len(hashes), 2):
-                combined = hashes[i] + hashes[i + 1]
-                new_hash = hashlib.sha256(combined.encode()).hexdigest()
-                new_hashes.append(new_hash)
-            hashes = new_hashes
-            
-        return hashes[0]
+        # Convert root bytes to hex string
+        return root_bytes.hex()
         
     def to_dict(self) -> dict:
         """Convert block to dictionary format."""
