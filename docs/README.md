@@ -34,6 +34,13 @@ Welcome to the BT2C documentation. This guide provides comprehensive information
 - [Deployment](deployment.md) - Deployment strategies for BT2C infrastructure
 - [Seed Nodes](seed_nodes.md) - Information about seed node setup and management
 
+## Technical Documentation
+
+- [Network Architecture](NETWORK_ARCHITECTURE.md) - Overview of the BT2C network architecture
+- [Network Diagram](NETWORK_DIAGRAM.md) - Visual representation of the BT2C network
+- [API Documentation](api.md) - Comprehensive API reference
+- [Timestamp Update Notice](TIMESTAMP_UPDATE.md) - Important information about the timestamp fix
+
 ## Support & Community
 
 - [GitHub Issues](https://github.com/sa2shinakamo2/bt2c/issues) - Report bugs or request features

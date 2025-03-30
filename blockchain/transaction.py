@@ -45,7 +45,7 @@ class Transaction(BaseModel):
     sender_address: str
     recipient_address: str
     amount: Decimal = Field(..., ge=0)  # Amount must be non-negative
-    timestamp: int  # Required field, should be provided (for compatibility)
+    timestamp: int = Field(default_factory=lambda: int(time.time()))  # Use current time by default
     signature: Optional[str] = None
     network_type: NetworkType = NetworkType.MAINNET
     nonce: int = 0
@@ -195,7 +195,6 @@ class Transaction(BaseModel):
             sender_address=sender_address,
             recipient_address=recipient_address,
             amount=amount,
-            timestamp=int(time.time())
         )
 
     @classmethod
