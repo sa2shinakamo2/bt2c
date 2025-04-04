@@ -6,7 +6,7 @@ import base64
 import json
 import os
 from mnemonic import Mnemonic
-from hdwallet import BIP44HDWallet
+from hdwallet import HDWallet
 from hdwallet.cryptocurrencies import EthereumMainnet
 from hdwallet.derivations import BIP44Derivation
 from hdwallet.utils import generate_mnemonic
@@ -46,7 +46,7 @@ class Wallet:
             wallet = cls()
             
             # Create HD wallet
-            hd_wallet = BIP44HDWallet(cryptocurrency=EthereumMainnet)
+            hd_wallet = HDWallet(cryptocurrency=EthereumMainnet)
             hd_wallet.from_mnemonic(mnemonic=seed_phrase, language="english")
             
             # Get private key from derivation path
