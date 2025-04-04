@@ -8,9 +8,6 @@ on:
   schedule:
     - cron: '0 0 * * *'  # Run daily at midnight
 
-env:
-  SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-
 jobs:
   security-scan:
     runs-on: ubuntu-latest
@@ -58,8 +55,9 @@ jobs:
       # Dependency scanning
       - name: Run Snyk security scan
         uses: snyk/actions/python@master
+        if: ${{ env.SNYK_TOKEN != '' }}
         env:
-          SNYK_TOKEN: ${{ env.SNYK_TOKEN }}
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           command: monitor
 
