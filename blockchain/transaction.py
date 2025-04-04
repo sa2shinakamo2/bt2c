@@ -55,7 +55,7 @@ class Transaction(BaseModel):
     sender_address: str
     recipient_address: str
     amount: Decimal = Field(..., ge=0)  # Amount must be non-negative
-    timestamp: int  # Required field, should be provided (for compatibility)
+    timestamp: int = Field(default_factory=lambda: int(time.time()))  # Use current time by default
     signature: Optional[str] = None
     network_type: NetworkType = NetworkType.MAINNET
     nonce: int = 0
@@ -345,6 +345,7 @@ class Transaction(BaseModel):
             return False
     
     @classmethod
+
     def create_transaction(cls, sender_address: str, recipient_address: str, amount: Union[Decimal, str, float, int]) -> 'Transaction':
         """Factory method to create a transaction with current timestamp.
         
@@ -375,7 +376,7 @@ class Transaction(BaseModel):
                 sender_address=sender_address,
                 recipient_address=recipient_address,
                 amount=amount,
-                timestamp=int(time.time())
+                # No need to explicitly set timestamp since we're using default_factory in the class definition
             )
             
         except InvalidOperation as e:
@@ -393,6 +394,7 @@ class Transaction(BaseModel):
         except json.JSONDecodeError as e:
             logger.error("transaction_json_error", error=str(e), amount=amount)
             raise ValueError(f"JSON formatting error in transaction creation: {e}")
+
 
     @classmethod
     def create_transfer(cls, sender: str, recipient: str, amount: Union[Decimal, str, float, int]) -> 'Transaction':
