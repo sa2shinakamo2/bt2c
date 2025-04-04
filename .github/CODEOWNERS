@@ -1,0 +1,31 @@
+# BT2C Code Owners File
+# This file defines who is responsible for reviewing different parts of the codebase
+
+# Default owners for everything in the repo
+*       @sa2shinakamo2
+
+# Blockchain core components
+/blockchain/       @sa2shinakamo2
+/consensus/        @sa2shinakamo2
+
+# API and networking
+/api/              @sa2shinakamo2
+/network/          @sa2shinakamo2
+
+# Documentation
+/docs/             @sa2shinakamo2
+
+# Website
+/website/          @sa2shinakamo2
+
+# Security-critical components
+/blockchain/crypto/       @sa2shinakamo2
+/blockchain/transaction.py @sa2shinakamo2
+/blockchain/block.py      @sa2shinakamo2
+/blockchain/blockchain.py @sa2shinakamo2
+
+# Testing
+/tests/            @sa2shinakamo2
+
+# CI/CD
+/.github/workflows/ @sa2shinakamo2

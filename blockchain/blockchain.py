@@ -109,7 +109,7 @@ class BT2CBlockchain:
                 sender="0" * 64,  # Coinbase
                 recipient=validator_address,
                 amount=reward,
-                timestamp=int(time.time()),
+                timestamp=block.timestamp,
                 tx_type=TransactionType.REWARD
             )
             block.transactions.insert(0, reward_tx)

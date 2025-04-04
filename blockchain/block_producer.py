@@ -1,11 +1,11 @@
 import time
-import hashlib
-import json
 import asyncio
 import structlog
-from typing import Optional, List, Dict
-from dataclasses import dataclass, asdict
+from typing import List, Optional
 from datetime import datetime
+import hashlib
+import json
+from dataclasses import dataclass, asdict
 from .crypto import sign_block, verify_block_signature
 
 logger = structlog.get_logger()
@@ -135,7 +135,7 @@ class BlockProducer:
         # TODO: Implement actual block creation logic
         return Block(
             height=1,
-            timestamp=int(time.time()),
+            timestamp=datetime.now().timestamp(),
             previous_hash="",
             transactions=transactions,
             proposer=self.validator_name
