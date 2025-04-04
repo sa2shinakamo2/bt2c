@@ -143,3 +143,6 @@ Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Website directory - kept locally but not in repository
+website/
