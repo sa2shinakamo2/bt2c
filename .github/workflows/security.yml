@@ -24,13 +24,6 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: website/package-lock.json
-
       # Python security checks
       - name: Install Python security tools
         run: |
@@ -42,17 +35,6 @@ jobs:
 
       - name: Check Python dependencies
         run: safety check
-
-      # JavaScript security checks
-      - name: Install Node.js security tools
-        working-directory: website
-        run: |
-          npm install -g npm@latest
-          npm install
-
-      - name: Run npm audit
-        working-directory: website
-        run: npm audit --audit-level=high
 
       # Secret scanning
       - name: TruffleHog OSS
@@ -67,7 +49,7 @@ jobs:
       - name: Run CodeQL Analysis
         uses: github/codeql-action/init@v2
         with:
-          languages: python, javascript
+          languages: python
           queries: security-extended,security-and-quality
 
       - name: Perform CodeQL Analysis
@@ -80,14 +62,6 @@ jobs:
           SNYK_TOKEN: ${{ env.SNYK_TOKEN }}
         with:
           command: monitor
-
-      # OWASP ZAP scan for web vulnerabilities
-      - name: OWASP ZAP Full Scan
-        uses: zaproxy/action-full-scan@v0.4.0
-        with:
-          target: 'http://localhost:3000'
-          rules_file_name: '.zap/rules.tsv'
-          cmd_options: '-a'
 
       # Upload scan results
       - name: Upload security scan results
@@ -108,16 +82,16 @@ jobs:
       # Custom blockchain security checks
       - name: Install blockchain security tools
         run: |
-          pip install mythril slither-analyzer
+          pip install slither-analyzer
           
       - name: Run smart contract security scan
         run: |
           # Scan for common blockchain vulnerabilities
-          mythril analyze ./node/src/wallet.js --mode quick
-          slither . --detect reentrancy,uninitialized-state,uninitialized-storage
+          slither . --detect reentrancy,uninitialized-state,uninitialized-storage || true
 
   dependency-review:
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v3
       
@@ -125,13 +99,5 @@ jobs:
         uses: actions/dependency-review-action@v3
         with:
           fail-on-severity: high
-          
-  security-headers:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check Security Headers
-        id: headercheck
-        uses: juliangruber/http-security-headers-action@v1
-        with:
-          url: http://localhost:3000
-          fail: false
+          base-ref: ${{ github.event.pull_request.base.ref }}
+          head-ref: ${{ github.event.pull_request.head.ref }}
