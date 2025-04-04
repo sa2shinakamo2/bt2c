@@ -22,8 +22,8 @@ Welcome to the BT2C validator network! This guide will help you quickly set up a
 
 1. **Create Your Wallet**
    ```bash
-   # Use the CLI wallet tool
-   python cli_wallet.py create --password your-secure-password
+   # Use the standalone wallet tool
+   python standalone_wallet.py create
    
    # Save your:
    - Seed phrase (24 words)
@@ -68,7 +68,7 @@ Welcome to the BT2C validator network! This guide will help you quickly set up a
      "network": {
        "listen_addr": "0.0.0.0:8334",
        "external_addr": "0.0.0.0:8334",
-       "seeds": ["bt2c.network:8334"]
+       "seeds": ["bt2c.network:8334"]  # Developer node serving as seed
      }
    }
    ```
@@ -76,7 +76,7 @@ Welcome to the BT2C validator network! This guide will help you quickly set up a
 5. **Start Your Node**
    ```bash
    # Build and start
-   docker-compose up -d
+   docker-compose -f docker-compose.validator.yml up -d
    
    # Check logs
    docker-compose logs -f
@@ -88,6 +88,18 @@ Welcome to the BT2C validator network! This guide will help you quickly set up a
    docker-compose exec validator ./cli.sh register \
      --wallet-address "your-wallet-address" \
      --stake-amount 1.0
+   ```
+
+7. **Verify Your Node**
+   ```bash
+   # Verify validator is connected to the network
+   docker-compose exec validator ./cli.sh network peers
+   
+   # Check if your validator is participating in consensus
+   docker-compose exec validator ./cli.sh validator status
+   
+   # Verify blockchain synchronization
+   docker-compose exec validator ./cli.sh blockchain status
    ```
 
 ## 📊 Monitor Your Node
@@ -109,7 +121,7 @@ docker-compose exec validator ./cli.sh sync status
 1. **Node Not Syncing**
    ```bash
    # Restart node
-   docker-compose restart
+   docker-compose -f docker-compose.validator.yml restart
    ```
 
 2. **Connection Issues**
@@ -137,6 +149,9 @@ docker-compose exec validator ./cli.sh sync status
    ```bash
    # Backup configuration
    cp mainnet/validators/validator1/config/validator.json validator.json.backup
+   
+   # Backup wallet data
+   cp -r ~/.bt2c/wallets ~/bt2c-wallets-backup
    ```
 
 ## 📱 Stay Connected
