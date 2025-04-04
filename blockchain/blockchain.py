@@ -1,6 +1,6 @@
 from .block import Block
 from .transaction import Transaction, TransactionType, TransactionFinality
-from .validator import ValidatorSet, ValidatorInfo, ValidatorStatus
+from .validator import ValidatorInfo, ValidatorStatus, get_validator_set
 from .genesis import GenesisConfig
 from .wallet import Wallet
 from typing import List, Optional, Dict, Set
@@ -19,7 +19,7 @@ class BT2CBlockchain:
         self.genesis_config = genesis_config
         self.chain: List[Block] = []
         self.pending_transactions: List[Transaction] = []
-        self.validator_set = ValidatorSet()
+        self.validator_set = get_validator_set()
         self.total_supply = 0  # Track total supply
         self.current_block_reward = genesis_config.block_reward
         self.network_type = genesis_config.network_type
