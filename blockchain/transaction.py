@@ -24,6 +24,11 @@ MAX_TRANSACTION_AMOUNT = Decimal('1000000000')  # 1 billion tokens
 MAX_TOTAL_SUPPLY = Decimal('2100000000')  # Maximum total supply
 MAX_SAFE_INTEGER = 2**53 - 1  # JavaScript safe integer limit for frontend compatibility
 
+# Transaction expiration settings for replay protection
+DEFAULT_TRANSACTION_EXPIRY = 3600  # Default expiration time in seconds (1 hour)
+MAX_TRANSACTION_EXPIRY = 86400  # Maximum expiration time (24 hours)
+MIN_TRANSACTION_EXPIRY = 300  # Minimum expiration time (5 minutes)
+
 logger = structlog.get_logger()
 
 class TransactionType(str, Enum):
@@ -38,6 +43,7 @@ class TransactionStatus(str, Enum):
     PENDING = "pending"
     CONFIRMED = "confirmed"
     FAILED = "failed"
+    EXPIRED = "expired"  # New status for expired transactions
 
 class TransactionFinality(str, Enum):
     PENDING = "pending"
@@ -65,6 +71,7 @@ class Transaction(BaseModel):
     status: TransactionStatus = TransactionStatus.PENDING
     finality: TransactionFinality = TransactionFinality.PENDING
     hash: Optional[str] = None
+    expiry: int = DEFAULT_TRANSACTION_EXPIRY  # Transaction expiration time in seconds
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
@@ -140,6 +147,26 @@ class Transaction(BaseModel):
         except (ImportError, RuntimeError) as e:
             raise RuntimeError(f"System error in fee validation: {e}")
 
+    @field_validator('expiry')
+    @classmethod
+    def validate_expiry(cls, v: int) -> int:
+        """Validate transaction expiration time."""
+        try:
+            # Ensure expiry is an integer
+            v = int(v)
+            
+            # Check minimum and maximum expiry time
+            if v < MIN_TRANSACTION_EXPIRY:
+                raise ValueError(f"Expiry time must be at least {MIN_TRANSACTION_EXPIRY} seconds")
+            
+            if v > MAX_TRANSACTION_EXPIRY:
+                raise ValueError(f"Expiry time cannot exceed {MAX_TRANSACTION_EXPIRY} seconds")
+                
+            return v
+            
+        except (TypeError, ValueError) as e:
+            raise ValueError(f"Invalid expiry time: {e}")
+
     def set_fee(self, fee: Union[Decimal, str, float, int]):
         """Set transaction fee with safe conversion and validation.
         
@@ -171,6 +198,24 @@ class Transaction(BaseModel):
             logger.error("fee_overflow", error=str(e), fee=fee)
             raise OverflowError(f"Fee value causes numeric overflow: {e}")
 
+    def set_expiry(self, expiry_seconds: int):
+        """Set transaction expiration time.
+        
+        Args:
+            expiry_seconds: Expiration time in seconds from now
+            
+        Raises:
+            ValueError: If expiry time is invalid
+        """
+        try:
+            validated_expiry = self.validate_expiry(expiry_seconds)
+            self.expiry = validated_expiry
+            self.hash = self._calculate_hash()
+            
+        except ValueError as e:
+            logger.error("invalid_expiry_time", error=str(e), expiry=expiry_seconds)
+            raise ValueError(f"Invalid expiry time: {e}")
+
     def _calculate_hash(self) -> str:
         """Calculate transaction hash."""
         tx_dict = {
@@ -181,7 +226,8 @@ class Transaction(BaseModel):
             'timestamp': self.timestamp,
             'network_type': self.network_type.value,
             'nonce': self.nonce,
-            'tx_type': self.tx_type.value
+            'tx_type': self.tx_type.value,
+            'expiry': self.expiry  # Include expiry in hash calculation
         }
         if self.payload:
             tx_dict['payload'] = self.payload
@@ -197,7 +243,17 @@ class Transaction(BaseModel):
         self.signature = base64.b64encode(signer.sign(h)).decode()
 
     def verify(self) -> bool:
-        """Verify transaction signature."""
+        """Verify transaction signature and expiration."""
+        # Check if transaction has expired
+        current_time = int(time.time())
+        if current_time > (self.timestamp + self.expiry):
+            logger.warning("transaction_expired", 
+                          transaction_hash=self.hash, 
+                          created_at=self.timestamp, 
+                          expiry=self.expiry, 
+                          current_time=current_time)
+            return False
+
         if not self.signature:
             return False
 
@@ -207,9 +263,13 @@ class Transaction(BaseModel):
             verifier = pkcs1_15.new(public_key)
             h = SHA256.new(self.hash.encode())
             return verifier.verify(h, base64.b64decode(self.signature))
-        except (ValueError, TypeError) as e:
+        except ValueError as e:
             # Handle malformed data errors
-            logger.error("signature_verification_error", error=str(e), transaction_hash=self.hash)
+            logger.error("signature_verification_error", error=str(e), transaction_hash=self.hash, error_type="ValueError")
+            return False
+        except TypeError as e:
+            # Handle type errors
+            logger.error("signature_verification_error", error=str(e), transaction_hash=self.hash, error_type="TypeError")
             return False
         except pkcs1_15.pkcs1_15Error as e:
             # Handle signature verification errors
@@ -223,6 +283,11 @@ class Transaction(BaseModel):
             # Handle crypto library or runtime errors
             logger.error("crypto_verification_error", error=str(e), transaction_hash=self.hash)
             return False
+
+    def is_expired(self) -> bool:
+        """Check if transaction has expired."""
+        current_time = int(time.time())
+        return current_time > (self.timestamp + self.expiry)
 
     def to_dict(self) -> Dict:
         """Convert transaction to dictionary format."""
@@ -239,7 +304,8 @@ class Transaction(BaseModel):
             'hash': self.hash,
             'signature': self.signature,
             'status': self.status.value,
-            'finality': self.finality.value
+            'finality': self.finality.value,
+            'expiry': self.expiry
         }
 
     def calculate_fee(self, tx_size_bytes: int = 250) -> float:
@@ -250,8 +316,8 @@ class Transaction(BaseModel):
         if self.tx_type == TransactionType.STAKE:
             base_fee *= 2  # Staking transactions cost more
             
-        return base_fee
-    
+        return float(base_fee)
+
     def validate(self, sender_wallet: Optional[Wallet] = None) -> bool:
         """Validate the transaction for correctness and to prevent overflow attacks.
         
