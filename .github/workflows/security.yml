@@ -44,13 +44,13 @@ jobs:
 
       # SAST scan
       - name: Run CodeQL Analysis
-        uses: github/codeql-action/init@v2
+        uses: github/codeql-action/init@v3
         with:
           languages: python
           queries: security-extended,security-and-quality
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
+        uses: github/codeql-action/analyze@v3
 
       # Dependency scanning
       - name: Run Snyk security scan
@@ -63,7 +63,7 @@ jobs:
 
       # Upload scan results
       - name: Upload security scan results
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: bandit-results.json
 

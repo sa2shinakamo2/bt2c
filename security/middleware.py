@@ -356,7 +356,7 @@ class SecurityMiddleware:
         Returns:
             True if strings are equal, False otherwise
         """
-        if len(a) \!= len(b):
+        if len(a) != len(b):
             return False
             
         result = 0
