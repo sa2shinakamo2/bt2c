@@ -23,7 +23,17 @@ cd bt2c
 python3 -m pip install -r requirements.txt
 ```
 
-3. Start the node:
+3. Create a wallet (optional if you already have one):
+```bash
+python standalone_wallet.py create
+
+# Save your:
+# - Seed phrase (24 words)
+# - Wallet address
+# - Public key
+```
+
+4. Start the node:
 ```bash
 python3 scripts/install.py
 ~/.bt2c/bt2cd
@@ -34,6 +44,49 @@ That's it! Your node will:
 - Connect to the P2P network
 - Start validating if you have sufficient stake
 
+## Running on macOS
+
+For macOS users, follow these additional steps:
+
+1. Ensure you have Python 3.8+ installed:
+```bash
+brew install python
+```
+
+2. Configure your node to connect to seed nodes:
+```bash
+# Create a configuration directory
+mkdir -p mainnet/validators/local/config
+
+# Create a validator configuration file
+cat > mainnet/validators/local/config/validator.json << EOF
+{
+  "node_name": "mac-node",
+  "wallet_address": "your-wallet-address",
+  "network": {
+    "listen_addr": "tcp://0.0.0.0:26656",
+    "external_addr": "tcp://your-mac-ip:26656",
+    "seeds": [
+      "seed1.bt2c.net:26656",
+      "seed2.bt2c.net:26656"
+    ],
+    "persistent_peers": []
+  }
+}
+EOF
+```
+
+3. Start the node with your configuration:
+```bash
+python3 scripts/install.py --config mainnet/validators/local/config/validator.json
+~/.bt2c/bt2cd
+```
+
+4. Verify connectivity:
+```bash
+curl http://localhost:26657/net_info | jq '.result.peers'
+```
+
 ## Network Parameters
 
 - Block time: 5 minutes
@@ -41,7 +94,7 @@ That's it! Your node will:
 - Maximum supply: 21M BT2C
 - Initial block reward: 21.0 BT2C
 - Halving period: 4 years
-- Distribution period: 14 days
+- Distribution period: 14 days (until April 6, 2025)
 
 ## Validator Rewards
 
@@ -49,6 +102,33 @@ That's it! Your node will:
 - Developer node reward: 100 BT2C (first validator only)
 - All rewards are automatically staked
 - Distribution period: 14 days
+
+## Connecting to Local Seed Nodes
+
+If you're running seed nodes locally (moved from cloud hosting):
+
+1. Update your configuration to point to your local machine's IP:
+```json
+"seeds": [
+  "your-local-machine-ip:26656"
+]
+```
+
+2. Or update your hosts file to resolve the seed domains to your local IP:
+```bash
+sudo nano /etc/hosts
+# Add:
+# your-local-machine-ip seed1.bt2c.net
+# your-local-machine-ip seed2.bt2c.net
+```
+
+3. Ensure port 26656 is accessible between your machines.
+
+## Additional Documentation
+
+For more detailed information, see:
+- [Validator Guide](README_VALIDATOR.md)
+- [Seed Nodes Guide](docs/seed_nodes.md)
 
 ## Security
 
