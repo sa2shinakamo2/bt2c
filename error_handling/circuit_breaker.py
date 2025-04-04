@@ -1,190 +1,206 @@
-from enum import Enum
+"""Circuit breaker pattern implementation for error handling."""
 import time
-import asyncio
-from typing import Any, Callable, Optional, Dict
+import threading
+import functools
 import structlog
-from functools import wraps
 
 logger = structlog.get_logger()
 
-class CircuitState(Enum):
-    CLOSED = "closed"      # Normal operation
-    OPEN = "open"         # No operations allowed
-    HALF_OPEN = "half_open"  # Testing if service is back
-
 class CircuitBreaker:
-    """Circuit breaker pattern implementation."""
+    """
+    Implements the Circuit Breaker pattern to prevent cascading failures.
     
-    def __init__(
-        self,
-        failure_threshold: int = 5,
-        recovery_timeout: int = 60,
-        half_open_timeout: int = 30,
-        error_types: tuple = (Exception,)
-    ):
+    When a service is experiencing issues, calling it repeatedly can worsen the problem.
+    The Circuit Breaker stops calls to failing services when they exceed a threshold,
+    allowing them time to recover.
+    
+    Circuit states:
+    - CLOSED: Normal operation, calls pass through to the service
+    - OPEN: Service calls are blocked entirely to allow recovery
+    - HALF-OPEN: Limited testing of service to check if it's recovered
+    """
+    
+    STATE_CLOSED = 'closed'
+    STATE_OPEN = 'open'
+    STATE_HALF_OPEN = 'half-open'
+    
+    class CircuitBreakerError(Exception):
+        """Exception raised when a circuit is open."""
+        pass
+    
+    def __init__(self, failure_threshold=5, recovery_timeout=60, 
+                 half_open_success_threshold=1):
+        """
+        Initialize a new Circuit Breaker.
+        
+        Args:
+            failure_threshold: Number of failures before opening the circuit
+            recovery_timeout: Time in seconds to wait before attempting recovery
+            half_open_success_threshold: Number of successful calls needed to close circuit
+        """
         self.failure_threshold = failure_threshold
         self.recovery_timeout = recovery_timeout
-        self.half_open_timeout = half_open_timeout
-        self.error_types = error_types
+        self.half_open_success_threshold = half_open_success_threshold
         
-        self.state = CircuitState.CLOSED
+        # Internal state
+        self.state = self.STATE_CLOSED
         self.failure_count = 0
+        self.success_count = 0
         self.last_failure_time = 0
-        self.last_test_time = 0
-
-    def can_execute(self) -> bool:
-        """Check if operation can be executed."""
-        if self.state == CircuitState.CLOSED:
-            return True
-
-        if self.state == CircuitState.OPEN:
-            if time.time() - self.last_failure_time >= self.recovery_timeout:
-                self.state = CircuitState.HALF_OPEN
-                self.last_test_time = time.time()
-                return True
-            return False
-
-        if self.state == CircuitState.HALF_OPEN:
-            if time.time() - self.last_test_time >= self.half_open_timeout:
-                return True
-            return False
-
-        return False
-
-    def record_success(self):
-        """Record a successful operation."""
-        self.failure_count = 0
-        self.state = CircuitState.CLOSED
-        logger.info("circuit_breaker_success", state=self.state.value)
-
-    def record_failure(self):
-        """Record a failed operation."""
-        self.failure_count += 1
-        self.last_failure_time = time.time()
-
-        if self.state == CircuitState.HALF_OPEN or \
-           self.failure_count >= self.failure_threshold:
-            self.state = CircuitState.OPEN
-            logger.warning(
-                "circuit_breaker_opened",
-                failures=self.failure_count,
-                last_failure=self.last_failure_time
-            )
-
-class CircuitBreakerRegistry:
-    """Registry for managing multiple circuit breakers."""
+        self._lock = threading.RLock()
     
-    _instance = None
-    _breakers: Dict[str, CircuitBreaker] = {}
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
-    @classmethod
-    def get_breaker(cls, name: str) -> CircuitBreaker:
-        """Get or create a circuit breaker."""
-        if name not in cls._breakers:
-            cls._breakers[name] = CircuitBreaker()
-        return cls._breakers[name]
-
-def with_circuit_breaker(
-    breaker_name: str,
-    fallback_function: Optional[Callable] = None
-):
-    """Decorator to apply circuit breaker pattern."""
-    def decorator(func):
-        @wraps(func)
-        async def wrapper(*args, **kwargs):
-            breaker = CircuitBreakerRegistry.get_breaker(breaker_name)
-            
-            if not breaker.can_execute():
-                logger.warning(
-                    "circuit_breaker_blocked",
-                    breaker=breaker_name,
-                    state=breaker.state.value
-                )
-                if fallback_function:
-                    return await fallback_function(*args, **kwargs)
-                raise RuntimeError(f"Circuit breaker {breaker_name} is {breaker.state.value}")
-
-            try:
-                result = await func(*args, **kwargs)
-                breaker.record_success()
-                return result
-            except Exception as e:
-                breaker.record_failure()
-                logger.error(
-                    "circuit_breaker_failure",
-                    breaker=breaker_name,
-                    error=str(e)
-                )
-                if fallback_function:
-                    return await fallback_function(*args, **kwargs)
-                raise
+    def __call__(self, func):
+        """Use as a decorator on functions that might fail."""
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            return self.call(func, *args, **kwargs)
         return wrapper
-    return decorator
-
-class RetryWithBackoff:
-    """Implements exponential backoff retry logic."""
     
-    def __init__(
-        self,
-        max_retries: int = 3,
-        base_delay: float = 1.0,
-        max_delay: float = 10.0,
-        exponential_base: float = 2.0
-    ):
-        self.max_retries = max_retries
-        self.base_delay = base_delay
-        self.max_delay = max_delay
-        self.exponential_base = exponential_base
-
-    async def execute(self, func: Callable, *args, **kwargs) -> Any:
-        """Execute function with retry logic."""
-        last_exception = None
+    def call(self, func, *args, **kwargs):
+        """
+        Call the protected function with circuit breaker protection.
         
-        for attempt in range(self.max_retries):
-            try:
-                return await func(*args, **kwargs)
-            except Exception as e:
-                last_exception = e
-                if attempt < self.max_retries - 1:
-                    delay = min(
-                        self.base_delay * (self.exponential_base ** attempt),
-                        self.max_delay
+        Args:
+            func: The function to call
+            *args, **kwargs: Arguments to pass to the function
+            
+        Returns:
+            The result of the function call
+            
+        Raises:
+            CircuitBreakerError: If the circuit is open
+            Exception: Any exception raised by the function
+        """
+        with self._lock:
+            if self.state == self.STATE_OPEN:
+                # Check if it's time to try recovery
+                if time.time() - self.last_failure_time >= self.recovery_timeout:
+                    logger.info("circuit_breaker_half_open", 
+                                func=func.__name__, 
+                                recovery_timeout=self.recovery_timeout)
+                    self.state = self.STATE_HALF_OPEN
+                    self.success_count = 0
+                else:
+                    # Circuit is still open, don't call the function
+                    logger.warning("circuit_breaker_open", 
+                                  func=func.__name__,
+                                  last_failure=self.last_failure_time,
+                                  seconds_remaining=self.recovery_timeout - (time.time() - self.last_failure_time))
+                    raise self.CircuitBreakerError(
+                        f"Circuit is open for {func.__name__}, too many failures."
                     )
-                    logger.warning(
-                        "retry_attempt",
-                        attempt=attempt + 1,
-                        delay=delay,
-                        error=str(e)
-                    )
-                    await asyncio.sleep(delay)
-
-        logger.error(
-            "retry_exhausted",
-            max_retries=self.max_retries,
-            error=str(last_exception)
-        )
-        raise last_exception
-
-def with_retry(
-    max_retries: int = 3,
-    base_delay: float = 1.0,
-    max_delay: float = 10.0
-):
-    """Decorator to apply retry logic."""
-    retry_handler = RetryWithBackoff(
-        max_retries=max_retries,
-        base_delay=base_delay,
-        max_delay=max_delay
-    )
+        
+        try:
+            # Call the function
+            result = func(*args, **kwargs)
+            
+            # Record success
+            with self._lock:
+                if self.state == self.STATE_HALF_OPEN:
+                    self.success_count += 1
+                    if self.success_count >= self.half_open_success_threshold:
+                        # Service has recovered, close the circuit
+                        logger.info("circuit_breaker_closed", 
+                                   func=func.__name__,
+                                   success_count=self.success_count)
+                        self.state = self.STATE_CLOSED
+                        self.failure_count = 0
+                elif self.state == self.STATE_CLOSED:
+                    # Reset failure count on success
+                    self.failure_count = 0
+            
+            return result
+            
+        except Exception as e:
+            # Record failure
+            with self._lock:
+                self.failure_count += 1
+                self.last_failure_time = time.time()
+                
+                if self.state == self.STATE_CLOSED and self.failure_count >= self.failure_threshold:
+                    # Too many failures, open the circuit
+                    logger.warning("circuit_breaker_tripped", 
+                                  func=func.__name__, 
+                                  failure_count=self.failure_count,
+                                  exception=str(e))
+                    self.state = self.STATE_OPEN
+                elif self.state == self.STATE_HALF_OPEN:
+                    # Failed during recovery attempt, reopen the circuit
+                    logger.warning("circuit_breaker_recovery_failed",
+                                  func=func.__name__,
+                                  exception=str(e))
+                    self.state = self.STATE_OPEN
+            
+            # Re-raise the original exception
+            raise
     
-    def decorator(func):
-        @wraps(func)
-        async def wrapper(*args, **kwargs):
-            return await retry_handler.execute(func, *args, **kwargs)
-        return wrapper
-    return decorator
+    def reset(self):
+        """Reset the circuit breaker to closed state."""
+        with self._lock:
+            self.state = self.STATE_CLOSED
+            self.failure_count = 0
+            self.success_count = 0
+            self.last_failure_time = 0
+            logger.info("circuit_breaker_reset")
+            
+    def force_open(self):
+        """Manually force the circuit into open state."""
+        with self._lock:
+            self.state = self.STATE_OPEN
+            self.last_failure_time = time.time()
+            logger.warning("circuit_breaker_forced_open")
+    
+    def get_state(self):
+        """Get the current state of the circuit breaker."""
+        with self._lock:
+            return {
+                'state': self.state,
+                'failure_count': self.failure_count,
+                'success_count': self.success_count,
+                'last_failure_time': self.last_failure_time
+            }
+
+
+# Example usage
+if __name__ == "__main__":
+    # Create a circuit breaker with 3 failure threshold
+    breaker = CircuitBreaker(failure_threshold=3, recovery_timeout=5)
+    
+    # Create a function that will sometimes fail
+    @breaker
+    def unreliable_service(fail=False):
+        if fail:
+            raise ValueError("Service failed")
+        return "Service success"
+    
+    # Test the circuit breaker
+    try:
+        # Cause 3 failures to open the circuit
+        for _ in range(3):
+            try:
+                print(unreliable_service(fail=True))
+            except ValueError as e:
+                print(f"Expected error: {e}")
+        
+        # Now the circuit should be open
+        try:
+            print(unreliable_service())
+        except CircuitBreaker.CircuitBreakerError as e:
+            print(f"Circuit breaker error: {e}")
+        
+        # Wait for recovery timeout
+        print("Waiting for recovery timeout...")
+        time.sleep(6)
+        
+        # Circuit should be half-open, try with success
+        print(unreliable_service())
+        
+        # One more success should close the circuit
+        print(unreliable_service())
+        
+        # Circuit should be closed now
+        print("Circuit should be closed now.")
+        print(unreliable_service())
+        
+    except Exception as e:
+        print(f"Unexpected error: {e}")
