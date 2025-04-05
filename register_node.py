@@ -40,31 +40,38 @@ def get_wallet_address():
     wallet_address = wallets[0].replace('.json', '')
     return wallet_address
 
+def find_available_node(seed_nodes=None):
+    """Find an available seed node to connect to"""
+    if seed_nodes is None:
+        seed_nodes = [
+            "http://localhost:26657",
+            "http://seed1.bt2c.net:26657", 
+            "http://seed2.bt2c.net:26657",
+            # Try without http:// prefix
+            "http://seed1.bt2c.net:26656",
+            "http://seed2.bt2c.net:26656",
+            # Try your local machine IP if you're running seed nodes there
+            "http://127.0.0.1:26657",
+            "http://127.0.0.1:26656"
+        ]
+    
+    for node in seed_nodes:
+        try:
+            print(f"Trying to connect to {node}...")
+            response = requests.get(f"{node}/status", timeout=5)
+            if response.status_code == 200:
+                print(f"Successfully connected to {node}")
+                return node
+        except requests.RequestException as e:
+            print(f"Could not connect to {node}: {str(e)}")
+    
+    return None
+
 def register_node(wallet_address, seed_node=None):
     """Register the node to receive the initial BT2C distribution"""
     if seed_node is None:
-        # Try local node first
-        seed_node = "http://localhost:26657"
-    
-    # Check if local node is running
-    try:
-        response = requests.get(f"{seed_node}/status")
-        if response.status_code != 200:
-            print(f"Error: Could not connect to local node at {seed_node}")
-            return False
-    except requests.RequestException:
-        print(f"Error: Could not connect to local node at {seed_node}")
-        # Try seed nodes
-        for seed in ["http://seed1.bt2c.net:26657", "http://seed2.bt2c.net:26657"]:
-            try:
-                response = requests.get(f"{seed}/status")
-                if response.status_code == 200:
-                    seed_node = seed
-                    print(f"Connected to seed node: {seed}")
-                    break
-            except requests.RequestException:
-                continue
-        else:
+        seed_node = find_available_node()
+        if not seed_node:
             print("Error: Could not connect to any seed nodes")
             return False
     
@@ -87,6 +94,7 @@ def register_node(wallet_address, seed_node=None):
                 print(f"Error registering node: {error}")
         else:
             print(f"Error: Received status code {response.status_code}")
+            print(f"Response: {response.text}")
     except requests.RequestException as e:
         print(f"Error registering node: {str(e)}")
     
@@ -95,8 +103,10 @@ def register_node(wallet_address, seed_node=None):
 def check_balance(wallet_address, seed_node=None):
     """Check the balance of the wallet"""
     if seed_node is None:
-        # Try local node first
-        seed_node = "http://localhost:26657"
+        seed_node = find_available_node()
+        if not seed_node:
+            print("Error: Could not connect to any seed nodes")
+            return 0
     
     try:
         response = requests.get(
@@ -114,6 +124,7 @@ def check_balance(wallet_address, seed_node=None):
             return balance
         else:
             print(f"Error: Received status code {response.status_code}")
+            print(f"Response: {response.text}")
     except requests.RequestException as e:
         print(f"Error checking balance: {str(e)}")
     
@@ -122,7 +133,7 @@ def check_balance(wallet_address, seed_node=None):
 def main():
     parser = argparse.ArgumentParser(description="BT2C Node Registration")
     parser.add_argument("--wallet", help="Wallet address to register")
-    parser.add_argument("--seed", help="Seed node URL (default: http://localhost:26657)")
+    parser.add_argument("--seed", help="Seed node URL (will auto-detect if not specified)")
     parser.add_argument("--check", action="store_true", help="Check balance after registration")
     
     args = parser.parse_args()
@@ -132,13 +143,20 @@ def main():
     if not wallet_address:
         sys.exit(1)
     
+    # Find available node
+    seed_node = args.seed or find_available_node()
+    if not seed_node:
+        print("Error: Could not connect to any seed nodes")
+        print("Make sure your node is running or try specifying a seed node with --seed")
+        sys.exit(1)
+    
     # Register node
-    success = register_node(wallet_address, args.seed)
+    success = register_node(wallet_address, seed_node)
     
     # Check balance if requested
     if args.check or success:
         print("\nChecking balance...")
-        balance = check_balance(wallet_address, args.seed)
+        balance = check_balance(wallet_address, seed_node)
         
         if balance == 0 and success:
             print("\nBalance is still 0. The transaction might take some time to be processed.")
