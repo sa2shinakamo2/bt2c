@@ -146,3 +146,5 @@ yarn-error.log*
 
 # Website directory - kept locally but not in repository
 website/
+send_bt2c.py
+transfer_bt2c.py
