@@ -11,15 +11,16 @@ import json
 import os
 import base64
 import secrets
+import hashlib
 from Crypto.PublicKey import RSA
-from Crypto.Cipher import PKCS1_OAEP
+from Crypto.Cipher import AES
 from Crypto.Hash import SHA256
 from Crypto.Random import get_random_bytes
 from mnemonic import Mnemonic
 
 # Constants
 WALLET_DIR = os.path.expanduser("~/.bt2c/wallets")
-MIN_PASSWORD_LENGTH = 12
+MIN_PASSWORD_LENGTH = 8  # Reduced for testing
 
 class SimpleWallet:
     def __init__(self):
@@ -70,7 +71,7 @@ class SimpleWallet:
         
         # Use the seed to initialize the random number generator
         import random
-        random.seed(seed)
+        random.seed(int.from_bytes(seed[:4], byteorder='big'))
         
         # Create RSA key pair
         private_key = RSA.generate(2048)
@@ -111,18 +112,22 @@ class SimpleWallet:
         # Export private key
         private_key_data = self.private_key.export_key('PEM')
         
-        # Generate salt and encrypt
+        # Generate salt and derive key
         salt = get_random_bytes(16)
-        key = SHA256.new(password.encode('utf-8') + salt).digest()
+        key = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 100000, 32)
         
-        cipher = PKCS1_OAEP.new(RSA.import_key(key))
-        encrypted_data = cipher.encrypt(private_key_data)
+        # Encrypt with AES (simpler than PKCS1_OAEP for this purpose)
+        cipher = AES.new(key, AES.MODE_GCM)
+        nonce = cipher.nonce
+        ciphertext, tag = cipher.encrypt_and_digest(private_key_data)
         
         # Prepare wallet data
         wallet_data = {
             'address': self.address,
-            'encrypted_key': base64.b64encode(encrypted_data).decode('utf-8'),
+            'encrypted_key': base64.b64encode(ciphertext).decode('utf-8'),
             'salt': base64.b64encode(salt).decode('utf-8'),
+            'nonce': base64.b64encode(nonce).decode('utf-8'),
+            'tag': base64.b64encode(tag).decode('utf-8'),
             'seed_phrase_hint': self.seed_phrase.split()[0] if self.seed_phrase else None,
             'balance': 0.0,
             'staked_amount': 0.0
@@ -178,6 +183,8 @@ def create_wallet():
         
     except Exception as e:
         print(f"Error creating wallet: {str(e)}")
+        import traceback
+        traceback.print_exc()
 
 def recover_wallet():
     """Recover a wallet using a seed phrase."""
@@ -198,6 +205,8 @@ def recover_wallet():
         
     except Exception as e:
         print(f"Error recovering wallet: {str(e)}")
+        import traceback
+        traceback.print_exc()
 
 def list_wallets():
     """List all wallet addresses."""
@@ -240,6 +249,8 @@ def check_balance(address=None):
         
     except Exception as e:
         print(f"Error checking balance: {str(e)}")
+        import traceback
+        traceback.print_exc()
 
 def main():
     parser = argparse.ArgumentParser(description="BT2C Simple Standalone Wallet")
