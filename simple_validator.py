@@ -134,12 +134,33 @@ class SimpleValidator:
     def discover_peers(self):
         """Discover peers on the network"""
         import socket
+        import subprocess
+        
+        # First try to get peers from p2p_discovery.py if it exists
+        try:
+            result = subprocess.run(["python3", "p2p_discovery.py", "--get-seeds"], 
+                                   capture_output=True, text=True)
+            if result.returncode == 0:
+                discovered_peers = json.loads(result.stdout.strip())
+                for peer in discovered_peers:
+                    self.peers.add(peer)
+                    self.logger.info(f"Found peer from p2p_discovery: {peer}")
+                
+                if discovered_peers:
+                    self.logger.info(f"Discovered {len(discovered_peers)} peers from p2p_discovery")
+                    print(f"✅ Found {len(discovered_peers)} peers from p2p_discovery")
+                    return list(self.peers)
+        except Exception as e:
+            self.logger.warning(f"Error using p2p_discovery.py: {str(e)}")
+        
+        # If no peers found, try direct UDP broadcast
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         sock.settimeout(2)
         
         try:
+            # Try to discover peers on the local network
             sock.sendto(b"BT2C_DISCOVERY", ('<broadcast>', DISCOVERY_PORT))
             
             start_time = time.time()
@@ -150,15 +171,50 @@ class SimpleValidator:
                         port = int(data.split(b":")[1])
                         peer = f"{addr[0]}:{port}"
                         self.peers.add(peer)
-                        self.logger.info(f"Found peer: {peer}")
+                        self.logger.info(f"Found peer via UDP broadcast: {peer}")
                 except socket.timeout:
                     pass
         except Exception as e:
-            self.logger.error(f"Error discovering peers: {str(e)}")
+            self.logger.error(f"Error discovering peers via UDP: {str(e)}")
         finally:
             sock.close()
+        
+        # If still no peers, try direct connection to known IPs
+        if not self.peers:
+            # Try to connect to the developer node directly using common local IPs
+            common_ips = [
+                "192.168.1.72",  # Previously discovered IP
+                "192.168.1.1",   # Common router IP
+                "192.168.0.1",   # Common router IP
+                "10.0.0.1",      # Common network IP
+                "127.0.0.1"      # Localhost (if running on same machine)
+            ]
             
-        self.logger.info(f"Discovered {len(self.peers)} peers")
+            for ip in common_ips:
+                try:
+                    # Try to connect to the API port
+                    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    s.settimeout(1)
+                    result = s.connect_ex((ip, API_PORT))
+                    s.close()
+                    
+                    if result == 0:  # Port is open
+                        peer = f"{ip}:{P2P_PORT}"
+                        self.peers.add(peer)
+                        self.logger.info(f"Found peer via direct connection: {peer}")
+                        print(f"✅ Found peer via direct connection: {peer}")
+                except Exception:
+                    pass
+        
+        if self.peers:
+            self.logger.info(f"Discovered {len(self.peers)} peers total")
+            print(f"✅ Found {len(self.peers)} peers total")
+        else:
+            self.logger.warning("No peers found")
+            print("⚠️ No peers found. Will use hardcoded seed node IP: 192.168.1.72")
+            # Add hardcoded seed node as fallback
+            self.peers.add("192.168.1.72:26656")
+            
         return list(self.peers)
         
     def sync_blockchain(self):
