@@ -13,6 +13,9 @@ import socket
 import argparse
 import threading
 from pathlib import Path
+import getpass
+import hashlib
+import base64
 
 # Constants
 CONFIG_DIR = os.path.expanduser("~/.bt2c/config")
@@ -179,9 +182,33 @@ def create_simple_wallet():
     import hashlib
     import base64
     import uuid
+    import random
     
-    # Generate a random wallet ID
-    wallet_id = str(uuid.uuid4())
+    # Generate a simple seed phrase
+    word_list = [
+        "abandon", "ability", "able", "about", "above", "absent", "absorb", "abstract", "absurd", "abuse",
+        "access", "accident", "account", "accuse", "achieve", "acid", "acoustic", "acquire", "across", "act",
+        "action", "actor", "actress", "actual", "adapt", "add", "addict", "address", "adjust", "admit",
+        "adult", "advance", "advice", "aerobic", "affair", "afford", "afraid", "again", "age", "agent",
+        "agree", "ahead", "aim", "air", "airport", "aisle", "alarm", "album", "alcohol", "alert",
+        "alien", "all", "alley", "allow", "almost", "alone", "alpha", "already", "also", "alter",
+        "always", "amateur", "amazing", "among", "amount", "amused", "analyst", "anchor", "ancient", "anger",
+        "angle", "angry", "animal", "ankle", "announce", "annual", "another", "answer", "antenna", "antique",
+        "anxiety", "any", "apart", "apology", "appear", "apple", "approve", "april", "arch", "arctic",
+        "area", "arena", "argue", "arm", "armed", "armor", "army", "around", "arrange", "arrest",
+        "arrive", "arrow", "art", "artefact", "artist", "artwork", "ask", "aspect", "assault", "asset",
+        "assist", "assume", "asthma", "athlete", "atom", "attack", "attend", "attitude", "attract", "auction"
+    ]
+    
+    # Generate 24 random words for the seed phrase
+    seed_words = []
+    for _ in range(24):
+        seed_words.append(random.choice(word_list))
+    
+    seed_phrase = " ".join(seed_words)
+    
+    # Use the seed phrase to generate a deterministic wallet ID
+    wallet_id = hashlib.sha256(seed_phrase.encode()).hexdigest()
     
     # Create a simple hash for the address
     address_hash = hashlib.sha256(wallet_id.encode()).digest()
@@ -192,13 +219,40 @@ def create_simple_wallet():
     # Format as BT2C address
     address = "bt2c_" + b32_encoded
     
+    # Get password for encryption
+    while True:
+        password = getpass.getpass("Enter password to encrypt wallet (min 12 chars): ")
+        if len(password) < 12:
+            print("⚠️ Password must be at least 12 characters")
+            continue
+            
+        confirm = getpass.getpass("Confirm password: ")
+        if password != confirm:
+            print("⚠️ Passwords don't match")
+            continue
+            
+        break
+    
+    # Simple encryption (in a real implementation, use proper encryption)
+    def simple_encrypt(data, password):
+        password_hash = hashlib.sha256(password.encode()).digest()
+        encrypted = bytearray()
+        for i, char in enumerate(data.encode()):
+            encrypted.append(char ^ password_hash[i % len(password_hash)])
+        return base64.b64encode(encrypted).decode()
+    
+    # Encrypt the seed phrase and wallet ID
+    encrypted_seed = simple_encrypt(seed_phrase, password)
+    encrypted_id = simple_encrypt(wallet_id, password)
+    
     # Save wallet info
     wallet_dir = os.path.expanduser("~/.bt2c/wallets")
     os.makedirs(wallet_dir, exist_ok=True)
     
     wallet_info = {
         "address": address,
-        "id": wallet_id,
+        "encrypted_id": encrypted_id,
+        "encrypted_seed": encrypted_seed,
         "created_at": int(time.time())
     }
     
@@ -208,6 +262,9 @@ def create_simple_wallet():
     
     print(f"✅ Created simple wallet: {address}")
     print(f"📝 Wallet saved to: {wallet_file}")
+    print(f"🔐 Wallet encrypted with password")
+    print("\n⚠️ IMPORTANT: Write down your seed phrase and keep it safe!")
+    print(f"🔑 Seed phrase: {seed_phrase}")
     
     return address
 
