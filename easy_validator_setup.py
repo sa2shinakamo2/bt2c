@@ -31,11 +31,27 @@ def setup_directories():
 def discover_seed_nodes():
     """Discover seed nodes from the discovery service"""
     try:
-        print("🔍 Discovering seed nodes...")
+        # First try to use the P2P discovery to find peers
+        print("🔍 Discovering peers via P2P...")
+        p2p_discovery_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "p2p_discovery.py")
+        if os.path.exists(p2p_discovery_path):
+            result = subprocess.run(
+                [sys.executable, p2p_discovery_path, "--get-seeds"],
+                capture_output=True,
+                text=True
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                peers = json.loads(result.stdout.strip())
+                if peers:
+                    print(f"✅ Found {len(peers)} peers via P2P discovery")
+                    return peers
+        
+        # Fallback to online discovery service
+        print("🔍 Checking online seed discovery service...")
         response = requests.get(SEED_DISCOVERY_URL, timeout=10)
         if response.status_code == 200:
             data = response.json()
-            print(f"✅ Found {len(data['seed_nodes'])} seed nodes")
+            print(f"✅ Found {len(data['seed_nodes'])} seed nodes online")
             return data['seed_nodes']
         else:
             print(f"⚠️ Seed discovery failed: {response.status_code}")
@@ -44,7 +60,7 @@ def discover_seed_nodes():
     
     # Fallback to default seed nodes
     print("ℹ️ Using default seed nodes")
-    return ["seed1.bt2c.net:26656", "seed2.bt2c.net:26656"]
+    return ["127.0.0.1:26656"]  # Local node as fallback
 
 def create_wallet():
     """Create a new BT2C wallet"""
