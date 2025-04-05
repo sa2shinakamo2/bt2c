@@ -45,6 +45,8 @@ class SimpleValidator:
         self.rewards = 0.0
         self.running = False
         self.stake = 1.0  # Minimum stake amount
+        self.balance = 0.0
+        self.is_validator = False
         
         # Load existing blocks if any
         self.load_blocks()
@@ -304,6 +306,155 @@ class SimpleValidator:
                 
         return False
         
+    def check_wallet_balance(self):
+        """Check wallet balance and stake status"""
+        if not self.peers:
+            self.discover_peers()
+            if not self.peers:
+                self.logger.warning("No peers found to check wallet balance")
+                return False
+                
+        try:
+            # Find a peer to query
+            for peer in self.peers:
+                peer_ip = peer.split(":")[0]
+                
+                # Query wallet info
+                import requests
+                response = requests.get(f"http://{peer_ip}:{API_PORT}/blockchain/wallet/{self.wallet_address}")
+                
+                if response.status_code == 200:
+                    wallet_info = response.json()
+                    self.logger.info(f"Wallet info: {wallet_info}")
+                    
+                    # Check if already a validator
+                    if wallet_info.get("is_validator", False):
+                        self.logger.info("Already registered as validator")
+                        self.is_validator = True
+                        self.stake = wallet_info.get("staked", 0.0)
+                        self.rewards = wallet_info.get("rewards", 0.0)
+                        return True
+                        
+                    # Check if has enough balance to stake
+                    balance = wallet_info.get("balance", 0.0)
+                    staked = wallet_info.get("staked", 0.0)
+                    
+                    if balance + staked >= 1.0:  # Minimum stake requirement
+                        self.logger.info(f"Sufficient balance for staking: {balance} BT2C")
+                        self.balance = balance
+                        self.stake = staked
+                        return True
+                    else:
+                        self.logger.warning(f"Insufficient balance for staking: {balance} BT2C")
+                        self.balance = balance
+                        self.stake = staked
+                        return False
+                        
+            self.logger.warning("Failed to check wallet balance from any peer")
+            return False
+            
+        except Exception as e:
+            self.logger.error(f"Error checking wallet balance: {str(e)}")
+            return False
+            
+    def register_as_validator(self):
+        """Register as a validator by staking the minimum required amount"""
+        if not self.peers:
+            self.discover_peers()
+            if not self.peers:
+                self.logger.warning("No peers found to register as validator")
+                return False
+                
+        # Check if already a validator
+        if self.is_validator:
+            self.logger.info("Already registered as validator")
+            return True
+            
+        # Check if has enough balance
+        if not self.check_wallet_balance():
+            self.logger.warning("Cannot register as validator due to insufficient balance")
+            return False
+            
+        # If already has minimum stake, just need to register
+        if self.stake >= 1.0:
+            self.logger.info(f"Already has minimum stake: {self.stake} BT2C")
+        else:
+            # Need to stake the minimum required amount
+            stake_amount = min(self.balance, 1.0)
+            
+            try:
+                # Find a peer to submit stake transaction
+                for peer in self.peers:
+                    peer_ip = peer.split(":")[0]
+                    
+                    # Submit stake transaction
+                    import requests
+                    stake_tx = {
+                        "type": "stake",
+                        "address": self.wallet_address,
+                        "amount": stake_amount,
+                        "fee": 0.001
+                    }
+                    
+                    self.logger.info(f"Submitting stake transaction: {stake_tx}")
+                    response = requests.post(f"http://{peer_ip}:{API_PORT}/blockchain/stake", json=stake_tx)
+                    
+                    if response.status_code == 200:
+                        result = response.json()
+                        self.logger.info(f"Stake transaction submitted: {result}")
+                        print(f"✅ Staked {stake_amount} BT2C")
+                        
+                        # Update stake amount
+                        self.stake += stake_amount
+                        self.balance -= stake_amount
+                        
+                        # Wait for transaction to be confirmed
+                        print("Waiting for stake transaction to be confirmed...")
+                        time.sleep(10)
+                        break
+                    else:
+                        self.logger.warning(f"Failed to submit stake transaction: {response.text}")
+                        continue
+                        
+            except Exception as e:
+                self.logger.error(f"Error staking: {str(e)}")
+                return False
+                
+        # Now register as validator
+        try:
+            # Find a peer to submit registration transaction
+            for peer in self.peers:
+                peer_ip = peer.split(":")[0]
+                
+                # Submit registration transaction
+                import requests
+                reg_tx = {
+                    "type": "validator_register",
+                    "address": self.wallet_address,
+                    "fee": 0.001
+                }
+                
+                self.logger.info(f"Submitting validator registration: {reg_tx}")
+                response = requests.post(f"http://{peer_ip}:{API_PORT}/blockchain/validator/register", json=reg_tx)
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    self.logger.info(f"Validator registration submitted: {result}")
+                    print(f"✅ Registered as validator")
+                    
+                    # Set as validator
+                    self.is_validator = True
+                    return True
+                else:
+                    self.logger.warning(f"Failed to register as validator: {response.text}")
+                    continue
+                    
+        except Exception as e:
+            self.logger.error(f"Error registering as validator: {str(e)}")
+            return False
+            
+        return False
+        
     def create_block(self):
         """Create a new block"""
         # In a real implementation, this would include transaction validation
@@ -364,6 +515,15 @@ class SimpleValidator:
             # Initial blockchain sync
             print("Synchronizing blockchain...")
             self.sync_blockchain()
+            
+            # Check wallet balance and register as validator if needed
+            print("Checking wallet balance...")
+            self.check_wallet_balance()
+            
+            # Register as validator if not already
+            if not self.is_validator and self.balance + self.stake >= 1.0:
+                print("Registering as validator...")
+                self.register_as_validator()
             
             # Main validation loop
             while self.running:
