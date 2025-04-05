@@ -4,9 +4,15 @@ cryptography==44.0.2
 coincurve==19.0.1
 base58==2.1.1
 
+# Data validation and settings
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
 # Networking and communication
 aiohttp==3.9.1
 websockets==12.0
+fastapi==0.104.1
+uvicorn==0.24.0
 
 # Database
 sqlalchemy==2.0.25
