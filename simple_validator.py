@@ -76,11 +76,65 @@ class SimpleValidator:
         
     def get_wallet_address(self):
         """Get the wallet address from config or user input"""
+        # First check validator.json config
         config_file = os.path.join(CONFIG_DIR, "validator.json")
         if os.path.exists(config_file):
-            with open(config_file, 'r') as f:
-                config = json.load(f)
-                return config.get("wallet_address")
+            try:
+                with open(config_file, 'r') as f:
+                    config = json.load(f)
+                    if "wallet_address" in config:
+                        self.logger.info(f"Found wallet address in validator.json: {config['wallet_address']}")
+                        return config.get("wallet_address")
+            except Exception as e:
+                self.logger.error(f"Error reading validator.json: {str(e)}")
+        
+        # If not found, check for existing wallet files
+        wallet_files = [f for f in os.listdir(WALLET_DIR) if f.endswith('.json')]
+        
+        if wallet_files:
+            self.logger.info(f"Found {len(wallet_files)} wallet files")
+            
+            # If there's only one wallet, use it
+            if len(wallet_files) == 1:
+                wallet_file = wallet_files[0]
+                wallet_address = wallet_file.replace('.json', '')
+                self.logger.info(f"Using existing wallet: {wallet_address}")
+                
+                # Save to config for future use
+                os.makedirs(CONFIG_DIR, exist_ok=True)
+                with open(config_file, 'w') as f:
+                    json.dump({"wallet_address": wallet_address}, f, indent=2)
+                    
+                return wallet_address
+                
+            # If there are multiple wallets, ask the user
+            print("\nExisting wallets found:")
+            for i, wallet_file in enumerate(wallet_files, 1):
+                wallet_address = wallet_file.replace('.json', '')
+                print(f"{i}. {wallet_address}")
+                
+            while True:
+                try:
+                    choice = input("\nSelect a wallet number (or press Enter to create a new one): ")
+                    if not choice:
+                        return None
+                        
+                    choice = int(choice)
+                    if 1 <= choice <= len(wallet_files):
+                        wallet_address = wallet_files[choice-1].replace('.json', '')
+                        
+                        # Save to config for future use
+                        os.makedirs(CONFIG_DIR, exist_ok=True)
+                        with open(config_file, 'w') as f:
+                            json.dump({"wallet_address": wallet_address}, f, indent=2)
+                            
+                        return wallet_address
+                    else:
+                        print("Invalid selection. Please try again.")
+                except ValueError:
+                    print("Invalid input. Please enter a number.")
+                    
+        # If no wallet files found, return None to create a new one
         return None
         
     def load_blocks(self):
