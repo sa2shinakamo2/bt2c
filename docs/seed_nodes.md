@@ -11,6 +11,7 @@ This guide provides detailed instructions for connecting to existing BT2C seed n
    - [Troubleshooting](#troubleshooting)
 2. [Setting Up a New Seed Node](#setting-up-a-new-seed-node)
    - [Hardware Requirements](#hardware-requirements)
+   - [Dependency Options](#dependency-options)
    - [Installation](#installation)
    - [Configuration](#configuration)
    - [Registering Your Seed Node](#registering-your-seed-node)
@@ -120,6 +121,30 @@ Seed nodes have higher bandwidth requirements than regular validator nodes:
 | Storage   | 100 GB SSD           | 500 GB SSD                |
 | Bandwidth | 100 Mbps             | 1 Gbps                    |
 | Uptime    | 99%                  | 99.9%                     |
+
+### Dependency Options
+
+For seed nodes, choose the appropriate requirements file:
+
+1. **Validator Requirements** (Recommended for seed nodes):
+   ```bash
+   pip install -r validator-requirements.txt
+   ```
+   This includes all essential dependencies for running a seed node without the overhead of development tools.
+
+2. **Full Requirements**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+   Complete set of dependencies including development and testing tools.
+
+3. **Minimal Requirements** (Not suitable for seed nodes):
+   ```bash
+   pip install -r requirements.minimal.txt
+   ```
+   Contains only basic crypto libraries, insufficient for seed node functionality.
+
+Seed nodes should use either the validator-requirements.txt or the full requirements.txt.
 
 ### Installation
 

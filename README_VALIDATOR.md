@@ -5,12 +5,43 @@ Welcome to the BT2C validator network! This guide will help you quickly set up a
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Linux server (Ubuntu 20.04 LTS recommended)
+
+#### Hardware Requirements
+
 - 4 CPU cores
 - 8GB RAM
-- 100GB SSD storage
-- Stable internet connection (10Mbps+)
-- 1 BT2C token for staking
+- 100GB SSD
+- Reliable internet connection
+
+#### Software Requirements
+
+- Docker & Docker Compose
+- Git
+- 2048-bit RSA key pair
+
+#### Dependency Options
+
+BT2C offers different requirement files based on your needs:
+
+1. **Validator Requirements** (Recommended):
+   ```bash
+   pip install -r validator-requirements.txt
+   ```
+   This includes all essential dependencies for running a validator node without the overhead of development tools.
+
+2. **Full Requirements**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+   Complete set of dependencies including development and testing tools.
+
+3. **Minimal Requirements** (Not recommended for validators):
+   ```bash
+   pip install -r requirements.minimal.txt
+   ```
+   Contains only basic crypto libraries, insufficient for full validator functionality.
+
+For validator nodes, always use either the validator-requirements.txt or the full requirements.txt.
 
 ### Rewards Structure
 - Developer node reward: 1000 BT2C (first validator only)

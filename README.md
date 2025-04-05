@@ -10,6 +10,40 @@ Minimum requirements for running a node:
 - 50GB storage
 - Internet connection
 
+## Dependency Options
+
+BT2C offers different requirement files based on your needs:
+
+1. **Full Requirements** (`requirements.txt`):
+   - Complete set of dependencies for development and production
+   - Includes all testing, security, and monitoring tools
+   - Use this for development or if you're unsure
+
+2. **Validator Requirements** (`validator-requirements.txt`):
+   - Essential dependencies for running a validator node
+   - Includes crypto, networking, and database libraries
+   - Faster to install than full requirements
+   - Recommended for validator nodes
+
+3. **Minimal Requirements** (`requirements.minimal.txt`):
+   - Bare minimum dependencies for basic functionality
+   - Limited to core crypto libraries and wallet generation
+   - Fastest to install but limited functionality
+   - Use for wallet operations or simple node connections
+
+Choose the appropriate requirements file based on your use case:
+
+```bash
+# For full development environment
+pip install -r requirements.txt
+
+# For running a validator node
+pip install -r validator-requirements.txt
+
+# For minimal functionality (wallet operations)
+pip install -r requirements.minimal.txt
+```
+
 ## Quick Start
 
 1. Clone the repository:
@@ -18,9 +52,9 @@ git clone https://github.com/sa2shinakamo2/bt2c.git
 cd bt2c
 ```
 
-2. Install Python dependencies:
+2. Install Python dependencies (choose appropriate requirements file):
 ```bash
-python3 -m pip install -r requirements.txt
+python3 -m pip install -r validator-requirements.txt
 ```
 
 3. Create a wallet (optional if you already have one):
