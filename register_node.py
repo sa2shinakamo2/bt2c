@@ -44,15 +44,23 @@ def find_available_node(seed_nodes=None):
     """Find an available seed node to connect to"""
     if seed_nodes is None:
         seed_nodes = [
+            # Your validator node is running on port 8334
+            "http://localhost:8334",
+            "http://127.0.0.1:8334",
+            
+            # Try Docker container directly
+            "http://bt2c_validator:8334",
+            
+            # Try other common ports
             "http://localhost:26657",
-            "http://seed1.bt2c.net:26657", 
+            "http://localhost:26656",
+            "http://localhost:8081",  # Another port your validator exposes
+            
+            # Remote seed nodes as fallback
+            "http://seed1.bt2c.net:26657",
             "http://seed2.bt2c.net:26657",
-            # Try without http:// prefix
             "http://seed1.bt2c.net:26656",
-            "http://seed2.bt2c.net:26656",
-            # Try your local machine IP if you're running seed nodes there
-            "http://127.0.0.1:26657",
-            "http://127.0.0.1:26656"
+            "http://seed2.bt2c.net:26656"
         ]
     
     for node in seed_nodes:
@@ -78,24 +86,44 @@ def register_node(wallet_address, seed_node=None):
     # Register the node
     try:
         print(f"Registering node with wallet address: {wallet_address}")
-        response = requests.post(
-            f"{seed_node}/register_node",
-            json={"address": wallet_address}
-        )
         
-        if response.status_code == 200:
-            result = response.json()
-            if result.get("result", {}).get("success"):
-                print("Node registered successfully!")
-                print("You should receive 1.0 BT2C as part of the distribution period.")
-                return True
-            else:
-                error = result.get("result", {}).get("error", "Unknown error")
-                print(f"Error registering node: {error}")
-        else:
-            print(f"Error: Received status code {response.status_code}")
-            print(f"Response: {response.text}")
-    except requests.RequestException as e:
+        # Try different API endpoints that might be used by your implementation
+        endpoints = [
+            "/register_node",
+            "/blockchain/register_node",
+            "/api/register_node",
+            "/v1/register_node",
+            "/register"
+        ]
+        
+        for endpoint in endpoints:
+            try:
+                url = f"{seed_node}{endpoint}"
+                print(f"Trying endpoint: {url}")
+                response = requests.post(
+                    url,
+                    json={"address": wallet_address},
+                    timeout=10
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    if result.get("result", {}).get("success"):
+                        print("Node registered successfully!")
+                        print("You should receive 1.0 BT2C as part of the distribution period.")
+                        return True
+                    else:
+                        error = result.get("result", {}).get("error", "Unknown error")
+                        print(f"Error registering node: {error}")
+                        # Continue to try other endpoints
+                else:
+                    print(f"Error: Received status code {response.status_code}")
+                    print(f"Response: {response.text}")
+            except requests.RequestException as e:
+                print(f"Error with endpoint {endpoint}: {str(e)}")
+        
+        print("Failed to register with any endpoint.")
+    except Exception as e:
         print(f"Error registering node: {str(e)}")
     
     return False
@@ -109,23 +137,39 @@ def check_balance(wallet_address, seed_node=None):
             return 0
     
     try:
-        response = requests.get(
-            f"{seed_node}/account",
-            params={"address": wallet_address}
-        )
+        # Try different API endpoints for balance checking
+        endpoints = [
+            "/account",
+            "/blockchain/account",
+            "/api/account",
+            "/v1/account",
+            "/balance"
+        ]
         
-        if response.status_code == 200:
-            result = response.json()
-            balance = result.get("result", {}).get("balance", 0)
-            staked = result.get("result", {}).get("staked", 0)
-            print(f"Wallet: {wallet_address}")
-            print(f"Balance: {balance} BT2C")
-            print(f"Staked: {staked} BT2C")
-            return balance
-        else:
-            print(f"Error: Received status code {response.status_code}")
-            print(f"Response: {response.text}")
-    except requests.RequestException as e:
+        for endpoint in endpoints:
+            try:
+                url = f"{seed_node}{endpoint}"
+                print(f"Checking balance at: {url}")
+                response = requests.get(
+                    url,
+                    params={"address": wallet_address},
+                    timeout=10
+                )
+                
+                if response.status_code == 200:
+                    result = response.json()
+                    balance = result.get("result", {}).get("balance", 0)
+                    staked = result.get("result", {}).get("staked", 0)
+                    print(f"Wallet: {wallet_address}")
+                    print(f"Balance: {balance} BT2C")
+                    print(f"Staked: {staked} BT2C")
+                    return balance
+                else:
+                    print(f"Error: Received status code {response.status_code}")
+                    print(f"Response: {response.text}")
+            except requests.RequestException as e:
+                print(f"Error with endpoint {endpoint}: {str(e)}")
+    except Exception as e:
         print(f"Error checking balance: {str(e)}")
     
     return 0
@@ -135,6 +179,7 @@ def main():
     parser.add_argument("--wallet", help="Wallet address to register")
     parser.add_argument("--seed", help="Seed node URL (will auto-detect if not specified)")
     parser.add_argument("--check", action="store_true", help="Check balance after registration")
+    parser.add_argument("--port", type=int, help="Specific port to try for local node")
     
     args = parser.parse_args()
     
@@ -143,11 +188,29 @@ def main():
     if not wallet_address:
         sys.exit(1)
     
-    # Find available node
-    seed_node = args.seed or find_available_node()
+    # If specific port is provided, try that first
+    if args.port:
+        custom_node = f"http://localhost:{args.port}"
+        print(f"Trying specified port at {custom_node}...")
+        try:
+            response = requests.get(f"{custom_node}/status", timeout=5)
+            if response.status_code == 200:
+                print(f"Successfully connected to {custom_node}")
+                seed_node = custom_node
+            else:
+                print(f"Could not connect to {custom_node}")
+                seed_node = args.seed or find_available_node()
+        except:
+            print(f"Could not connect to {custom_node}")
+            seed_node = args.seed or find_available_node()
+    else:
+        # Find available node
+        seed_node = args.seed or find_available_node()
+    
     if not seed_node:
         print("Error: Could not connect to any seed nodes")
         print("Make sure your node is running or try specifying a seed node with --seed")
+        print("You can also try specifying a specific port with --port")
         sys.exit(1)
     
     # Register node
