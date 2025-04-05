@@ -56,7 +56,9 @@ class Wallet:
             # Generate address from public key
             public_key_bytes = public_key.export_key('DER')
             address_hash = SHA256.new(public_key_bytes).digest()
-            wallet.address = "bt2c_" + base64.b32encode(address_hash[:16]).decode('utf-8').lower()
+            # Remove padding characters (=) from base32 encoding
+            b32_encoded = base64.b32encode(address_hash[:16]).decode('utf-8').lower().rstrip('=')
+            wallet.address = "bt2c_" + b32_encoded
             
             return wallet
         except Exception as e:
