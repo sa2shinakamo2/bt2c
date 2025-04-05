@@ -16,166 +16,317 @@ from pathlib import Path
 import getpass
 import hashlib
 import base64
+import logging
 
 # Constants
 CONFIG_DIR = os.path.expanduser("~/.bt2c/config")
 WALLET_DIR = os.path.expanduser("~/.bt2c/wallets")
 DATA_DIR = os.path.expanduser("~/.bt2c/data")
+BLOCKS_DIR = os.path.join(DATA_DIR, "blocks")
 LOG_DIR = os.path.expanduser("~/.bt2c/logs")
-PEERS_FILE = os.path.expanduser("~/.bt2c/peers.json")
+P2P_PORT = 26656
+DISCOVERY_PORT = 26657
+API_PORT = 8081
+SYNC_INTERVAL = 60  # Seconds between sync attempts
 
 class SimpleValidator:
-    """A simplified validator that doesn't import from blockchain module"""
-    
-    def __init__(self, wallet_address, stake_amount=1.0):
-        self.wallet_address = wallet_address
-        self.stake_amount = stake_amount
-        self.peers = []
+    def __init__(self, wallet_address=None):
+        self.setup_directories()
+        self.setup_logging()
+        
+        self.wallet_address = wallet_address or self.get_wallet_address()
+        if not self.wallet_address:
+            self.wallet_address = create_simple_wallet()
+            
+        self.peers = set()
+        self.blocks = []
+        self.latest_block_height = -1
+        self.latest_block_hash = ""
+        self.rewards = 0.0
         self.running = False
-        self.load_peers()
+        self.stake = 1.0  # Minimum stake amount
         
-    def load_peers(self):
-        """Load peers from file"""
-        if os.path.exists(PEERS_FILE):
-            try:
-                with open(PEERS_FILE, 'r') as f:
-                    self.peers = json.load(f)
-                print(f"Loaded {len(self.peers)} peers from file")
-            except json.JSONDecodeError:
-                print("Error loading peers file")
-                self.peers = []
-        else:
-            self.peers = []
-            
-    def save_peers(self):
-        """Save peers to file"""
-        os.makedirs(os.path.dirname(PEERS_FILE), exist_ok=True)
-        with open(PEERS_FILE, 'w') as f:
-            json.dump(self.peers, f, indent=2)
-            
-    def discover_peers(self):
-        """Discover peers using UDP broadcast"""
-        print("Starting peer discovery...")
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        # Load existing blocks if any
+        self.load_blocks()
         
-        # Bind to discovery port
-        try:
-            sock.bind(('0.0.0.0', 26657))
-        except OSError:
-            print("Warning: Could not bind to discovery port, already in use")
-            return
-            
-        # Start listening thread
-        def listen_for_peers():
-            while self.running:
-                try:
-                    sock.settimeout(1.0)
-                    try:
-                        data, addr = sock.recvfrom(1024)
-                        try:
-                            peer_data = json.loads(data.decode('utf-8'))
-                            peer_addr = f"{addr[0]}:{peer_data.get('port', 26656)}"
-                            if peer_addr not in self.peers:
-                                self.peers.append(peer_addr)
-                                print(f"Discovered new peer: {peer_addr}")
-                                self.save_peers()
-                        except json.JSONDecodeError:
-                            pass
-                    except socket.timeout:
-                        pass
-                except Exception as e:
-                    print(f"Error in peer discovery: {str(e)}")
-                    time.sleep(5)
+        # Setup P2P discovery
+        self.setup_p2p_discovery()
         
-        # Start broadcast thread
-        def broadcast_presence():
-            while self.running:
-                try:
-                    message = json.dumps({
-                        'node_id': self.wallet_address,
-                        'port': 26656,
-                        'timestamp': int(time.time())
-                    }).encode('utf-8')
-                    
-                    sock.sendto(message, ('<broadcast>', 26657))
-                    time.sleep(60)  # Broadcast every minute
-                except Exception as e:
-                    print(f"Error broadcasting presence: {str(e)}")
-                    time.sleep(5)
+    def setup_logging(self):
+        """Setup logging for the validator"""
+        os.makedirs(LOG_DIR, exist_ok=True)
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+            handlers=[
+                logging.FileHandler(os.path.join(LOG_DIR, "validator.log")),
+                logging.StreamHandler()
+            ]
+        )
+        self.logger = logging.getLogger("SimpleValidator")
         
-        # Start threads
-        self.running = True
-        threading.Thread(target=listen_for_peers, daemon=True).start()
-        threading.Thread(target=broadcast_presence, daemon=True).start()
-    
-    def start(self):
-        """Start the validator"""
-        print(f"\n🚀 Starting BT2C Simple Validator")
-        print(f"📝 Wallet: {self.wallet_address}")
-        print(f"💰 Stake: {self.stake_amount} BT2C")
-        
-        # Create necessary directories
+    def setup_directories(self):
+        """Create necessary directories"""
         os.makedirs(CONFIG_DIR, exist_ok=True)
         os.makedirs(WALLET_DIR, exist_ok=True)
         os.makedirs(DATA_DIR, exist_ok=True)
-        os.makedirs(os.path.join(DATA_DIR, "pending_transactions"), exist_ok=True)
-        os.makedirs(LOG_DIR, exist_ok=True)
+        os.makedirs(BLOCKS_DIR, exist_ok=True)
         
-        # Start peer discovery
-        self.discover_peers()
+    def get_wallet_address(self):
+        """Get the wallet address from config or user input"""
+        config_file = os.path.join(CONFIG_DIR, "validator.json")
+        if os.path.exists(config_file):
+            with open(config_file, 'r') as f:
+                config = json.load(f)
+                return config.get("wallet_address")
+        return None
         
-        # Simulate validation process
-        print("\n✅ Validator node is running")
-        print("🔄 Waiting for transactions to validate...")
-        
+    def load_blocks(self):
+        """Load existing blocks from disk"""
+        latest_file = os.path.join(BLOCKS_DIR, "latest_block.json")
+        if os.path.exists(latest_file):
+            try:
+                with open(latest_file, 'r') as f:
+                    latest_block = json.load(f)
+                    self.latest_block_height = latest_block.get("height", -1)
+                    self.latest_block_hash = latest_block.get("hash", "")
+                    self.logger.info(f"Loaded latest block: height={self.latest_block_height}, hash={self.latest_block_hash}")
+            except json.JSONDecodeError:
+                self.logger.error("Failed to load latest block")
+                
+    def setup_p2p_discovery(self):
+        """Setup P2P discovery to find other nodes"""
         try:
-            block_time = 300  # 5 minutes
-            last_block_time = time.time()
+            # Try to use existing P2P discovery service
+            import socket
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            sock.bind(('0.0.0.0', DISCOVERY_PORT))
+            sock.close()
             
-            while True:
-                current_time = time.time()
-                
-                # Create a block every 5 minutes
-                if current_time - last_block_time >= block_time:
-                    self.create_block()
-                    last_block_time = current_time
-                
-                # Sleep to avoid high CPU usage
+            # If we get here, port is available, start discovery service
+            self.discovery_thread = threading.Thread(target=self.run_discovery_service)
+            self.discovery_thread.daemon = True
+            self.discovery_thread.start()
+            self.logger.info("Started P2P discovery service")
+        except OSError:
+            self.logger.warning("Could not bind to discovery port, already in use")
+            
+    def run_discovery_service(self):
+        """Run the P2P discovery service"""
+        import socket
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        sock.bind(('0.0.0.0', DISCOVERY_PORT))
+        
+        while True:
+            try:
+                data, addr = sock.recvfrom(1024)
+                if data == b"BT2C_DISCOVERY":
+                    sock.sendto(f"BT2C_NODE:{P2P_PORT}".encode(), addr)
+                    self.peers.add(f"{addr[0]}:{P2P_PORT}")
+                    self.logger.info(f"Discovered peer: {addr[0]}:{P2P_PORT}")
+            except Exception as e:
+                self.logger.error(f"Discovery error: {str(e)}")
                 time.sleep(1)
                 
-        except KeyboardInterrupt:
-            print("\n👋 Shutting down validator...")
-            self.running = False
-    
-    def create_block(self):
-        """Simulate creating a new block"""
-        # In a real implementation, this would validate transactions and create a block
-        block_reward = 21.0  # Initial block reward
+    def discover_peers(self):
+        """Discover peers on the network"""
+        import socket
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+        sock.settimeout(2)
         
-        # Simulate block creation
+        try:
+            sock.sendto(b"BT2C_DISCOVERY", ('<broadcast>', DISCOVERY_PORT))
+            
+            start_time = time.time()
+            while time.time() - start_time < 5:  # Search for 5 seconds
+                try:
+                    data, addr = sock.recvfrom(1024)
+                    if data.startswith(b"BT2C_NODE:"):
+                        port = int(data.split(b":")[1])
+                        peer = f"{addr[0]}:{port}"
+                        self.peers.add(peer)
+                        self.logger.info(f"Found peer: {peer}")
+                except socket.timeout:
+                    pass
+        except Exception as e:
+            self.logger.error(f"Error discovering peers: {str(e)}")
+        finally:
+            sock.close()
+            
+        self.logger.info(f"Discovered {len(self.peers)} peers")
+        return list(self.peers)
+        
+    def sync_blockchain(self):
+        """Synchronize blockchain with peers"""
+        if not self.peers:
+            self.discover_peers()
+            if not self.peers:
+                self.logger.warning("No peers found for blockchain synchronization")
+                return False
+                
+        # Try to sync with each peer
+        for peer in self.peers:
+            try:
+                self.logger.info(f"Attempting to sync with peer: {peer}")
+                peer_ip = peer.split(":")[0]
+                
+                # Get peer's latest block
+                import requests
+                response = requests.get(f"http://{peer_ip}:{API_PORT}/blockchain/blocks?limit=1")
+                if response.status_code != 200:
+                    self.logger.warning(f"Failed to get latest block from peer: {peer}")
+                    continue
+                    
+                peer_blocks = response.json().get("blocks", [])
+                if not peer_blocks:
+                    self.logger.warning(f"Peer has no blocks: {peer}")
+                    continue
+                    
+                peer_latest_block = peer_blocks[0]
+                peer_height = peer_latest_block.get("height")
+                
+                if peer_height <= self.latest_block_height:
+                    self.logger.info(f"Already up to date with peer: {peer}")
+                    continue
+                    
+                # We need to sync blocks
+                self.logger.info(f"Syncing blocks from height {self.latest_block_height + 1} to {peer_height}")
+                
+                # Get blocks in batches
+                current_height = self.latest_block_height + 1
+                while current_height <= peer_height:
+                    batch_size = min(20, peer_height - current_height + 1)
+                    response = requests.get(f"http://{peer_ip}:{API_PORT}/blockchain/blocks?start={current_height}&limit={batch_size}")
+                    
+                    if response.status_code != 200:
+                        self.logger.warning(f"Failed to get blocks from peer: {peer}")
+                        break
+                        
+                    batch_blocks = response.json().get("blocks", [])
+                    if not batch_blocks:
+                        break
+                        
+                    # Save blocks to disk
+                    for block in batch_blocks:
+                        block_height = block.get("height")
+                        block_file = os.path.join(BLOCKS_DIR, f"block_{block_height}.json")
+                        
+                        with open(block_file, 'w') as f:
+                            json.dump(block, f, indent=2)
+                            
+                        # Update latest block info
+                        if block_height > self.latest_block_height:
+                            self.latest_block_height = block_height
+                            self.latest_block_hash = block.get("hash")
+                            
+                            # Save latest block info
+                            with open(os.path.join(BLOCKS_DIR, "latest_block.json"), 'w') as f:
+                                json.dump(block, f, indent=2)
+                                
+                    self.logger.info(f"Synced blocks {current_height} to {current_height + len(batch_blocks) - 1}")
+                    current_height += len(batch_blocks)
+                    
+                self.logger.info(f"Blockchain synchronized to height {self.latest_block_height}")
+                return True
+                
+            except Exception as e:
+                self.logger.error(f"Error syncing with peer {peer}: {str(e)}")
+                
+        return False
+        
+    def create_block(self):
+        """Create a new block"""
+        # In a real implementation, this would include transaction validation
+        # and consensus mechanisms
+        
+        # For simplicity, we'll just create a block with a timestamp and hash
+        block_height = self.latest_block_height + 1
+        timestamp = int(time.time())
+        
+        # Simple hash based on previous block and timestamp
+        block_hash = f"block_{block_height}_{timestamp}_{os.urandom(4).hex()}"
+        
         block = {
-            "timestamp": int(time.time()),
-            "validator": self.wallet_address,
+            "height": block_height,
+            "timestamp": timestamp,
             "transactions": [],
-            "reward": block_reward
+            "validator": self.wallet_address,
+            "reward": 21.0,  # Initial block reward
+            "hash": block_hash,
+            "previous_hash": self.latest_block_hash
         }
         
-        # Save block to file
-        block_dir = os.path.join(DATA_DIR, "blocks")
-        os.makedirs(block_dir, exist_ok=True)
-        
-        # Get next block number
-        block_files = os.listdir(block_dir) if os.path.exists(block_dir) else []
-        block_number = len(block_files)
-        
-        block_file = os.path.join(block_dir, f"{block_number}.json")
+        # Save block to disk
+        block_file = os.path.join(BLOCKS_DIR, f"block_{block_height}.json")
         with open(block_file, 'w') as f:
             json.dump(block, f, indent=2)
+            
+        # Update latest block info
+        self.latest_block_height = block_height
+        self.latest_block_hash = block_hash
         
-        print(f"🎉 Created block #{block_number} with reward {block_reward} BT2C")
-        print(f"💰 Total rewards: {block_reward * (block_number + 1)} BT2C")
+        # Save latest block info
+        with open(os.path.join(BLOCKS_DIR, "latest_block.json"), 'w') as f:
+            json.dump(block, f, indent=2)
+            
+        # Update rewards
+        self.rewards += block["reward"]
+        
+        self.logger.info(f"Created block #{block_height} with reward {block['reward']} BT2C")
+        self.logger.info(f"Total rewards: {self.rewards} BT2C")
+        
+        return block
+        
+    def run(self):
+        """Run the validator"""
+        self.running = True
+        self.logger.info(f"Starting validator with wallet: {self.wallet_address}")
+        self.logger.info(f"Stake: {self.stake} BT2C")
+        
+        print(f"💰 Stake: {self.stake} BT2C")
+        print("Starting peer discovery...")
+        
+        peers = self.discover_peers()
+        if peers:
+            print(f"✅ Validator node is running")
+            print(f"Waiting for transactions to validate...")
+            
+            # Initial blockchain sync
+            print("Synchronizing blockchain...")
+            self.sync_blockchain()
+            
+            # Main validation loop
+            while self.running:
+                try:
+                    # Periodically sync blockchain
+                    if int(time.time()) % SYNC_INTERVAL == 0:
+                        self.sync_blockchain()
+                    
+                    # Create a block every 5 minutes (300 seconds)
+                    # In a real implementation, this would be based on consensus
+                    if self.latest_block_height == -1 or int(time.time()) % 300 == 0:
+                        self.create_block()
+                        
+                    time.sleep(1)
+                except KeyboardInterrupt:
+                    self.running = False
+                except Exception as e:
+                    self.logger.error(f"Error in validation loop: {str(e)}")
+                    time.sleep(5)
+        else:
+            self.logger.error("No peers found, cannot start validator")
+            print("❌ No peers found, cannot start validator")
+            
+        print("Shutting down validator...")
+        
+    def stop(self):
+        """Stop the validator"""
+        self.running = False
 
 def create_simple_wallet():
     """Create a simple wallet without importing blockchain modules"""
@@ -284,8 +435,8 @@ def main():
         wallet_address = create_simple_wallet()
     
     # Create and start validator
-    validator = SimpleValidator(wallet_address, args.stake)
-    validator.start()
+    validator = SimpleValidator(wallet_address)
+    validator.run()
 
 if __name__ == "__main__":
     main()
