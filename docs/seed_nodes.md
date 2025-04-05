@@ -1,15 +1,19 @@
-# BT2C Seed Nodes Guide
+# BT2C Node Discovery Guide
 
-This guide provides detailed instructions for connecting to existing BT2C seed nodes and setting up new seed nodes to support the network.
+This guide provides detailed instructions for connecting to the BT2C network using our P2P discovery mechanism and setting up seed nodes to support the network.
 
 ## Table of Contents
 
-1. [Connecting to Existing Seed Nodes](#connecting-to-existing-seed-nodes)
+1. [P2P Discovery (Recommended)](#p2p-discovery-recommended)
+   - [How P2P Discovery Works](#how-p2p-discovery-works)
+   - [Using P2P Discovery](#using-p2p-discovery)
+   - [Troubleshooting P2P Discovery](#troubleshooting-p2p-discovery)
+2. [Connecting to Existing Seed Nodes](#connecting-to-existing-seed-nodes)
    - [Seed Node Addresses](#seed-node-addresses)
    - [Configuration Steps](#configuration-steps)
    - [Verifying Connection](#verifying-connection)
    - [Troubleshooting](#troubleshooting)
-2. [Setting Up a New Seed Node](#setting-up-a-new-seed-node)
+3. [Setting Up a New Seed Node](#setting-up-a-new-seed-node)
    - [Hardware Requirements](#hardware-requirements)
    - [Dependency Options](#dependency-options)
    - [Installation](#installation)
@@ -17,14 +21,77 @@ This guide provides detailed instructions for connecting to existing BT2C seed n
    - [Registering Your Seed Node](#registering-your-seed-node)
    - [Maintenance Best Practices](#maintenance-best-practices)
 
+## P2P Discovery (Recommended)
+
+The BT2C network now uses a decentralized peer-to-peer discovery mechanism to help validators find each other without relying on centralized seed nodes.
+
+### How P2P Discovery Works
+
+The P2P discovery mechanism:
+
+1. Uses UDP broadcast to find other nodes on the local network
+2. Maintains a list of known peers and shares them with new validators
+3. Periodically exchanges peer information to keep the network connected
+4. Works across different networks through peer propagation
+5. Eliminates the need for centralized seed nodes
+
+### Using P2P Discovery
+
+1. **Start the P2P discovery service**:
+
+   ```bash
+   python p2p_discovery.py
+   ```
+
+   This will:
+   - Start listening for peer announcements on port 26657
+   - Broadcast your presence to the network
+   - Build a list of known peers
+
+2. **Get a list of seed nodes from the P2P network**:
+
+   ```bash
+   python p2p_discovery.py --get-seeds
+   ```
+
+   This will output a JSON array of available seed nodes discovered through the P2P network.
+
+3. **Use the discovered seeds in your validator configuration**:
+
+   ```json
+   "network": {
+     "listen_addr": "0.0.0.0:8334",
+     "external_addr": "your_public_ip:8334",
+     "seeds": ["discovered_peer_1:8334", "discovered_peer_2:8334"]
+   }
+   ```
+
+### Troubleshooting P2P Discovery
+
+If you're having trouble with P2P discovery:
+
+1. **Check network connectivity**:
+   - Ensure UDP port 26657 is not blocked by firewalls
+   - Verify that broadcast packets are allowed on your network
+
+2. **Try manual peer exchange**:
+   - If you know another validator's IP, add it directly to your peers list
+   - Share your IP with other validators to add manually
+
+3. **Run the discovery service with verbose logging**:
+   ```bash
+   python p2p_discovery.py --verbose
+   ```
+
 ## Connecting to Existing Seed Nodes
+
+While P2P discovery is the recommended approach, you can still connect to existing seed nodes if available.
 
 ### Seed Node Addresses
 
 The BT2C network currently maintains the following seed nodes:
 
-- `seed1.bt2c.net:26656`
-- `seed2.bt2c.net:26656`
+- `127.0.0.1:26656` (local development seed)
 
 These seed nodes serve as entry points to the network and help new nodes discover peers.
 
@@ -35,7 +102,7 @@ These seed nodes serve as entry points to the network and help new nodes discove
    Navigate to your validator configuration directory:
 
    ```bash
-   cd /path/to/bt2c/mainnet/validators/your_validator/config
+   mkdir -p ~/.bt2c/config
    ```
 
 2. **Update the `validator.json` file**:
@@ -43,22 +110,20 @@ These seed nodes serve as entry points to the network and help new nodes discove
    Open the file with your preferred text editor:
 
    ```bash
-   nano validator.json
+   nano ~/.bt2c/config/validator.json
    ```
 
 3. **Add seed nodes to the configuration**:
 
-   Locate the `network` section and ensure the `seeds` field includes the official seed nodes:
+   Locate the `network` section and ensure the `seeds` field includes the seed nodes:
 
    ```json
    "network": {
-     "listen_addr": "tcp://0.0.0.0:26656",
-     "external_addr": "tcp://your_public_ip:26656",
+     "listen_addr": "0.0.0.0:8334",
+     "external_addr": "your_public_ip:8334",
      "seeds": [
-       "seed1.bt2c.net:26656",
-       "seed2.bt2c.net:26656"
-     ],
-     "persistent_peers": []
+       "127.0.0.1:26656"
+     ]
    }
    ```
 
@@ -67,48 +132,51 @@ These seed nodes serve as entry points to the network and help new nodes discove
 4. **Restart your validator node**:
 
    ```bash
-   docker-compose restart validator
+   python run_node.py --restart
    ```
 
 ### Verifying Connection
 
-To verify that your node is successfully connected to the seed nodes:
+To verify that your node is successfully connected to the network:
 
 1. **Check your node's peers**:
 
    ```bash
-   curl http://localhost:26657/net_info | jq '.result.peers'
+   python run_node.py --peers
    ```
 
-2. **Look for connections to the seed nodes**:
+2. **Look for connections to other nodes**:
 
-   The output should include entries with remote addresses matching the seed node IPs.
+   The output should include entries with remote addresses of connected peers.
 
 ### Troubleshooting
 
-If you're having trouble connecting to seed nodes:
+If you're having trouble connecting to the network:
 
 1. **Check firewall settings**:
-   - Ensure port 26656 is open for both incoming and outgoing TCP connections
+   - Ensure port 8334 is open for both incoming and outgoing TCP connections
 
 2. **Verify network connectivity**:
    - Test basic connectivity with:
      ```bash
-     telnet seed1.bt2c.net 26656
+     telnet 127.0.0.1 26656
      ```
 
 3. **Check logs for connection errors**:
    - View validator logs:
      ```bash
-     docker-compose logs --tail=100 validator
+     tail -f ~/.bt2c/logs/validator.log
      ```
 
-4. **Try alternative seed nodes**:
-   - If one seed node is unresponsive, try connecting only to the other
+4. **Try using P2P discovery**:
+   - Run the P2P discovery service to find additional peers:
+     ```bash
+     python p2p_discovery.py
+     ```
 
 ## Setting Up a New Seed Node
 
-Seed nodes are critical infrastructure for the BT2C network. By running a seed node, you help new validators join the network and improve overall network resilience.
+While the P2P discovery mechanism reduces the need for dedicated seed nodes, you can still set up a seed node to help bootstrap the network.
 
 ### Hardware Requirements
 
@@ -138,39 +206,31 @@ For seed nodes, choose the appropriate requirements file:
    ```
    Complete set of dependencies including development and testing tools.
 
-3. **Minimal Requirements** (Not suitable for seed nodes):
-   ```bash
-   pip install -r requirements.minimal.txt
-   ```
-   Contains only basic crypto libraries, insufficient for seed node functionality.
-
 Seed nodes should use either the validator-requirements.txt or the full requirements.txt.
 
 ### Installation
 
 1. **Set up a server** with the recommended specifications and a stable, high-bandwidth internet connection.
 
-2. **Install Docker and Docker Compose**:
-
-   ```bash
-   sudo apt update
-   sudo apt install -y docker.io docker-compose
-   sudo systemctl enable docker
-   sudo systemctl start docker
-   ```
-
-3. **Clone the BT2C repository**:
+2. **Clone the BT2C repository**:
 
    ```bash
    git clone https://github.com/sa2shinakamo2/bt2c.git
    cd bt2c
    ```
 
-4. **Create a seed node directory structure**:
+3. **Install dependencies**:
 
    ```bash
-   mkdir -p mainnet/seed_nodes/seed1/config
-   mkdir -p mainnet/seed_nodes/seed1/data
+   pip install -r validator-requirements.txt
+   ```
+
+4. **Create necessary directories**:
+
+   ```bash
+   mkdir -p ~/.bt2c/config
+   mkdir -p ~/.bt2c/data
+   mkdir -p ~/.bt2c/logs
    ```
 
 ### Configuration
@@ -178,123 +238,42 @@ Seed nodes should use either the validator-requirements.txt or the full requirem
 1. **Create a seed node configuration file**:
 
    ```bash
-   nano mainnet/seed_nodes/seed1/config/seed_node.json
+   nano ~/.bt2c/config/seed_node.json
    ```
 
 2. **Add the following configuration**:
 
    ```json
    {
-     "node_id": "your_seed_node_id",
+     "node_name": "seed-node",
      "network": {
-       "listen_addr": "tcp://0.0.0.0:26656",
-       "external_addr": "tcp://your_public_ip:26656",
-       "seeds": [
-         "seed1.bt2c.net:26656",
-         "seed2.bt2c.net:26656"
-       ],
-       "persistent_peers": []
-     },
-     "p2p": {
-       "seed_mode": true,
+       "listen_addr": "0.0.0.0:26656",
+       "external_addr": "your_public_ip:26656",
+       "seeds": [],
        "max_num_inbound_peers": 100,
-       "max_num_outbound_peers": 40,
+       "max_num_outbound_peers": 30,
        "flush_throttle_timeout": "100ms",
        "max_packet_msg_payload_size": 1024,
        "send_rate": 5120000,
        "recv_rate": 5120000
      },
-     "rpc": {
-       "laddr": "tcp://0.0.0.0:26657",
-       "cors_allowed_origins": []
-     },
-     "prometheus": {
-       "enabled": true,
-       "address": "0.0.0.0:26660"
-     }
+     "is_seed_node": true,
+     "p2p_discovery": true
    }
    ```
 
-   Replace `your_seed_node_id` with a unique identifier for your seed node and `your_public_ip` with your server's public IP address.
+   Replace `your_public_ip` with your server's public IP address.
 
-3. **Create a Docker Compose file**:
-
-   ```bash
-   nano mainnet/seed_nodes/seed1/docker-compose.yml
-   ```
-
-4. **Add the following configuration**:
-
-   ```yaml
-   version: '3'
-   services:
-     seed_node:
-       image: bt2c/node:latest
-       container_name: bt2c_seed_node
-       command: ["--seed-mode", "--config", "/config/seed_node.json"]
-       ports:
-         - "26656:26656"
-         - "26657:26657"
-         - "26660:26660"
-       volumes:
-         - ./config:/config
-         - ./data:/data
-       restart: always
-       logging:
-         driver: "json-file"
-         options:
-           max-size: "200m"
-           max-file: "10"
-       environment:
-         - NODE_TYPE=seed
-   
-     prometheus:
-       image: prom/prometheus:latest
-       container_name: bt2c_prometheus
-       ports:
-         - "9090:9090"
-       volumes:
-         - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
-       restart: always
-       depends_on:
-         - seed_node
-   
-     grafana:
-       image: grafana/grafana:latest
-       container_name: bt2c_grafana
-       ports:
-         - "3000:3000"
-       volumes:
-         - ./data/grafana:/var/lib/grafana
-       restart: always
-       depends_on:
-         - prometheus
-   ```
-
-5. **Create a Prometheus configuration file**:
+3. **Start the P2P discovery service**:
 
    ```bash
-   nano mainnet/seed_nodes/seed1/config/prometheus.yml
+   python p2p_discovery.py &
    ```
 
-6. **Add the following configuration**:
-
-   ```yaml
-   global:
-     scrape_interval: 15s
-     evaluation_interval: 15s
-   
-   scrape_configs:
-     - job_name: 'bt2c_seed_node'
-       static_configs:
-         - targets: ['seed_node:26660']
-   ```
-
-7. **Start your seed node**:
+4. **Start your seed node**:
 
    ```bash
-   cd mainnet/seed_nodes/seed1
-   docker-compose up -d
+   python run_node.py --config ~/.bt2c/config/seed_node.json --seed
    ```
 
 ### Registering Your Seed Node
@@ -302,8 +281,8 @@ Seed nodes should use either the validator-requirements.txt or the full requirem
 To register your seed node with the BT2C network:
 
 1. **Ensure your seed node is stable and has synced with the network**:
-   - Monitor logs: `docker-compose logs -f seed_node`
-   - Check sync status: `curl http://localhost:26657/status | jq '.result.sync_info'`
+   - Monitor logs: `tail -f ~/.bt2c/logs/seed.log`
+   - Check sync status: `python run_node.py --status`
 
 2. **Set up DNS (recommended)**:
    - Create a DNS A record (e.g., `your-seed.example.com`) pointing to your server's IP address
@@ -315,8 +294,7 @@ To register your seed node with the BT2C network:
    - Include your seed node ID, public address, and contact information
 
 4. **Announce your seed node**:
-   - Post in the BT2C community forum
-   - Share your seed node address: `your_node_id@your_public_ip:26656` or `your_node_id@your-seed.example.com:26656`
+   - Share your seed node address with other validators
 
 ### Maintenance Best Practices
 

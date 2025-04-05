@@ -15,7 +15,7 @@ Welcome to the BT2C validator network! This guide will help you quickly set up a
 
 #### Software Requirements
 
-- Docker & Docker Compose
+- Python 3.8+
 - Git
 - 2048-bit RSA key pair
 
@@ -44,12 +44,37 @@ BT2C offers different requirement files based on your needs:
 For validator nodes, always use either the validator-requirements.txt or the full requirements.txt.
 
 ### Rewards Structure
-- Developer node reward: 1000 BT2C (first validator only)
-- Early validator reward: 1 BT2C per validator (distribution period)
-- Distribution period: 14 days from network relaunch (until April 6, 2025)
+- Developer node reward: 100 BT2C (first validator only)
+- Early validator reward: 1.0 BT2C per validator (distribution period)
+- Distribution period: 14 days from mainnet launch (until April 6, 2025)
 - Required uptime: 95%
 
-## 🔧 Setup Steps
+## 🔧 Easy Setup (Recommended)
+
+The easiest way to set up a validator node is to use our automated setup script:
+
+```bash
+# Clone repository
+git clone https://github.com/sa2shinakamo2/bt2c.git
+cd bt2c
+
+# Install dependencies
+pip install -r validator-requirements.txt
+
+# Run the easy setup script
+python easy_validator_setup.py
+```
+
+The script will:
+- Create necessary directories
+- Generate a new wallet (or use an existing one)
+- Configure your validator node
+- Discover other nodes via P2P
+- Start validating with your specified stake
+
+## 🔄 Manual Setup (Alternative)
+
+If you prefer to set up manually:
 
 1. **Create Your Wallet**
    ```bash
@@ -62,75 +87,61 @@ For validator nodes, always use either the validator-requirements.txt or the ful
    - Public key
    ```
 
-2. **Prepare Your Server**
+2. **Prepare Your Environment**
    ```bash
-   # Update system
-   sudo apt update && sudo apt upgrade -y
-   
-   # Install dependencies
-   sudo apt install -y curl git build-essential
-   
-   # Install Docker
-   curl -fsSL https://get.docker.com -o get-docker.sh
-   sudo sh get-docker.sh
-   sudo usermod -aG docker $USER
+   # Create necessary directories
+   mkdir -p ~/.bt2c/config
+   mkdir -p ~/.bt2c/wallets
+   mkdir -p ~/.bt2c/data/pending_transactions
    ```
 
-3. **Get the Code**
+3. **Configure Your Node**
    ```bash
-   # Clone repository
-   git clone https://github.com/sa2shinakamo2/bt2c.git
-   cd bt2c
-   
-   # Set up environment
-   cp env.template .env
-   ```
-
-4. **Configure Your Node**
-   ```bash
-   # Edit validator.json file
-   nano mainnet/validators/validator1/config/validator.json
-   
-   # Required settings:
+   # Create validator.json file
+   cat > ~/.bt2c/config/validator.json << EOF
    {
      "node_name": "your-node-name",
      "wallet_address": "your-wallet-address",
      "stake_amount": 1.0,
      "network": {
        "listen_addr": "0.0.0.0:8334",
-       "external_addr": "0.0.0.0:8334",
-       "seeds": ["bt2c.network:8334"]  # Developer node serving as seed
-     }
+       "external_addr": "127.0.0.1:8334",
+       "seeds": []
+     },
+     "blockchain": {
+       "max_supply": 21000000,
+       "block_reward": 21.0,
+       "halving_period": 126144000,
+       "block_time": 300
+     },
+     "validation": {
+       "min_stake": 1.0,
+       "early_reward": 1.0,
+       "dev_reward": 100.0,
+       "distribution_period": 1209600
+     },
+     "security": {
+       "rsa_bits": 2048,
+       "seed_bits": 256
+     },
+     "is_validator": true
    }
+   EOF
+   ```
+
+4. **Discover Peers**
+   ```bash
+   # Start P2P discovery service
+   python p2p_discovery.py &
+   
+   # Get seed nodes
+   python p2p_discovery.py --get-seeds
    ```
 
 5. **Start Your Node**
    ```bash
-   # Build and start
-   docker-compose -f docker-compose.validator.yml up -d
-   
-   # Check logs
-   docker-compose logs -f
-   ```
-
-6. **Register as Validator**
-   ```bash
-   # Register node (replace with your details)
-   docker-compose exec validator ./cli.sh register \
-     --wallet-address "your-wallet-address" \
-     --stake-amount 1.0
-   ```
-
-7. **Verify Your Node**
-   ```bash
-   # Verify validator is connected to the network
-   docker-compose exec validator ./cli.sh network peers
-   
-   # Check if your validator is participating in consensus
-   docker-compose exec validator ./cli.sh validator status
-   
-   # Verify blockchain synchronization
-   docker-compose exec validator ./cli.sh blockchain status
+   # Start validator with your configuration
+   python run_node.py --config ~/.bt2c/config/validator.json --validator --stake 1.0
    ```
 
 ## 📊 Monitor Your Node
@@ -138,27 +149,27 @@ For validator nodes, always use either the validator-requirements.txt or the ful
 ### Basic Commands
 ```bash
 # Check node status
-docker-compose exec validator ./cli.sh status
+python run_node.py --status
 
 # View validator status
-docker-compose exec validator ./cli.sh validator status
+python run_node.py --validator-status
 
 # Check sync status
-docker-compose exec validator ./cli.sh sync status
+python run_node.py --sync-status
 ```
 
 ### Common Issues
 
 1. **Node Not Syncing**
-   ```bash
-   # Restart node
-   docker-compose -f docker-compose.validator.yml restart
-   ```
+   - Make sure P2P discovery is running
+   - Check if your validator can find other nodes
+   - Restart the node: `python run_node.py --restart`
 
 2. **Connection Issues**
    - Check firewall settings
    - Verify port 8334 is open
    - Ensure stable internet connection
+   - Run P2P discovery: `python p2p_discovery.py`
 
 ## 🔐 Security Best Practices
 
@@ -173,13 +184,13 @@ docker-compose exec validator ./cli.sh sync status
    sudo apt update && sudo apt upgrade -y
    
    # Check logs
-   docker-compose logs --tail=100
+   tail -f ~/.bt2c/logs/validator.log
    ```
 
 3. **Backup Important Files**
    ```bash
    # Backup configuration
-   cp mainnet/validators/validator1/config/validator.json validator.json.backup
+   cp ~/.bt2c/config/validator.json ~/validator.json.backup
    
    # Backup wallet data
    cp -r ~/.bt2c/wallets ~/bt2c-wallets-backup
@@ -187,14 +198,12 @@ docker-compose exec validator ./cli.sh sync status
 
 ## 📱 Stay Connected
 
-- Documentation: https://docs.bt2c.network
-- Discord: https://discord.gg/bt2c
+- Documentation: https://bt2c.net/docs
 - GitHub: https://github.com/sa2shinakamo2/bt2c
 
 ## 🆘 Need Help?
 
 1. Check our [Validator Guide](docs/VALIDATOR_GUIDE.md) for detailed instructions
-2. Join our Discord community for support
-3. Open an issue on GitHub for technical problems
+2. Open an issue on GitHub for technical problems
 
 Remember to maintain high uptime (95%+) to maximize your rewards!
