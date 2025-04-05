@@ -183,12 +183,18 @@ class SimpleValidator:
         if not self.peers:
             # Try to connect to the developer node directly using common local IPs
             common_ips = [
-                "192.168.1.72",  # Previously discovered IP
-                "192.168.1.1",   # Common router IP
-                "192.168.0.1",   # Common router IP
-                "10.0.0.1",      # Common network IP
-                "127.0.0.1"      # Localhost (if running on same machine)
+                "127.0.0.1",      # Localhost (if running on same machine)
+                # Use common local network patterns instead of hardcoded IPs
+                # The validator will scan these common local network addresses
+                "192.168.0.1",    # Common router IP
+                "192.168.1.1",    # Common router IP
+                "10.0.0.1"        # Common network IP
             ]
+            
+            # Also scan local network for common IP patterns
+            for subnet in ["192.168.0.", "192.168.1.", "10.0.0."]:
+                for i in range(1, 10):  # Just scan a few IPs to avoid excessive scanning
+                    common_ips.append(f"{subnet}{i}")
             
             for ip in common_ips:
                 try:
@@ -211,9 +217,12 @@ class SimpleValidator:
             print(f"✅ Found {len(self.peers)} peers total")
         else:
             self.logger.warning("No peers found")
-            print("⚠️ No peers found. Will use hardcoded seed node IP: 192.168.1.72")
-            # Add hardcoded seed node as fallback
-            self.peers.add("192.168.1.72:26656")
+            print("⚠️ No peers found. Please ensure your nodes are on the same network.")
+            # Instead of hardcoding an IP, prompt the user for a seed node
+            seed_ip = input("Enter seed node IP address (leave empty to skip): ")
+            if seed_ip:
+                self.peers.add(f"{seed_ip}:{P2P_PORT}")
+                print(f"✅ Added seed node: {seed_ip}:{P2P_PORT}")
             
         return list(self.peers)
         
