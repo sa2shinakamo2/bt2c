@@ -9,8 +9,16 @@ import sys
 import json
 import time
 import argparse
-import requests
 from pathlib import Path
+
+# Check for requests library and install if missing
+try:
+    import requests
+except ImportError:
+    print("Installing requests library...")
+    import subprocess
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "requests"])
+    import requests
 
 # Ensure we're in the project root
 project_root = os.path.dirname(os.path.abspath(__file__))
