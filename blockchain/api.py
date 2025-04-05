@@ -100,6 +100,11 @@ class TransactionResponse(BaseModel):
     amount: float
     memo: Optional[str] = None
 
+class ValidatorRegistrationRequest(BaseModel):
+    """Validator registration request model."""
+    address: str
+    stake_amount: float
+
 @app.on_event("startup")
 async def startup_event():
     """Initialize the blockchain on startup."""
@@ -313,6 +318,63 @@ async def wallet_info(address: str):
         "blocks_validated": blocks_validated,
         "type": node_type
     }
+
+@app.post("/blockchain/validator/register")
+async def register_validator(request: ValidatorRegistrationRequest):
+    """Register a new validator or update stake for an existing validator."""
+    if not hasattr(app.state, "blockchain"):
+        raise HTTPException(status_code=503, detail="Node not initialized")
+    
+    # Check if the wallet has sufficient balance
+    balance = app.state.blockchain.get_balance(request.address)
+    if balance < request.stake_amount:
+        raise HTTPException(status_code=400, detail=f"Insufficient balance: {balance} BT2C, need {request.stake_amount} BT2C")
+    
+    # Check if stake amount meets minimum requirement
+    min_stake = app.state.blockchain.staking_manager.config["parameters"]["min_stake"]
+    if request.stake_amount < min_stake:
+        raise HTTPException(status_code=400, detail=f"Stake amount below minimum: {request.stake_amount} BT2C, need at least {min_stake} BT2C")
+    
+    try:
+        # Create a staking transaction
+        tx = Transaction(
+            sender_address=request.address,
+            recipient_address="bt2c_system",  # System address for staking
+            amount=request.stake_amount,
+            transaction_type=TransactionType.STAKE
+        )
+        
+        # Add transaction to pending pool
+        tx_id = app.state.blockchain.add_transaction(tx)
+        
+        # Register the validator
+        success = app.state.blockchain.staking_manager.register_validator(
+            pubkey=request.address,
+            stake=request.stake_amount
+        )
+        
+        if not success:
+            raise HTTPException(status_code=400, detail="Failed to register validator")
+        
+        # Update metrics
+        ACTIVE_VALIDATORS.set(len(app.state.blockchain.validators))
+        total_staked = sum(v.stake for v in app.state.blockchain.validators.values())
+        STAKED_AMOUNT.set(total_staked)
+        
+        logger.info("validator_registered", 
+                   address=request.address, 
+                   stake=request.stake_amount,
+                   transaction_id=tx_id)
+        
+        return {
+            "transaction_id": tx_id,
+            "status": "pending",
+            "block_height": None,
+            "timestamp": int(time.time())
+        }
+    except Exception as e:
+        logger.error("validator_registration_error", error=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
 
 # Additional endpoints will be added for:
 # - /peers (GET, POST)
