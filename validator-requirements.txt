@@ -1,0 +1,29 @@
+# Core crypto dependencies
+pycryptodome==3.19.0
+cryptography==44.0.2
+coincurve==19.0.1
+base58==2.1.1
+
+# Networking and communication
+aiohttp==3.9.1
+websockets==12.0
+
+# Database
+sqlalchemy==2.0.25
+aiosqlite==0.19.0
+
+# Logging and utilities
+structlog==24.1.0
+
+# Wallet
+mnemonic==0.21
+hdwallet==2.2.1
+
+# Blockchain specific
+eth-hash==0.5.2
+eth-keys==0.4.0
+eth-utils==2.2.2
+
+# Monitoring (optional but recommended for validators)
+prometheus-client==0.17.1
+psutil==5.9.6
