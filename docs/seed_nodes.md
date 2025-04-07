@@ -20,6 +20,13 @@ This guide provides detailed instructions for connecting to the BT2C network usi
    - [Configuration](#configuration)
    - [Registering Your Seed Node](#registering-your-seed-node)
    - [Maintenance Best Practices](#maintenance-best-practices)
+4. [Home Machine Seed Node Setup](#home-machine-seed-node-setup)
+   - [Prerequisites](#prerequisites)
+   - [Dynamic DNS Setup](#dynamic-dns-setup)
+   - [Home Seed Node Configuration](#home-seed-node-configuration)
+   - [Auto-Start on Boot](#auto-start-on-boot)
+   - [Web-Based Seed Node Registry](#web-based-seed-node-registry)
+   - [Monitoring Your Home Seed Node](#monitoring-your-home-seed-node)
 
 ## P2P Discovery (Recommended)
 
@@ -321,4 +328,161 @@ To ensure your seed node remains reliable:
    - Adjust `max_num_inbound_peers` and `max_num_outbound_peers` based on your server's capabilities
    - Monitor and optimize network parameters for your specific infrastructure
 
-By following these guidelines, you'll help strengthen the BT2C network infrastructure and improve the experience for all participants.
+## Home Machine Seed Node Setup
+
+For those who want to run a seed node on their home machine without incurring cloud hosting costs, follow these steps:
+
+### Prerequisites
+
+1. **Static Local IP**: Configure your computer to use a static local IP address
+2. **Port Forwarding**: Set up port forwarding on your router for port 8334 (TCP)
+3. **Dynamic DNS**: Set up a free dynamic DNS service to handle changing public IP
+
+### Dynamic DNS Setup
+
+1. **Choose a provider**: Sign up for a free dynamic DNS service like:
+   - [No-IP](https://www.noip.com/free) (Free tier available)
+   - [DuckDNS](https://www.duckdns.org/) (Free)
+   - [Dynu](https://www.dynu.com/) (Free tier available)
+
+2. **Create a hostname**: Register a domain like `bt2c-seed.duckdns.org`
+
+3. **Install the update client**:
+   - Most providers offer a small client that keeps your IP updated
+   - Some routers have built-in support for dynamic DNS
+
+### Home Seed Node Configuration
+
+1. **Create a seed node configuration file**:
+
+   ```bash
+   nano ~/.bt2c/config/home_seed.json
+   ```
+
+2. **Use this configuration template**:
+
+   ```json
+   {
+     "node_name": "bt2c_home_seed",
+     "wallet_address": "your_wallet_address",
+     "stake_amount": 1.0,
+     "network": {
+       "listen_addr": "0.0.0.0:8334",
+       "external_addr": "your-dynamic-dns.duckdns.org:8334",
+       "seeds": [],
+       "is_seed": true,
+       "max_peers": 50,
+       "persistent_peers_max": 20
+     },
+     "metrics": {
+       "enabled": true,
+       "prometheus_port": 9092
+     },
+     "logging": {
+       "level": "info",
+       "file": "seed_node.log"
+     },
+     "security": {
+       "rate_limit": 100,
+       "ssl_enabled": true
+     }
+   }
+   ```
+
+3. **Start your seed node**:
+
+   ```bash
+   python run_node.py --config ~/.bt2c/config/home_seed.json
+   ```
+
+### Auto-Start on Boot
+
+To ensure your seed node starts automatically when your computer boots:
+
+#### macOS
+
+1. **Create a launch agent**:
+
+   ```bash
+   nano ~/Library/LaunchAgents/com.bt2c.seednode.plist
+   ```
+
+2. **Add this configuration**:
+
+   ```xml
+   <?xml version="1.0" encoding="UTF-8"?>
+   <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+   <plist version="1.0">
+   <dict>
+     <key>Label</key>
+     <string>com.bt2c.seednode</string>
+     <key>ProgramArguments</key>
+     <array>
+       <string>/usr/bin/python3</string>
+       <string>/path/to/bt2c/run_node.py</string>
+       <string>--config</string>
+       <string>~/.bt2c/config/home_seed.json</string>
+     </array>
+     <key>RunAtLoad</key>
+     <true/>
+     <key>KeepAlive</key>
+     <true/>
+     <key>StandardErrorPath</key>
+     <string>~/.bt2c/logs/seed_error.log</string>
+     <key>StandardOutPath</key>
+     <string>~/.bt2c/logs/seed_output.log</string>
+   </dict>
+   </plist>
+   ```
+
+3. **Load the launch agent**:
+
+   ```bash
+   launchctl load ~/Library/LaunchAgents/com.bt2c.seednode.plist
+   ```
+
+### Web-Based Seed Node Registry
+
+To help other nodes discover your seed node:
+
+1. **Create a JSON file** on your bt2c.net website:
+
+   ```json
+   {
+     "seed_nodes": [
+       {
+         "address": "your-dynamic-dns.duckdns.org",
+         "port": 8334,
+         "region": "US",
+         "version": "1.0.0"
+       }
+     ],
+     "last_updated": "2025-04-05T13:00:00Z"
+   }
+   ```
+
+2. **Host this file** at `https://bt2c.net/api/seed_nodes.json`
+
+3. **Update client code** to check this endpoint for seed node discovery
+
+### Monitoring Your Home Seed Node
+
+1. **Check node status**:
+
+   ```bash
+   curl http://localhost:8334/status
+   ```
+
+2. **View connected peers**:
+
+   ```bash
+   curl http://localhost:8334/peers
+   ```
+
+3. **Check system resources**:
+
+   ```bash
+   top -pid $(pgrep -f "run_node.py")
+   ```
+
+By following these steps, you can run a reliable seed node from your home machine without incurring cloud hosting costs while still providing a valuable service to the BT2C network.

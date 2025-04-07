@@ -1,12 +1,11 @@
-# Import validator classes directly
-from ..validator import ValidatorStatus as VS
-from ..validator import ValidatorInfo as VI
+# This file forwards imports to the new core modules to maintain backward compatibility
+# while avoiding circular imports
 
-# Define aliases to avoid circular imports
-ValidatorStatus = VS
-ValidatorInfo = VI
+# Import from core types
+from ..core.types import ValidatorStatus, ValidatorInfo
+from ..core.validator_manager import ValidatorManager as ValidatorSet
 
-# Use a function to get ValidatorSet to break circular dependency
+# For backward compatibility
 def get_validator_set():
-    from ..validator import ValidatorSet
-    return ValidatorSet
+    from ..core.validator_manager import ValidatorManager
+    return ValidatorManager

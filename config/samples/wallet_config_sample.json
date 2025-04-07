@@ -1,0 +1,7 @@
+{
+  "wallet_address": "YOUR_WALLET_ADDRESS",
+  "network": "mainnet",
+  "api_endpoint": "http://localhost:8335",
+  "auto_backup": true,
+  "backup_dir": "~/.bt2c/backups"
+}

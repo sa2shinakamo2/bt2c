@@ -43,7 +43,7 @@ except Exception as e:
     logger.error(f"Failed to load configuration: {e}")
     config = {
         "node_name": os.environ.get("NODE_NAME", "developer_node"),
-        "wallet_address": os.environ.get("WALLET_ADDRESS", "bt2c_4k3qn2qmiwjeqkhf44wtowxb"),
+        "wallet_address": os.environ.get("WALLET_ADDRESS", ""YOUR_WALLET_ADDRESS""),
         "stake_amount": float(os.environ.get("STAKE_AMOUNT", "1001.0")),
     }
 
@@ -61,12 +61,12 @@ blockchain_state = {
 
 # Initialize wallet balances
 wallet_balances = {
-    config.get("wallet_address", "bt2c_4k3qn2qmiwjeqkhf44wtowxb"): config.get("stake_amount", 1001.0)
+    config.get("wallet_address", ""YOUR_WALLET_ADDRESS""): config.get("stake_amount", 1001.0)
 }
 
 # Initialize validator stakes
 validator_stakes = {
-    config.get("wallet_address", "bt2c_4k3qn2qmiwjeqkhf44wtowxb"): {
+    config.get("wallet_address", ""YOUR_WALLET_ADDRESS""): {
         "staked_amount": config.get("stake_amount", 1001.0),
         "rewards_earned": 0.0,
         "is_validator": True,
