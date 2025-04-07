@@ -69,9 +69,14 @@ source venv/bin/activate
 # On Windows
 venv\Scripts\activate
 
-# Install dependencies
-pip install -r requirements.txt
+# Install dependencies (recommended - uses pinned versions)
+pip install -r requirements.fixed.txt
+
+# Alternative (may take longer to resolve dependencies)
+# pip install -r requirements.txt
 ```
+
+If you encounter the message "This is taking longer than usual..." during installation, use the fixed requirements file as shown above.
 
 ### Step 3: Set Up Configuration Directory
 
@@ -321,29 +326,30 @@ python3 tools/create_fresh_database.py YOUR_WALLET_ADDRESS mainnet
 
 ### Common Issues
 
-1. **Database is locked**
+1. **Dependency Installation Problems**
+   - If pip shows "This is taking longer than usual..." message, use `pip install -r requirements.fixed.txt`
+   - For detailed solutions, see [Installation Troubleshooting Guide](docs/installation_troubleshooting.md)
+
+2. **Database is locked**
    - Ensure you don't have multiple processes accessing the database
    - Kill any hanging processes and try again
    - Solution: `python tools/repair_database.py`
 
-2. **Blocks not being produced**
+3. **Blocks not being produced**
    - Check your validator registration status
    - Ensure your system clock is synchronized
    - Solution: `python tools/check_validator_status.py --address YOUR_WALLET_ADDRESS`
 
-3. **Transaction not confirming**
+4. **Transaction not confirming**
    - Ensure your transaction has been properly signed
    - Wait for the next block (up to 5 minutes)
    - Solution: `python tools/view_blockchain.py pending-transactions`
 
-4. **Incorrect merkle roots**
+5. **Incorrect merkle roots**
    - Update all merkle roots in the blockchain
    - Solution: `python tools/update_merkle_roots.py update mainnet`
 
-5. **Wallet balance not updating**
-   - Ensure your transaction has been included in a block
-   - Check for database corruption
-   - Solution: `python tools/check_wallet_balance.py YOUR_WALLET_ADDRESS --network mainnet`
+For more detailed troubleshooting information, see the [Installation Troubleshooting Guide](docs/installation_troubleshooting.md).
 
 ## Documentation
 
@@ -356,6 +362,7 @@ Comprehensive documentation is available in the `docs/` directory:
 - [Wallet Guide](docs/wallet_guide.md) - Guide to creating and managing wallets
 - [check_wallet_balance.py](docs/check_wallet_balance.md) - Documentation for the check_wallet_balance.py script
 - [check_block_height.py](docs/check_block_height.md) - Documentation for the check_block_height.py script
+- [Installation Troubleshooting](docs/installation_troubleshooting.md) - Solutions to common installation and setup issues
 
 ## License
 
