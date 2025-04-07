@@ -155,6 +155,18 @@ To see transaction history:
 python tools/check_wallet_balance.py YOUR_WALLET_ADDRESS --network mainnet --transactions
 ```
 
+### Check Blockchain Height
+
+```bash
+python tools/check_block_height.py --network mainnet
+```
+
+For more detailed information about the latest block:
+
+```bash
+python tools/check_block_height.py --network mainnet --verbose
+```
+
 ### Backup Your Wallet
 
 ```bash
@@ -342,6 +354,8 @@ Comprehensive documentation is available in the `docs/` directory:
 - [Security Architecture](docs/security_architecture.md) - Overview of security features
 - [Validator Guide](docs/validator_guide.md) - Detailed instructions for validators
 - [Wallet Guide](docs/wallet_guide.md) - Guide to creating and managing wallets
+- [check_wallet_balance.py](docs/check_wallet_balance.md) - Documentation for the check_wallet_balance.py script
+- [check_block_height.py](docs/check_block_height.md) - Documentation for the check_block_height.py script
 
 ## License
 
@@ -349,4 +363,4 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
-© 2025 BT2C Network. All rights reserved.
+ 2025 BT2C Network. All rights reserved.
