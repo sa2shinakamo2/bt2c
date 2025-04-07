@@ -1,179 +1,352 @@
-# BT2C (Bit2Coin) Node
+# BT2C (Bit2Coin)
 
-BT2C is a decentralized blockchain platform following Bitcoin's minimalist design principles.
+BT2C is a decentralized blockchain platform designed with Bitcoin's minimalist principles while incorporating modern validator technology. This README provides comprehensive instructions for running nodes, creating wallets, and participating in the BT2C network.
 
-## Hardware Requirements
+## Table of Contents
+- [Overview](#overview)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Network Setup](#network-setup)
+- [Running a Validator Node](#running-a-validator-node)
+- [Creating a Wallet](#creating-a-wallet)
+- [Managing Your Wallet](#managing-your-wallet)
+- [Viewing Blockchain Data](#viewing-blockchain-data)
+- [Transferring Funds](#transferring-funds)
+- [Block Production](#block-production)
+- [Technical Specifications](#technical-specifications)
+- [Platform-Specific Instructions](#platform-specific-instructions)
+- [Troubleshooting](#troubleshooting)
+- [Documentation](#documentation)
+- [License](#license)
 
-Minimum requirements for running a node:
-- 2 CPU cores
-- 2GB RAM
-- 50GB storage
+## Overview
+
+BT2C is a blockchain with the following key features:
+- 21 million maximum supply
+- 21.0 BT2C initial block reward
+- 5-minute target block time (300 seconds)
+- Validator-based consensus
+- 14-day distribution period with special rewards
+- Proper merkle root implementation for transaction verification
+- Bitcoin-like structure with modern improvements
+
+## Requirements
+
+### Core Requirements
+- Python 3.8 or higher
+- SQLite 3.30 or higher
+- Git (for cloning the repository)
 - Internet connection
 
-## Dependency Options
+### Python Dependencies
+- `sqlite3`: Database management
+- `hashlib`: Cryptographic functions
+- `json`: Data serialization
+- `datetime`: Time management
+- `pathlib`: File path handling
+- `argparse`: Command-line argument parsing
+- `secrets`: Secure random number generation
+- `base64`: Encoding/decoding
 
-BT2C offers different requirement files based on your needs:
+## Installation
 
-1. **Full Requirements** (`requirements.txt`):
-   - Complete set of dependencies for development and production
-   - Includes all testing, security, and monitoring tools
-   - Use this for development or if you're unsure
+### Step 1: Clone the Repository
 
-2. **Validator Requirements** (`validator-requirements.txt`):
-   - Essential dependencies for running a validator node
-   - Includes crypto, networking, and database libraries
-   - Faster to install than full requirements
-   - Recommended for validator nodes
-
-3. **Minimal Requirements** (`requirements.minimal.txt`):
-   - Bare minimum dependencies for basic functionality
-   - Limited to core crypto libraries and wallet generation
-   - Fastest to install but limited functionality
-   - Use for wallet operations or simple node connections
-
-Choose the appropriate requirements file based on your use case:
-
-```bash
-# For full development environment
-pip install -r requirements.txt
-
-# For running a validator node
-pip install -r validator-requirements.txt
-
-# For minimal functionality (wallet operations)
-pip install -r requirements.minimal.txt
-```
-
-## Quick Start
-
-1. Clone the repository:
 ```bash
 git clone https://github.com/sa2shinakamo2/bt2c.git
 cd bt2c
 ```
 
-2. Install Python dependencies:
+### Step 2: Install Dependencies
+
 ```bash
-python3 -m pip install -r validator-requirements.txt
+# Create and activate a virtual environment (recommended)
+python -m venv venv
+
+# On macOS/Linux
+source venv/bin/activate
+
+# On Windows
+venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
 ```
 
-3. Run the easy validator setup script:
+### Step 3: Set Up Configuration Directory
+
+The BT2C blockchain stores its data in a `.bt2c` directory in your home folder:
+
 ```bash
-python3 easy_validator_setup.py
+# Create the necessary directories
+mkdir -p ~/.bt2c/data
 ```
 
-That's it! The setup script will:
-- Create necessary directories
-- Generate a wallet (or use an existing one)
-- Configure your validator node
-- Start validating with your specified stake
+## Network Setup
 
-## Manual Setup (Alternative)
+BT2C supports both mainnet and testnet environments:
 
-If you prefer to set up manually:
-
-1. Create a wallet:
 ```bash
-python standalone_wallet.py create
+# Set up mainnet
+python tools/create_fresh_database.py YOUR_VALIDATOR_ADDRESS mainnet
 
-# Save your:
-# - Seed phrase (24 words)
-# - Wallet address
-# - Public key
+# Set up testnet
+python tools/create_fresh_database.py YOUR_VALIDATOR_ADDRESS testnet
 ```
 
-2. Start the node:
+Replace `YOUR_VALIDATOR_ADDRESS` with your BT2C wallet address. If you don't have one yet, see the [Creating a Wallet](#creating-a-wallet) section.
+
+## Running a Validator Node
+
+### Step 1: Register as a Validator
+
 ```bash
-python3 run_node.py --validator --stake 1.0
+python tools/register_validator.py --address YOUR_WALLET_ADDRESS --stake 1.0 --network mainnet
 ```
 
-## P2P Node Discovery
+The minimum stake requirement is 1.0 BT2C for mainnet.
 
-BT2C uses a decentralized peer-to-peer discovery mechanism to help validators find each other:
+### Step 2: Start Block Production
 
-1. Run the P2P discovery service:
 ```bash
-python3 p2p_discovery.py
+python tools/produce_blocks_scheduled.py YOUR_WALLET_ADDRESS mainnet
 ```
 
-2. Get a list of seed nodes from the P2P network:
+This will start producing blocks at the 5-minute intervals specified in the whitepaper.
+
+### Step 3: Monitor Your Validator
+
 ```bash
-python3 p2p_discovery.py --get-seeds
+python tools/check_validator_status.py --address YOUR_WALLET_ADDRESS --network mainnet
 ```
 
-The P2P discovery service:
-- Uses UDP broadcast to find nodes on the local network
-- Maintains a list of known peers
-- Shares peers with new validators
-- Eliminates the need for centralized seed nodes
+## Creating a Wallet
 
-## Network Parameters
+### Generate a New Wallet
 
-- Block time: 5 minutes
-- Minimum stake: 1.0 BT2C
-- Maximum supply: 21M BT2C
+```bash
+python tools/create_wallet.py
+```
+
+This will generate:
+- A new BT2C wallet address
+- A private key
+- A recovery seed phrase
+
+**IMPORTANT**: Save your seed phrase and private key in a secure location. If you lose them, you will lose access to your funds.
+
+### Import an Existing Wallet
+
+```bash
+python tools/import_wallet.py --seed "your seed phrase here"
+```
+
+## Managing Your Wallet
+
+### Check Wallet Balance
+
+```bash
+python tools/check_wallet_balance.py YOUR_WALLET_ADDRESS --network mainnet
+```
+
+To see transaction history:
+
+```bash
+python tools/check_wallet_balance.py YOUR_WALLET_ADDRESS --network mainnet --transactions
+```
+
+### Backup Your Wallet
+
+```bash
+python tools/backup_wallet.py --address YOUR_WALLET_ADDRESS --output wallet_backup.json
+```
+
+## Viewing Blockchain Data
+
+### View All Blocks
+
+```bash
+python tools/view_blockchain.py blocks --network mainnet
+```
+
+### View Specific Block
+
+```bash
+python tools/view_blockchain.py block --height 1 --network mainnet
+```
+
+Or by hash:
+
+```bash
+python tools/view_blockchain.py block --hash BLOCK_HASH --network mainnet
+```
+
+### View All Transactions
+
+```bash
+python tools/view_blockchain.py transactions --network mainnet
+```
+
+### View Specific Transaction
+
+```bash
+python tools/view_blockchain.py transaction --hash TRANSACTION_HASH --network mainnet
+```
+
+## Transferring Funds
+
+### Send BT2C to Another Address
+
+```bash
+python tools/send_transaction.py --from YOUR_WALLET_ADDRESS --to RECIPIENT_ADDRESS --amount 1.0 --network mainnet
+```
+
+You will be prompted to enter your private key to sign the transaction.
+
+### Create a Multi-signature Transaction
+
+```bash
+python tools/create_multisig_transaction.py --from YOUR_WALLET_ADDRESS --to RECIPIENT_ADDRESS --amount 1.0 --signers ADDRESS1,ADDRESS2,ADDRESS3 --threshold 2 --network mainnet
+```
+
+This creates a transaction that requires signatures from at least 2 out of the 3 specified addresses.
+
+## Block Production
+
+### Produce Blocks at Regular Intervals
+
+```bash
+python tools/produce_blocks_scheduled.py YOUR_WALLET_ADDRESS mainnet
+```
+
+This script will produce blocks at exactly 5-minute intervals as specified in the whitepaper.
+
+### Update Merkle Roots
+
+```bash
+python tools/update_merkle_roots.py update mainnet
+```
+
+This updates the merkle roots for all blocks in the blockchain to ensure proper transaction verification.
+
+## Technical Specifications
+
+### Economic Model
+- Max supply: 21M BT2C
 - Initial block reward: 21.0 BT2C
-- Halving period: 4 years
-- Distribution period: 14 days (until April 6, 2025)
+- Halving: Every 4 years (126,144,000 seconds)
+- Min reward: 0.00000001 BT2C
 
-## Validator Rewards
-
+### Validator System
+- Min stake: 1.0 BT2C
 - Early validator reward: 1.0 BT2C
-- Developer node reward: 100 BT2C (first validator only)
-- All rewards are automatically staked
+- Developer node reward: 1000 BT2C
 - Distribution period: 14 days
+- Reputation-based selection
 
-## Additional Documentation
-
-For more detailed information, see:
-- [Validator Guide](README_VALIDATOR.md)
-- [Seed Nodes Guide](docs/seed_nodes.md)
-
-## Security
-
+### Security
 - 2048-bit RSA keys
 - BIP39 seed phrases (256-bit)
 - BIP44 HD wallets
 - Password-protected storage
 - SSL/TLS encryption
 
-## Security Features
+### Network
+- Target block time: 300s (5 minutes)
+- Dynamic fees
+- Rate limiting: 100 req/min
+- Mainnet domains:
+  * bt2c.net (main)
+  * api.bt2c.net
+  * explorer at /explorer
 
-BT2C implements several security measures to ensure transaction integrity and prevent attacks:
+## Platform-Specific Instructions
 
-- **Nonce Validation**: Each transaction from a sender must use a strictly increasing nonce, preventing replay attacks
-- **Double-Spend Protection**: Transactions are tracked to prevent the same funds from being spent multiple times
-- **Transaction Finality**: Clear rules define when a transaction is considered final (6+ confirmations)
-- **Mempool Cleanup**: Transactions are removed from the pending pool once included in a block
-- **2048-bit RSA Keys**: Strong cryptographic signatures ensure transaction authenticity
-- **BIP39 Seed Phrases**: 256-bit entropy for wallet generation
-- **BIP44 HD Wallets**: Hierarchical deterministic wallet structure
+### macOS
 
-## Recent Updates
-
-See [CHANGELOG.md](CHANGELOG.md) for a complete list of changes.
-
-- **v1.2.0 (April 2025)**: 
-  - Added easy validator setup script
-  - Implemented P2P discovery mechanism
-  - Fixed wallet address format
-  - Improved validator connectivity
-- **v1.1.0 (March 2025)**: Enhanced security with nonce validation, double-spend protection, and transaction finality rules
-- **v1.0.0 (February 2025)**: Initial mainnet release
-
-## Configuration
-
-Default configuration is stored in `~/.bt2c/config/validator.json`. You can override it by passing a custom config file:
 ```bash
-python3 run_node.py --config /path/to/config.json
+# Install Python and SQLite
+brew install python sqlite
+
+# Set up environment
+mkdir -p ~/.bt2c/data
+
+# Run BT2C
+cd /path/to/bt2c
+python tools/create_fresh_database.py YOUR_WALLET_ADDRESS mainnet
 ```
 
-## Support
+### Windows
 
-For technical support:
-- GitHub Issues: [Report a bug](https://github.com/sa2shinakamo2/bt2c/issues)
-- Documentation: [Wiki](https://github.com/sa2shinakamo2/bt2c/wiki)
+```bash
+# Install Python from https://www.python.org/downloads/
+# SQLite is included with Python on Windows
+
+# Set up environment (in Command Prompt)
+mkdir %USERPROFILE%\.bt2c\data
+
+# Run BT2C
+cd \path\to\bt2c
+python tools\create_fresh_database.py YOUR_WALLET_ADDRESS mainnet
+```
+
+### Linux
+
+```bash
+# Install Python and SQLite
+sudo apt update
+sudo apt install python3 python3-pip sqlite3
+
+# Set up environment
+mkdir -p ~/.bt2c/data
+
+# Run BT2C
+cd /path/to/bt2c
+python3 tools/create_fresh_database.py YOUR_WALLET_ADDRESS mainnet
+```
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Database is locked**
+   - Ensure you don't have multiple processes accessing the database
+   - Kill any hanging processes and try again
+   - Solution: `python tools/repair_database.py`
+
+2. **Blocks not being produced**
+   - Check your validator registration status
+   - Ensure your system clock is synchronized
+   - Solution: `python tools/check_validator_status.py --address YOUR_WALLET_ADDRESS`
+
+3. **Transaction not confirming**
+   - Ensure your transaction has been properly signed
+   - Wait for the next block (up to 5 minutes)
+   - Solution: `python tools/view_blockchain.py pending-transactions`
+
+4. **Incorrect merkle roots**
+   - Update all merkle roots in the blockchain
+   - Solution: `python tools/update_merkle_roots.py update mainnet`
+
+5. **Wallet balance not updating**
+   - Ensure your transaction has been included in a block
+   - Check for database corruption
+   - Solution: `python tools/check_wallet_balance.py YOUR_WALLET_ADDRESS --network mainnet`
+
+## Documentation
+
+Comprehensive documentation is available in the `docs/` directory:
+
+- [Whitepaper v1.1](docs/whitepaper_v1.1.md) - Technical specifications and economic model
+- [API Reference](docs/api_reference.md) - Complete API reference for developers
+- [Security Architecture](docs/security_architecture.md) - Overview of security features
+- [Validator Guide](docs/validator_guide.md) - Detailed instructions for validators
+- [Wallet Guide](docs/wallet_guide.md) - Guide to creating and managing wallets
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details
+MIT License - see [LICENSE](LICENSE) file for details.
+
+---
+
+© 2025 BT2C Network. All rights reserved.

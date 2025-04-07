@@ -1,0 +1,16 @@
+{
+  "node_type": "validator",
+  "network": "mainnet",
+  "stake_amount": 1.0,
+  "commission_rate": 10.0,
+  "wallet_address": "YOUR_WALLET_ADDRESS",
+  "api_port": 8335,
+  "p2p_port": 8338,
+  "metrics_port": 9093,
+  "log_level": "info",
+  "data_dir": "~/.bt2c/data",
+  "seed_nodes": [
+    "seed1.bt2c.net:8338",
+    "seed2.bt2c.net:8338"
+  ]
+}

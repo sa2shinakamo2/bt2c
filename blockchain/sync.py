@@ -126,3 +126,159 @@ class BlockSynchronizer:
             logger.error("block_handling_error",
                         peer=peer_address,
                         error=str(e))
+
+class BlockchainSynchronizer:
+    """
+    Enhanced blockchain synchronizer that coordinates the synchronization
+    of blockchain data across the BT2C network.
+    
+    This class extends the functionality of BlockSynchronizer with additional
+    features for handling network partitions, fork resolution, and optimized
+    block downloading strategies.
+    """
+    
+    def __init__(self, blockchain, peer_manager: PeerManager, consensus: ConsensusManager):
+        """
+        Initialize the blockchain synchronizer.
+        
+        Args:
+            blockchain: The blockchain instance
+            peer_manager: The peer manager instance
+            consensus: The consensus manager instance
+        """
+        self.blockchain = blockchain
+        self.peer_manager = peer_manager
+        self.consensus = consensus
+        self.block_sync = BlockSynchronizer(blockchain, peer_manager, consensus)
+        self.syncing = False
+        self.sync_task = None
+        self.last_sync_time = 0
+        self.min_sync_interval = 60  # Minimum seconds between syncs
+        
+    async def start(self):
+        """Start the blockchain synchronizer."""
+        logger.info("Starting blockchain synchronizer")
+        # Initial sync
+        await self.sync()
+        
+        # Start periodic sync task
+        self.sync_task = asyncio.create_task(self._periodic_sync())
+        
+    async def stop(self):
+        """Stop the blockchain synchronizer."""
+        logger.info("Stopping blockchain synchronizer")
+        if self.sync_task:
+            self.sync_task.cancel()
+            try:
+                await self.sync_task
+            except asyncio.CancelledError:
+                pass
+            self.sync_task = None
+            
+    async def _periodic_sync(self):
+        """Periodically sync with the network."""
+        while True:
+            try:
+                await asyncio.sleep(300)  # Check every 5 minutes
+                await self.sync()
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error("periodic_sync_error", error=str(e))
+                await asyncio.sleep(60)  # Wait a bit before retrying
+                
+    async def sync(self):
+        """Synchronize blockchain with the network."""
+        # Delegate to the block synchronizer
+        await self.block_sync.sync_with_network()
+        
+    async def handle_new_block(self, block: Block, peer_address: str):
+        """Handle a new block received from a peer."""
+        # Delegate to the block synchronizer
+        await self.block_sync.handle_new_block(block, peer_address)
+        
+    async def request_missing_blocks(self, start_height: int, end_height: int):
+        """
+        Request missing blocks from peers.
+        
+        Args:
+            start_height: Starting block height
+            end_height: Ending block height
+            
+        Returns:
+            List of retrieved blocks
+        """
+        logger.info("requesting_missing_blocks", 
+                   start=start_height, 
+                   end=end_height)
+        
+        # Get best peers
+        peers = sorted(
+            [p for p in self.peer_manager.peers.values() if p.state == "active"],
+            key=lambda x: x.reputation,
+            reverse=True
+        )[:3]  # Use top 3 peers
+        
+        if not peers:
+            logger.error("no_active_peers_for_block_request")
+            return []
+            
+        # Try each peer until successful
+        for peer in peers:
+            try:
+                blocks = await self.peer_manager.get_peer_blocks(
+                    peer.address, start_height, end_height
+                )
+                if blocks:
+                    return blocks
+            except Exception as e:
+                logger.warning("peer_block_request_failed",
+                             peer=peer.address,
+                             error=str(e))
+                
+        return []
+        
+    async def verify_chain_consistency(self):
+        """
+        Verify that our blockchain is consistent with the network.
+        
+        This checks for potential forks and resolves them according to
+        the consensus rules.
+        """
+        # Get our chain tip
+        our_height = len(self.blockchain.chain) - 1
+        our_tip = self.blockchain.chain[-1]
+        
+        # Get network consensus on the tip
+        network_tips = {}
+        
+        for peer in self.peer_manager.peers.values():
+            if peer.state != "active" or not peer.last_block_hash:
+                continue
+                
+            if peer.last_block_hash in network_tips:
+                network_tips[peer.last_block_hash] += 1
+            else:
+                network_tips[peer.last_block_hash] = 1
+                
+        if not network_tips:
+            logger.warning("no_network_consensus_data")
+            return
+            
+        # Find the most common tip
+        consensus_tip, consensus_count = max(
+            network_tips.items(), key=lambda x: x[1]
+        )
+        
+        # If our tip matches consensus, we're good
+        if our_tip.hash == consensus_tip:
+            return
+            
+        # We're on a fork, need to resolve
+        logger.warning("fork_detected",
+                     our_tip=our_tip.hash,
+                     consensus_tip=consensus_tip,
+                     consensus_count=consensus_count)
+                     
+        # Trigger a full sync to resolve the fork
+        await self.sync()
