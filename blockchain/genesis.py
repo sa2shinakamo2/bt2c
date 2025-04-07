@@ -15,9 +15,9 @@ GENESIS_SEED_PHRASE = mnemo.generate(strength=256)  # 24 words
 GENESIS_PASSWORD = "genesis_password"
 
 # Hardcoded Genesis Block Parameters
-GENESIS_TIMESTAMP = 1709937600  # March 8th, 2024 at 16:00:00 UTC-6
+GENESIS_TIMESTAMP = int(time.time())  # Current time (April 5th, 2025)
 GENESIS_MESSAGE = "The world needs a better financial system - BT2C Genesis"
-GENESIS_HASH = "000000000019d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"  # Bitcoin's genesis hash as tribute
+GENESIS_HASH = "000000000025d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f"  # BT2C's unique genesis hash
 GENESIS_NONCE = 2083236893
 GENESIS_COINBASE = "0" * 64  # Represents the coinbase transaction
 
@@ -27,11 +27,11 @@ class GenesisConfig:
     def __init__(self, network_type: NetworkType):
         self.network_type = network_type
         self.initial_supply = 150  # Initial supply for distribution
-        self.block_reward = 50  # Initial block reward in BT2C
+        self.block_reward = 21.0  # Initial block reward in BT2C (as per whitepaper)
         self.halving_interval = 210000  # Number of blocks between halvings
         self.minimum_stake = 1  # Minimum stake to be a validator (in BT2C)
         self.distribution_period_days = 14  # Initial 2-week distribution period
-        self.developer_reward = 100  # Amount for first node (developer)
+        self.developer_reward = 1000  # Amount for first node (developer) - 1000 BT2C as per whitepaper
         self.distribution_amount = 1  # Amount given to each new node during distribution
         
         # Genesis block specific data
@@ -43,11 +43,12 @@ class GenesisConfig:
     def get_genesis_coinbase_tx(self) -> Transaction:
         """Create the genesis coinbase transaction."""
         return Transaction(
-            sender=GENESIS_COINBASE,
-            recipient=GENESIS_COINBASE,  # Unspendable like Bitcoin's genesis
-            amount=50,  # First block reward
+            sender_address=GENESIS_COINBASE,
+            recipient_address=GENESIS_COINBASE,  # Unspendable like Bitcoin's genesis
+            amount=21.0,  # First block reward as per whitepaper
             timestamp=self.timestamp,
-            message=self.message  # Include the genesis message
+            network_type=self.network_type,
+            payload={"message": self.message}  # Include the genesis message
         )
         
     def initialize(self) -> None:
@@ -100,3 +101,6 @@ class GenesisConfig:
                        network=self.network_type.value,
                        timestamp=self.timestamp,
                        message=self.message)
+        except Exception as e:
+            logger.error("genesis_config_error", error=str(e))
+            raise

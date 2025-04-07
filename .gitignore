@@ -1,81 +1,9 @@
+
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Node
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.env
-.env.test
-.env.production
-
-# IDEs and editors
-.idea/
-.vscode/
-*.swp
-*.swo
-.DS_Store
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# Project specific
-secure_wallets/
-data/
-logs/
-*.log
-*.db
-*.sqlite3
-backups/
-bt2c_*_backup_*.tar.gz
-bt2c_*_backup_*.tar.gz.sha256
-bt2c_*_backup_*.tar.gz.json
-
-# Security sensitive files
-*.pem
-*.key
-*.crt
-*.csr
-*.srl
-*.p12
-*.pfx
-*.keystore
-*private*
-*secret*
-wallet.json
-.env*
-config.json
-credentials.json
-*.password
-*.token
-id_rsa*
-id_dsa*
-id_ecdsa*
-id_ed25519*
-known_hosts
-
-# Distribution / packaging
 .Python
 env/
 build/
@@ -89,62 +17,54 @@ lib64/
 parts/
 sdist/
 var/
-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-
-# Testing
-htmlcov/
-.tox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-.hypothesis/
-
-# Misc
-*.zip
-*.tar.gz
-.DS_Store
-
-# Dependencies
-node_modules/
-__pycache__/
-*.pyc
-
-# Build outputs
-dist/
-dist-new/
-preview/
-temp/
-*.zip
-*.zip.new
-
-# Environment files
-.env
-.env.*
+venv/
 .venv/
 
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
+# BT2C specific
+.bt2c/
+*.db
+*.db-journal
+private_keys.json
+wallet_keys.json
+*_private.json
+*_secret.json
+.env
+.env.*
+config_local.py
+local_settings.py
 
-# OS files
-.DS_Store
-Thumbs.db
+# Sensitive information
+*wallet_address*
+*private_key*
+*secret_key*
+*password*
+*credentials*
 
 # Logs
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Website directory - kept locally but not in repository
-website/
-send_bt2c.py
-transfer_bt2c.py
+# OS specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
