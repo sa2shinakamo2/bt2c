@@ -69,14 +69,18 @@ source venv/bin/activate
 # On Windows
 venv\Scripts\activate
 
-# Install dependencies (recommended - uses pinned versions)
-pip install -r requirements.fixed.txt
+# Install dependencies (recommended - uses optimized versions)
+pip install -r requirements.optimized.txt
 
-# Alternative (may take longer to resolve dependencies)
+# Alternative options:
+# For exact pinned versions (may cause conflicts):
+# pip install -r requirements.fixed.txt
+
+# For loose version constraints (takes longer to resolve):
 # pip install -r requirements.txt
 ```
 
-If you encounter the message "This is taking longer than usual..." during installation, use the fixed requirements file as shown above.
+If you encounter dependency conflicts with requirements.fixed.txt or if requirements.txt is taking too long to resolve, use the optimized requirements file as shown above.
 
 ### Step 3: Set Up Configuration Directory
 
@@ -327,7 +331,7 @@ python3 tools/create_fresh_database.py YOUR_WALLET_ADDRESS mainnet
 ### Common Issues
 
 1. **Dependency Installation Problems**
-   - If pip shows "This is taking longer than usual..." message, use `pip install -r requirements.fixed.txt`
+   - If pip shows "This is taking longer than usual..." message, use `pip install -r requirements.optimized.txt`
    - For detailed solutions, see [Installation Troubleshooting Guide](docs/installation_troubleshooting.md)
 
 2. **Database is locked**
