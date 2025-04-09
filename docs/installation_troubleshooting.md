@@ -11,13 +11,16 @@ This document provides solutions to common issues encountered when installing an
 INFO: This is taking longer than usual. You might need to provide the dependency resolver with stricter constraints to reduce runtime.
 ```
 
-**Solution**: Use the fixed requirements file with pinned versions:
+**Solution**: Use the optimized requirements file with constrained versions:
 
 ```bash
-pip install -r requirements.fixed.txt
+pip install -r requirements.optimized.txt
 ```
 
-The original requirements file uses loose version constraints (`>=`), which forces pip to spend excessive time trying to find compatible versions of all packages. The fixed version uses exact version pins (`==`) to eliminate this resolution process.
+The BT2C project provides three requirements files:
+- `requirements.txt`: Uses loose version constraints (`>=`), which can take a long time to resolve
+- `requirements.fixed.txt`: Uses exact version pins (`==`), which can sometimes cause conflicts
+- `requirements.optimized.txt`: Uses tilde version constraints (`~=`), providing the best balance
 
 ### Conflicting Dependencies
 
@@ -31,9 +34,15 @@ source fresh_venv/bin/activate  # On macOS/Linux
 fresh_venv\Scripts\activate     # On Windows
 ```
 
-2. Install using the fixed requirements:
+2. Install using the optimized requirements:
 ```bash
-pip install -r requirements.fixed.txt
+pip install -r requirements.optimized.txt
+```
+
+If you're still experiencing conflicts, try installing packages one by one:
+```bash
+pip install -r requirements.optimized.txt --no-deps
+pip install <package-name>~=<version> --no-deps
 ```
 
 ### Missing System Dependencies
