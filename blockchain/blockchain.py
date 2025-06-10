@@ -11,6 +11,8 @@ import math
 import asyncio
 from decimal import Decimal
 from .config import NetworkType
+from .security.replay_protection import ReplayProtection
+from blockchain.security import UTXOTracker, DoubleSpendDetector
 
 logger = structlog.get_logger()
 
@@ -46,9 +48,11 @@ class BT2CBlockchain:
         self.developer_reward = Decimal('100.0')
         self.early_validator_reward = Decimal('1.0')
         
-        # Security improvements
-        self.nonce_tracker: Dict[str, int] = {}  # Track latest nonce for each address
-        self.spent_transactions: Set[str] = set()  # Track spent transaction hashes
+        # Initialize security components
+        self.replay_protection = ReplayProtection()
+        self.utxo_tracker = UTXOTracker()
+        self.double_spend_detector = DoubleSpendDetector(self.replay_protection, self.utxo_tracker)  # Initialize replay protection system
+        self.max_spent_tx_cache = 100000  # Maximum number of spent transactions to track
         
         # Create wallet with 2048-bit RSA key as per specs
         wallet = Wallet()
@@ -145,19 +149,26 @@ class BT2CBlockchain:
     
     def _cleanup_mempool(self, block_transactions: List[Transaction]) -> None:
         """Remove transactions in the block from the pending transactions pool."""
-        # Create a set of transaction hashes in the block for efficient lookup
-        block_tx_hashes = {tx.hash for tx in block_transactions if tx.hash}
+        # Create a set of transaction hashes for O(1) lookup
+        tx_hashes = {tx.hash for tx in block_transactions}
         
         # Filter out transactions that are now in the block
-        self.pending_transactions = [tx for tx in self.pending_transactions 
-                                    if tx.hash not in block_tx_hashes]
+        self.pending_transactions = [tx for tx in self.pending_transactions if tx.hash not in tx_hashes]
+        
+        # Add processed transactions to spent_transactions set (replay protection)
+        for tx in block_transactions:
+            self.replay_protection.add_spent_transaction(tx.hash)
+            
+            # Update nonce tracker for the sender
+            if tx.sender_address != "0" * 64:  # Skip coinbase transactions
+                current_nonce = self.utxo_tracker.get_nonce(tx.sender_address, tx.nonce)
+                if tx.nonce > current_nonce:
+                    self.utxo_tracker.update_nonce(tx.sender_address, tx.nonce)
         
         # Log the cleanup
-        removed_count = len(block_tx_hashes)
-        remaining_count = len(self.pending_transactions)
         logger.info("mempool_cleaned", 
-                   removed_transactions=removed_count,
-                   remaining_transactions=remaining_count)
+                   removed=len(tx_hashes), 
+                   remaining=len(self.pending_transactions))
     
     def add_transaction(self, transaction: Transaction) -> bool:
         """Add a transaction to the pending transactions list.
@@ -185,30 +196,37 @@ class BT2CBlockchain:
                               tx_network=transaction.network_type,
                               blockchain_network=self.network_type)
                 return False
-                
+        
+        # Apply comprehensive double-spend detection
+        valid, error_msg = self.double_spend_detector.validate_transaction(transaction)
+        if not valid:
+            logger.warning("transaction_validation_failed", 
+                          tx_hash=transaction.hash, 
+                          error=error_msg)
+            return False
+        
+        # Process the transaction through the double-spend detector
+        # This will update both replay protection and UTXO tracking
+        if not self.double_spend_detector.process_transaction(transaction):
+            return False
+            
         # Add transaction to pending list
         self.pending_transactions.append(transaction)
         logger.info("transaction_added", tx_hash=transaction.hash)
         return True
     
     def get_balance(self, address: str) -> Decimal:
-        """Get balance for an address"""
-        balance = Decimal('0')
+        """Get the balance of an address.
         
-        # Check each block for transactions involving this address
-        for block in self.chain:
-            for tx in block.transactions:
-                # If this address is the recipient, add the amount
-                if tx.recipient_address == address:
-                    balance += tx.amount
-                    
-                # If this address is the sender, subtract the amount
-                if tx.sender_address == address and tx.sender_address != "0" * 64:  # Exclude coinbase
-                    balance -= tx.amount
-                    # Also subtract the fee
-                    balance -= tx.fee
-                    
-        return balance
+        Args:
+            address: The address to get the balance for
+            
+        Returns:
+            The balance of the address
+        """
+        # Use the UTXO tracker to get the balance
+        # This is more efficient than recalculating from the entire blockchain
+        return self.utxo_tracker.get_balance(address)
     
     def get_total_supply(self) -> float:
         """Get current total supply."""
@@ -438,7 +456,7 @@ class BT2CBlockchain:
         # Add transactions to spent transactions set to prevent double-spending
         for tx in new_block.transactions:
             if tx.hash:
-                self.spent_transactions.add(tx.hash)
+                self.replay_protection.add_spent_transaction(tx.hash)
 
         # Clear pending transactions
         self.pending_transactions = []
@@ -489,8 +507,8 @@ class BT2CBlockchain:
             'distribution_period': self.distribution_period,
             'developer_reward': str(self.developer_reward),
             'early_validator_reward': str(self.early_validator_reward),
-            'nonce_tracker': self.nonce_tracker,
-            'spent_transactions': list(self.spent_transactions)
+            'nonce_tracker': self.utxo_tracker.nonce_tracker,
+            'spent_transactions': list(self.replay_protection.spent_transactions)
         }
 
     def import_state(self, state: dict) -> None:
@@ -506,8 +524,8 @@ class BT2CBlockchain:
         self.distribution_period = state.get('distribution_period', 1209600)
         self.developer_reward = Decimal(state.get('developer_reward', '100.0'))
         self.early_validator_reward = Decimal(state.get('early_validator_reward', '1.0'))
-        self.nonce_tracker = state.get('nonce_tracker', {})
-        self.spent_transactions = set(state.get('spent_transactions', []))
+        self.utxo_tracker.nonce_tracker = state.get('nonce_tracker', {})
+        self.replay_protection.spent_transactions = set(state.get('spent_transactions', []))
 
     def fund_wallet(self, address: str, amount: float) -> bool:
         """Fund a wallet with a specified amount of BT2C for testing purposes.

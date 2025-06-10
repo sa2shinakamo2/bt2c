@@ -1,0 +1,40 @@
+{
+  "node": {
+    "id": "validator_node",
+    "type": "validator",
+    "log_level": "INFO"
+  },
+  "network": {
+    "listen": "0.0.0.0",
+    "port": 26656,
+    "max_connections": 100,
+    "network_type": "mainnet",
+    "seed_nodes": [
+      "developer_node:26656"
+    ]
+  },
+  "api": {
+    "enabled": true,
+    "host": "0.0.0.0",
+    "port": 8000
+  },
+  "blockchain": {
+    "block_time": 5,
+    "block_reward": 21.0,
+    "halving_interval": 210000
+  },
+  "validation": {
+    "enabled": true,
+    "min_stake": 1.0
+  },
+  "security": {
+    "replay_protection": true,
+    "double_spend_prevention": true,
+    "mempool_cleaning": true,
+    "transaction_finality_confirmations": 6
+  },
+  "distribution": {
+    "period_end": "2025-04-21T02:01:23.469160",
+    "early_validator_bonus": 0.1
+  }
+}

@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  validator:
+    image: bt2c/validator:1.0.0
+    container_name: bt2c-validator
+    ports:
+      - "31110:31110"     # P2P port
+      - "31111:31111"     # Prometheus metrics
+      - "3000:3000"       # Grafana dashboard
+    volumes:
+      - ./config:/etc/bt2c
+      - ./data:/var/lib/bt2c
+      - ./wallets:/root/.bt2c/wallets
+    environment:
+      - BT2C_NETWORK=mainnet
+      - BT2C_WALLET=J22WBM7DPTTQXIIDZM77DN53HZ7XJCFYWFWOIDSD
+      - BT2C_AUTO_STAKE=true
+      - BT2C_MIN_STAKE=1.0
+      - BT2C_SEEDS=165.227.96.210:26656,165.227.108.83:26658
+      - BT2C_SSL_ENABLED=true
+      - BT2C_RATE_LIMIT=100
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:31111/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

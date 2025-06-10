@@ -1,0 +1,30 @@
+# Core dependencies
+fastapi>=0.104.0
+uvicorn>=0.24.0
+pydantic>=2.4.2
+sqlalchemy>=2.0.22
+psycopg2-binary>=2.9.9
+redis>=5.0.1
+prometheus-client>=0.17.1
+
+# Cryptography and blockchain
+cryptography>=41.0.4
+coincurve>=18.0.0
+base58>=2.1.1
+
+# Networking
+aiohttp>=3.8.6
+websockets>=11.0.3
+
+# Monitoring and metrics
+prometheus-fastapi-instrumentator>=6.1.0
+grafana-api>=1.0.3
+
+# Security
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+python-multipart>=0.0.6
+
+# Utilities
+python-dotenv>=1.0.0
+pyyaml>=6.0.1

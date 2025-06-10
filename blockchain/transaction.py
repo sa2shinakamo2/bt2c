@@ -165,6 +165,19 @@ class Transaction(BaseModel):
         except (ImportError, RuntimeError) as e:
             raise RuntimeError(f"System error in fee validation: {e}")
 
+    @field_validator('nonce')
+    @classmethod
+    def validate_nonce(cls, v: int) -> int:
+        """Validate transaction nonce.
+        
+        Nonce is a counter that must be incremented by 1 for each transaction from the same sender.
+        This prevents replay attacks by ensuring each transaction can only be processed once.
+        """
+        # Nonce must be non-negative
+        if v < 0:
+            raise ValueError("Nonce must be non-negative")
+        return v
+
     @field_validator('expiry')
     @classmethod
     def validate_expiry(cls, v: int) -> int:

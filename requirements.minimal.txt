@@ -1,0 +1,13 @@
+# Core dependencies - minimal set needed for BT2C
+cryptography==44.0.2     # For RSA and other crypto operations
+coincurve==19.0.1       # For secp256k1 operations (like Bitcoin)
+base58==2.1.1           # For address encoding
+structlog==24.1.0       # Simple logging
+
+# Optional for wallet generation
+mnemonic==0.21          # BIP39 support
+hdwallet==2.2.1         # BIP44 HD wallets
+
+# Testing
+pytest>=7.0.0
+pytest-asyncio>=0.18.0

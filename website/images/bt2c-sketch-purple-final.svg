@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">
+  <!-- Definitions for gradients and filters -->
+  <defs>
+    <!-- Purple gradient that matches website style -->
+    <linearGradient id="purpleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366F1" />
+      <stop offset="50%" stop-color="#8B5CF6" />
+      <stop offset="100%" stop-color="#A78BFA" />
+    </linearGradient>
+    
+    <!-- Sketch filter effect -->
+    <filter id="sketch" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="3" result="noise" />
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="7" xChannelSelector="R" yChannelSelector="G" />
+    </filter>
+    
+    <!-- Glow effect -->
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  
+  <!-- Main B symbol with sketch-like effect -->
+  <g transform="translate(60, 30)">
+    <!-- Vertical line with sketch effect -->
+    <path d="M30,10 
+             C28,12 29,15 30,20
+             C31,40 29,60 30,80
+             C31,120 29,160 30,200
+             C31,220 29,230 30,240"
+          stroke="url(#purpleGradient)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none"
+          filter="url(#sketch)" />
+    
+    <!-- Top curve of B -->
+    <path d="M30,40
+             C40,38 60,35 80,40
+             C100,45 110,60 105,80
+             C100,95 80,100 60,95
+             C50,93 40,90 30,85"
+          stroke="url(#purpleGradient)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none"
+          filter="url(#sketch)" />
+    
+    <!-- Bottom curve of B with 2-like feature -->
+    <path d="M30,110
+             C50,108 80,105 100,110
+             C120,115 130,130 125,150
+             C120,165 100,170 80,165
+             C70,163 50,160 40,155
+             
+             C60,170 80,180 100,190
+             C120,200 140,210 160,215"
+          stroke="url(#purpleGradient)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" fill="none"
+          filter="url(#sketch)" />
+    
+    <!-- Additional sketch lines for texture -->
+    <path d="M30,40 C32,42 31,38 30,40" stroke="#A78BFA" stroke-width="3" filter="url(#sketch)" />
+    <path d="M80,40 C82,42 81,38 80,40" stroke="#A78BFA" stroke-width="3" filter="url(#sketch)" />
+    <path d="M105,80 C107,82 106,78 105,80" stroke="#A78BFA" stroke-width="3" filter="url(#sketch)" />
+    <path d="M30,110 C32,112 31,108 30,110" stroke="#A78BFA" stroke-width="3" filter="url(#sketch)" />
+    <path d="M125,150 C127,152 126,148 125,150" stroke="#A78BFA" stroke-width="3" filter="url(#sketch)" />
+    <path d="M160,215 C162,217 161,213 160,215" stroke="#A78BFA" stroke-width="3" filter="url(#sketch)" />
+  </g>
+</svg>

@@ -425,12 +425,12 @@ class NodeDiscovery:
         logger.info("Node discovery service stopped")
         
     def _start_discovery_tasks(self):
-        """Start background tasks for peer discovery."""
+        """Start the discovery tasks"""
         # Clear existing tasks
         self.tasks = []
         
         # Add discovery task
-        self.tasks.append(asyncio.create_task(self._discover_peers_loop()))
+        self.tasks.append(asyncio.create_task(self._discover_peers()))
         
         logger.debug(f"Started {len(self.tasks)} discovery tasks")
     
@@ -774,6 +774,23 @@ class NodeDiscovery:
             
         # Return random selection
         return random.sample(all_peers, count)
+    
+    async def get_potential_peers(self, max_peers: int = 50) -> List[str]:
+        """Get a list of potential peers to connect to"""
+        # First try seed nodes
+        if self.seed_nodes:
+            return self.seed_nodes[:max_peers]
+            
+        # Then try known peers
+        if os.path.exists(self.peers_file):
+            try:
+                with open(self.peers_file, 'r') as f:
+                    known_peers = json.load(f)
+                return known_peers.get('peers', [])[:max_peers]
+            except Exception as e:
+                logger.error(f"Error loading known peers: {e}")
+                
+        return []
     
     def set_callbacks(self, connect_callback, get_peers_callback) -> None:
         """

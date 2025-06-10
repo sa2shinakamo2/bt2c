@@ -1,0 +1,372 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{natbib}
+\usepackage{url}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{setspace}
+\usepackage{geometry}
+\geometry{a4paper, margin=1in}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=blue,      
+    urlcolor=blue,
+    citecolor=blue,
+}
+
+\title{BT2C: A Pure Cryptocurrency Implementation with Reputation-Based Proof of Stake}
+\author{BT2C Core Development Team}
+\date{March 19, 2025}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This paper introduces BT2C (bit2coin), a cryptocurrency designed to function as a pure medium of exchange and store of value without the overhead of smart contracts or decentralized applications. We present a novel reputation-based Proof of Stake (rPoS) consensus mechanism that addresses the energy consumption concerns of Proof of Work while maintaining security properties through cryptographic verification and economic incentives. BT2C implements a deterministic issuance schedule with a fixed maximum supply, combined with a flexible staking model that optimizes for network security and validator participation. This paper outlines the technical architecture, cryptographic foundations, consensus rules, and economic model of the BT2C network.
+\end{abstract}
+
+\section{Introduction}
+Cryptocurrencies have evolved significantly since the introduction of Bitcoin \cite{nakamoto2008bitcoin} in 2009. While many projects have expanded into complex platforms supporting smart contracts and decentralized applications, BT2C returns to the original vision of a peer-to-peer electronic cash system with improvements in energy efficiency, transaction finality, and participation accessibility.
+
+The core innovation of BT2C lies in its reputation-based Proof of Stake consensus mechanism, which selects validators based on a combination of stake amount and historical performance metrics. This approach provides three key advantages:
+
+\begin{enumerate}
+\item Energy efficiency compared to Proof of Work systems
+\item Resistance to centralization through accessible validator requirements
+\item Enhanced security through reputation-based incentives
+\end{enumerate}
+
+\section{System Architecture}
+
+\subsection{Network Topology}
+BT2C implements a peer-to-peer network with specialized validator nodes responsible for block production. The network utilizes a gossip protocol for message propagation with the following components:
+
+\begin{itemize}
+\item \textbf{Seed nodes}: Entry points for new validators joining the network
+\item \textbf{Validator nodes}: Full nodes with staked BT2C that participate in consensus
+\item \textbf{API nodes}: Provide REST and WebSocket interfaces for client applications
+\item \textbf{Explorer nodes}: Index and serve blockchain data for user interfaces
+\end{itemize}
+
+Network communication occurs over TCP/IP with mandatory TLS encryption. Each node maintains a connection pool with a configurable number of peers, with priority given to connections with validators having higher reputation scores.
+
+\subsection{Data Structures}
+
+\subsubsection{Blocks}
+Each block in the BT2C blockchain contains:
+
+\begin{verbatim}
+Block {
+    height: uint64
+    timestamp: uint64
+    transactions: Transaction[]
+    validator: string (BT2C address)
+    reward: float64
+    previous_hash: string
+    hash: string
+}
+\end{verbatim}
+
+Block hashes are computed as:
+\begin{verbatim}
+hash = SHA3-256(height || timestamp || merkle_root || validator || reward || previous_hash)
+\end{verbatim}
+
+Where \texttt{merkle\_root} is the root of a Merkle tree constructed from transaction hashes.
+
+\subsubsection{Transactions}
+Transactions in BT2C follow a simple structure:
+
+\begin{verbatim}
+Transaction {
+    sender: string (BT2C address)
+    recipient: string (BT2C address)
+    amount: float64
+    fee: float64
+    nonce: uint64
+    timestamp: uint64
+    signature: string
+    hash: string
+}
+\end{verbatim}
+
+Transaction hashes are computed as:
+\begin{verbatim}
+hash = SHA3-256(sender || recipient || amount || fee || nonce || timestamp)
+\end{verbatim}
+
+The signature is generated using the sender's private key over the transaction hash.
+
+\subsection{Cryptographic Foundations}
+BT2C employs multiple cryptographic primitives to ensure security:
+
+\begin{enumerate}
+\item \textbf{Key generation}: 2048-bit RSA key pairs
+\item \textbf{Address derivation}: 
+   \begin{verbatim}
+   address = "bt2c_" + base58encode(RIPEMD160(SHA256(public_key)))
+   \end{verbatim}
+\item \textbf{Transaction signing}: RSA-PSS with SHA-256
+\item \textbf{Block and transaction hashing}: SHA3-256
+\item \textbf{Seed phrases}: BIP39 with 256-bit entropy (24 words)
+\item \textbf{HD wallet derivation}: BIP44 path m/44'/999'/0'/0/n
+\end{enumerate}
+
+\section{Consensus Mechanism}
+
+\subsection{Reputation-Based Proof of Stake (rPoS)}
+BT2C introduces a reputation-based Proof of Stake consensus mechanism that extends traditional PoS by incorporating historical performance metrics into validator selection. The probability of a validator being selected to produce the next block is determined by:
+
+\begin{equation}
+P(v) = \frac{s_v}{S_{total}} \cdot R_v
+\end{equation}
+
+Where:
+\begin{itemize}
+\item $P(v)$ is the probability of validator $v$ being selected
+\item $s_v$ is the stake of validator $v$
+\item $S_{total}$ is the total stake in the network
+\item $R_v$ is the reputation score of validator $v$ (range: 0.1 to 2.0)
+\end{itemize}
+
+The reputation score $R_v$ is calculated as:
+
+\begin{equation}
+R_v = 0.1 + \min(1.9, (0.4 \cdot A_v + 0.3 \cdot U_v + 0.2 \cdot T_v + 0.1 \cdot H_v))
+\end{equation}
+
+Where:
+\begin{itemize}
+\item $A_v$ is the block validation accuracy (range: 0 to 1)
+\item $U_v$ is the uptime score (range: 0 to 1)
+\item $T_v$ is the transaction processing efficiency (range: 0 to 1)
+\item $H_v$ is the historical participation quality (range: 0 to 1)
+\end{itemize}
+
+This formula ensures that even validators with poor reputation maintain a minimum selection probability (10\% of their stake-based probability), while high-performing validators can achieve up to 200\% of their stake-based probability.
+
+\subsection{Block Production}
+Block production in BT2C follows a time-based schedule with a target block time of 60 seconds. The block production process:
+
+\begin{enumerate}
+\item At each block height, validator selection occurs using the rPoS algorithm
+\item The selected validator has 30 seconds to produce and broadcast a valid block
+\item If the selected validator fails to produce a block, a new validator is selected
+\item This process repeats until a valid block is produced or a timeout occurs
+\end{enumerate}
+
+\subsection{Block Validation}
+When a validator receives a new block, it performs the following validation steps:
+
+\begin{enumerate}
+\item Verify the block structure and hash
+\item Verify the selected validator's eligibility
+\item Verify each transaction's signature and validity
+\item Verify the Merkle root matches the transactions
+\item Verify the block reward calculation
+\end{enumerate}
+
+A block is considered finalized when it has been built upon by 6 subsequent blocks, providing probabilistic finality similar to Bitcoin but with significantly shorter confirmation times due to the 60-second block interval.
+
+\subsection{Validator States}
+Validators in BT2C can exist in four distinct states:
+
+\begin{enumerate}
+\item \textbf{Active}: Fully participating in consensus
+\item \textbf{Inactive}: Registered but not participating (can reactivate)
+\item \textbf{Jailed}: Temporarily suspended for protocol violations
+\item \textbf{Tombstoned}: Permanently banned for severe violations
+\end{enumerate}
+
+Transitions between states follow specific rules:
+
+\begin{itemize}
+\item Active $\rightarrow$ Jailed: Occurs when a validator misses more than 50 blocks in a 1000-block window
+\item Jailed $\rightarrow$ Active: Requires a waiting period of 100 blocks and a manual unjail transaction
+\item Active $\rightarrow$ Tombstoned: Occurs upon detection of double-signing or other critical security violations
+\item Tombstoned $\rightarrow$ Any: Not possible; tombstoned validators must create new validator identities
+\end{itemize}
+
+\section{Economic Model}
+
+\subsection{Supply Schedule}
+BT2C implements a deterministic issuance schedule with the following parameters:
+
+\begin{itemize}
+\item \textbf{Maximum supply}: 21,000,000 BT2C
+\item \textbf{Initial block reward}: 21.0 BT2C
+\item \textbf{Halving interval}: 4 years (126,144,000 seconds, approximately 2,102,400 blocks)
+\item \textbf{Minimum reward}: 0.00000001 BT2C
+\end{itemize}
+
+The block reward at any height $h$ is calculated as:
+
+\begin{equation}
+reward(h) = \max(21.0 \cdot 0.5^{\lfloor h/2102400 \rfloor}, 0.00000001)
+\end{equation}
+
+This creates a disinflationary supply curve similar to Bitcoin but with more predictable issuance due to the consistent block time.
+
+\subsection{Fee Market}
+Transaction fees in BT2C are dynamic, based on network congestion:
+
+\begin{equation}
+min\_fee = base\_fee \cdot (1 + \alpha \cdot utilization\_ratio)
+\end{equation}
+
+Where:
+\begin{itemize}
+\item $base\_fee$ is the minimum fee under no congestion (0.00001 BT2C)
+\item $\alpha$ is a multiplier controlling fee sensitivity (currently set to 5)
+\item $utilization\_ratio$ is the ratio of transactions in the mempool to the maximum block capacity
+\end{itemize}
+
+This mechanism ensures fees remain low during normal operation but increase during periods of high demand to prioritize transactions efficiently.
+
+\subsection{Staking Economics}
+BT2C implements a flexible staking model with the following characteristics:
+
+\begin{itemize}
+\item \textbf{Minimum stake}: 1.0 BT2C
+\item \textbf{No maximum stake}: Validators can stake any amount above the minimum
+\item \textbf{No fixed staking period}: Validators can unstake at any time
+\item \textbf{Unstaking queue}: Withdrawals enter a FIFO queue processed over time
+\item \textbf{Queue processing rate}: Limited to 1\% of total stake per day
+\end{itemize}
+
+The effective annual yield for validators is determined by:
+
+\begin{equation}
+APY = \frac{block\_rewards\_per\_year \cdot validator\_selection\_probability}{validator\_stake}
+\end{equation}
+
+Where $validator\_selection\_probability$ is influenced by both stake amount and reputation as described in section 3.1.
+
+\subsection{Validator Incentives}
+\begin{itemize}
+\item \textbf{Developer Node Reward}: 1000 BT2C (one-time reward for first mainnet validator)
+\item \textbf{Early Validator Reward}: 1.0 BT2C (for validators joining during distribution period)
+\item \textbf{Distribution Period}: 14 days from mainnet launch
+\item \textbf{Auto-staking}: All distribution period rewards are automatically staked
+\end{itemize}
+
+\section{Security Considerations}
+
+\subsection{Sybil Resistance}
+The minimum stake requirement of 1.0 BT2C provides a basic economic barrier against Sybil attacks. Additionally, the reputation system requires consistent participation over time to achieve maximum influence, making it costly to establish multiple high-reputation validators.
+
+\subsection{Nothing-at-Stake Problem}
+BT2C addresses the nothing-at-stake problem through a combination of:
+
+\begin{enumerate}
+\item \textbf{Slashing conditions}: Validators who sign conflicting blocks lose a portion of their stake
+\item \textbf{Reputation penalties}: Double-signing results in immediate reputation reduction to minimum
+\item \textbf{Tombstoning}: Severe violations result in permanent exclusion from the validator set
+\end{enumerate}
+
+\subsection{Long-Range Attacks}
+To mitigate long-range attacks, BT2C implements:
+
+\begin{enumerate}
+\item \textbf{Weak subjectivity checkpoints}: Published every 10,000 blocks
+\item \textbf{Time-bound validator set changes}: Validator set changes take effect only after a delay
+\item \textbf{Social consensus backstop}: Community-recognized canonical chain in case of deep reorganizations
+\end{enumerate}
+
+\subsection{Transaction Replay Protection}
+Each transaction includes a unique nonce derived from the sender's account state, preventing transaction replay attacks. The nonce is incremented with each transaction, and the network rejects transactions with previously used nonces.
+
+\section{Implementation Details}
+
+\subsection{Core Components}
+The BT2C implementation consists of several interconnected components:
+
+\begin{enumerate}
+\item \textbf{Consensus engine}: Implements the rPoS algorithm and block validation rules
+\item \textbf{Transaction pool}: Manages pending transactions and fee prioritization
+\item \textbf{State machine}: Tracks account balances, stakes, and validator metadata
+\item \textbf{P2P network}: Handles peer discovery and message propagation
+\item \textbf{API server}: Provides external interfaces for clients and services
+\end{enumerate}
+
+\subsection{Data Persistence}
+BT2C uses a hybrid storage approach:
+
+\begin{enumerate}
+\item \textbf{Blockchain data}: Stored in a custom append-only file format optimized for sequential access
+\item \textbf{State data}: Maintained in a PostgreSQL database for efficient querying and indexing
+\item \textbf{Mempool}: Held in memory with Redis backup for persistence across restarts
+\end{enumerate}
+
+\subsection{Performance Optimizations}
+Several optimizations enable BT2C to maintain high throughput:
+
+\begin{enumerate}
+\item \textbf{Parallel transaction verification}: Multiple CPU cores validate transaction signatures concurrently
+\item \textbf{Incremental state updates}: State changes are applied incrementally rather than recomputing
+\item \textbf{Bloom filters}: Used to quickly check transaction existence without full lookups
+\item \textbf{Connection pooling}: Database connections are pooled for efficient resource utilization
+\end{enumerate}
+
+\subsection{Network Parameters}
+\begin{itemize}
+\item \textbf{Target block time}: 60 seconds
+\item \textbf{Maximum block size}: 1MB
+\item \textbf{Transaction throughput}: Up to 100 tx/s
+\item \textbf{Rate limiting}: 100 requests/minute
+\item \textbf{Network ports}: 26656 (P2P), 26660 (metrics)
+\end{itemize}
+
+\subsection{Infrastructure Requirements}
+\begin{itemize}
+\item \textbf{Hardware}: 4 CPU cores, 8GB RAM, 100GB SSD
+\item \textbf{Software}: Docker \& Docker Compose
+\item \textbf{Database}: PostgreSQL
+\item \textbf{Caching}: Redis
+\item \textbf{Monitoring}: Prometheus \& Grafana
+\end{itemize}
+
+\section{Distribution Period Mechanics}
+To bootstrap the network securely, BT2C implemented a 14-day distribution period with special incentives:
+
+\begin{enumerate}
+\item \textbf{Early validator reward}: 1.0 BT2C for any validator joining during this period
+\item \textbf{Developer node reward}: 1000 BT2C for the first validator (network founder)
+\item \textbf{Automatic staking}: All distribution rewards are automatically staked
+\end{enumerate}
+
+These mechanics were designed to ensure sufficient initial stake distribution while maintaining security during the critical launch phase.
+
+\section{Conclusion}
+BT2C represents a focused approach to cryptocurrency design, combining Bitcoin's economic principles with modern consensus mechanisms. By implementing reputation-based Proof of Stake, BT2C achieves energy efficiency without sacrificing security or decentralization.
+
+The deliberate exclusion of smart contracts and complex programmability allows BT2C to optimize for its core use case: a secure, efficient medium of exchange and store of value. This specialization enables performance optimizations and security hardening that would be challenging in more general-purpose blockchain platforms.
+
+As the network continues to mature beyond its initial distribution period, the reputation system will increasingly reward consistent, high-quality participation, creating a virtuous cycle of improved security and performance.
+
+\begin{thebibliography}{9}
+\bibitem{nakamoto2008bitcoin}
+S. Nakamoto, ``Bitcoin: A Peer-to-Peer Electronic Cash System,'' 2008.
+
+\bibitem{buterin2014slasher}
+V. Buterin, ``Slasher: A Punitive Proof-of-Stake Algorithm,'' 2014.
+
+\bibitem{king2012ppcoin}
+S. King and S. Nadal, ``PPCoin: Peer-to-Peer Crypto-Currency with Proof-of-Stake,'' 2012.
+
+\bibitem{kiayias2017ouroboros}
+A. Kiayias, A. Russell, B. David, and R. Oliynykov, ``Ouroboros: A Provably Secure Proof-of-Stake Blockchain Protocol,'' 2017.
+
+\bibitem{gilad2017algorand}
+Y. Gilad, R. Hemo, S. Micali, G. Vlachos, and N. Zeldovich, ``Algorand: Scaling Byzantine Agreements for Cryptocurrencies,'' 2017.
+\end{thebibliography}
+
+\end{document}

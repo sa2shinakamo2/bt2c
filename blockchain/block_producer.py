@@ -7,6 +7,7 @@ import hashlib
 import json
 from dataclasses import dataclass, asdict
 from .crypto import sign_block, verify_block_signature
+from .config import Config
 
 logger = structlog.get_logger()
 
@@ -42,101 +43,88 @@ class Block:
         return verify_block_signature(asdict(self), self.signature, public_key)
 
 class BlockProducer:
-    def __init__(self, validator_name: str, stake: int = 0, metrics=None, pending_transactions=None, config=None):
-        self.validator_name = validator_name
-        self.stake = stake
-        self.metrics = metrics
-        self.pending_transactions = pending_transactions
-        self.is_running = False
-        self._task: Optional[asyncio.Task] = None
+    def __init__(self, node, config: Config):
+        self.node = node
+        self.config = config
+        self.running = False
+        self.block_time = config.get('block_time', 300)  # Default 5 minutes
+        self.min_transactions = config.get('min_transactions', 1)
+        self.max_transactions = config.get('max_transactions', 1000)
         self.last_block_time = 0
-        self.block_time = config["block_time"] if config else 5  # Default block time in seconds
-        self.max_transactions = config["max_transactions_per_block"] if config else 1000
-        self.produce_empty_blocks = config["produce_empty_blocks"] if config else False
-        
-    def start(self):
-        """Start block production"""
-        if self.is_running:
-            return
-            
-        self.is_running = True
-        self._task = asyncio.create_task(self._produce_blocks())
-        logger.info("block_producer_started", validator=self.validator_name)
-        
-    def stop(self):
-        """Stop block production"""
-        if not self.is_running:
-            return
-            
-        self.is_running = False
-        if self._task:
-            self._task.cancel()
-        logger.info("block_producer_stopped", validator=self.validator_name)
-        
+
+    async def start(self):
+        """Start block production."""
+        self.running = True
+        await self._produce_blocks()
+
+    async def stop(self):
+        """Stop block production."""
+        self.running = False
+
     async def _produce_blocks(self):
-        """Main block production loop"""
-        while self.is_running:
+        """Main block production loop."""
+        while self.running:
             try:
-                # Get pending transactions
-                transactions = []
-                while len(transactions) < self.max_transactions:
-                    try:
-                        tx = self.pending_transactions.get_nowait()
-                        transactions.append(tx)
-                    except asyncio.QueueEmpty:
-                        break
+                current_time = time.time()
+                time_since_last = current_time - self.last_block_time
+
+                if time_since_last >= self.block_time:
+                    # Time to produce a new block
+                    block = await self._create_block()
+                    if block:
+                        await self.node.add_block(block)
+                        self.last_block_time = current_time
+                        logger.info("block_produced", 
+                                  height=len(self.node.chain),
+                                  transactions=len(block.transactions))
                 
-                # Only produce block if we have transactions or empty blocks are enabled
-                if transactions or self.produce_empty_blocks:
-                    # Create new block
-                    block = await self._create_block(transactions)
-                    
-                    # Sign block with validator's private key
-                    if config:
-                        block.sign(config["private_key"])
-                    
-                    # Update metrics
-                    if self.metrics:
-                        self.metrics.block_counter.labels(network=self.metrics.network_type).inc()
-                        self.metrics.block_size.labels(network=self.metrics.network_type).observe(block.size)
-                        self.metrics.transaction_counter.labels(network=self.metrics.network_type).inc(len(transactions))
-                        
-                        for tx in transactions:
-                            self.metrics.transaction_size.labels(network=self.metrics.network_type).observe(len(json.dumps(tx)))
-                        
-                        # Update validator metrics
-                        if config:
-                            active_validators = len(config["validators"])
-                            self.metrics.active_validator_count.labels(network=self.metrics.network_type).set(active_validators)
-                        
-                        # Calculate and update block time
-                        if self.last_block_time > 0:
-                            block_time = block.timestamp - self.last_block_time
-                            self.metrics.block_time.labels(network=self.metrics.network_type).observe(block_time)
-                        self.last_block_time = block.timestamp
-                    
-                    # Verify signature
-                    if config and not block.verify(config["public_key"]):
-                        raise ValueError("Failed to verify block signature")
-                    
-                    logger.info("block_produced",
-                              height=block.height,
-                              transactions=len(transactions))
-                
-                # Wait for next block
-                await asyncio.sleep(self.block_time)  # TODO: Make configurable
-                
-            except Exception as e:
-                logger.error("block_production_failed", error=str(e))
+                # Sleep for a short time to prevent CPU overuse
                 await asyncio.sleep(1)
-                
-    async def _create_block(self, transactions):
-        """Create a new block"""
-        # TODO: Implement actual block creation logic
-        return Block(
-            height=1,
-            timestamp=datetime.now().timestamp(),
-            previous_hash="",
-            transactions=transactions,
-            proposer=self.validator_name
-        )
+            except Exception as e:
+                logger.error("block_production_error", error=str(e))
+                await asyncio.sleep(5)  # Back off on error
+
+    async def _create_block(self) -> Optional[Block]:
+        """Create a new block with pending transactions."""
+        try:
+            # Get pending transactions
+            transactions = self.node.mempool.get_transactions(
+                max_count=self.max_transactions
+            )
+
+            if len(transactions) < self.min_transactions:
+                logger.debug("insufficient_transactions",
+                           count=len(transactions),
+                           required=self.min_transactions)
+                return None
+
+            # Create block reward transaction
+            reward = self.node.calculate_block_reward()
+            reward_tx = {
+                "sender": "network",
+                "recipient": self.node.wallet_address,
+                "amount": reward,
+                "nonce": 0,  # Network transactions don't need nonce
+                "timestamp": int(time.time())
+            }
+            
+            # Add reward as first transaction
+            transactions.insert(0, reward_tx)
+
+            # Create the block
+            block = Block(
+                height=len(self.node.chain) + 1,
+                timestamp=int(time.time()),
+                previous_hash=self.node.chain[-1].hash if self.node.chain else "0" * 64,
+                transactions=transactions,
+                proposer=self.node.wallet_address
+            )
+
+            # Sign the block
+            block.sign(self.config.get('private_key'))
+
+            return block
+
+        except Exception as e:
+            logger.error("block_creation_error", error=str(e))
+            return None

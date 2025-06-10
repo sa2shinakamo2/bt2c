@@ -1,0 +1,97 @@
+version: '3.8'
+
+services:
+  seed1:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    volumes:
+      - ./seed1/config:/app/config
+      - /var/log/bt2c:/var/log/bt2c
+    ports:
+      - "26656:26656"
+      - "26660:26660"
+      - "3000:3000"
+    depends_on:
+      - db1
+    environment:
+      - NODE_TYPE=seed
+      - CONFIG_FILE=/app/config/seed.json
+    networks:
+      - bt2c_network
+
+  seed2:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+    volumes:
+      - ./seed2/config:/app/config
+      - /var/log/bt2c:/var/log/bt2c
+    ports:
+      - "26657:26657"
+      - "26661:26661"
+      - "3001:3001"
+    depends_on:
+      - db2
+    environment:
+      - NODE_TYPE=seed
+      - CONFIG_FILE=/app/config/seed.json
+    networks:
+      - bt2c_network
+
+  db1:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=bt2c_seed1
+      - POSTGRES_PASSWORD=secure_password_1
+      - POSTGRES_DB=bt2c_seed1
+    volumes:
+      - postgres_data1:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - bt2c_network
+
+  db2:
+    image: postgres:13
+    environment:
+      - POSTGRES_USER=bt2c_seed2
+      - POSTGRES_PASSWORD=secure_password_2
+      - POSTGRES_DB=bt2c_seed2
+    volumes:
+      - postgres_data2:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - bt2c_network
+
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./prometheus:/etc/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - bt2c_network
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
+    networks:
+      - bt2c_network
+
+networks:
+  bt2c_network:
+    driver: bridge
+
+volumes:
+  postgres_data1:
+  postgres_data2:
+  grafana_data:

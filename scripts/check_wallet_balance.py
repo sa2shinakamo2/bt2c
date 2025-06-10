@@ -11,7 +11,7 @@ def check_balance(wallet_address):
     In a real implementation, this would query the blockchain.
     """
     # For the developer node wallet, return the initial stake amount
-    if wallet_address == "bt2c_4k3qn2qmiwjeqkhf44wtowxb":
+    if wallet_address == ""YOUR_WALLET_ADDRESS"":
         # 1000 BT2C developer reward + 1 BT2C early validator reward
         return 1001.0
     
@@ -24,7 +24,7 @@ def get_validator_info(wallet_address):
     In a real implementation, this would query the blockchain.
     """
     # For the developer node wallet, return validator info
-    if wallet_address == "bt2c_4k3qn2qmiwjeqkhf44wtowxb":
+    if wallet_address == ""YOUR_WALLET_ADDRESS"":
         return {
             "staked_amount": 1001.0,
             "rewards_earned": 0.0,

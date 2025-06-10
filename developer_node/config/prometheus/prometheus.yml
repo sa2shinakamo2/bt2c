@@ -1,0 +1,44 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'bt2c_developer_node'
+    static_configs:
+      - targets: ['developer_node:31111']
+        labels:
+          network: 'mainnet'
+          node_type: 'developer'
+          wallet: '0xAC9214B83CBe3c51CddfE1E032D34fdA98C0166b'
+    metrics_path: '/metrics'
+    scheme: 'https'
+    tls_config:
+      cert_file: '/etc/bt2c/ssl/node.crt'
+      key_file: '/etc/bt2c/ssl/node.key'
+    basic_auth:
+      username: 'prometheus'
+      password: 'bt2c_secure_password'
+
+  - job_name: 'node_validation'
+    metrics_path: '/metrics'
+    scheme: 'https'
+    static_configs:
+      - targets: ['developer_node:31111']
+        labels:
+          metric_type: 'validation'
+    relabel_configs:
+      - source_labels: [__name__]
+        regex: 'bt2c_(blocks_validated|stake_amount|rewards_earned|uptime)'
+        action: keep
+
+  - job_name: 'node_resources'
+    metrics_path: '/metrics'
+    scheme: 'https'
+    static_configs:
+      - targets: ['developer_node:31111']
+        labels:
+          metric_type: 'resources'
+    relabel_configs:
+      - source_labels: [__name__]
+        regex: '(node_memory_.*|node_cpu_.*|node_disk_.*|node_network_.*)'
+        action: keep
