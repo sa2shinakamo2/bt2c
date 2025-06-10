@@ -1,0 +1,48 @@
+{
+  "timestamp": 1741382305,
+  "network_type": "mainnet",
+  "chain_id": "bt2c-mainnet-1",
+  "block_time": 10,
+  "initial_supply": 1200.0,
+  "unspendable_amount": 100.0,
+  "consensus_params": {
+    "block": {
+      "max_bytes": 1000000,
+      "max_gas": -1,
+      "time_iota_ms": 1000
+    },
+    "evidence": {
+      "max_age_num_blocks": 100000,
+      "max_age_duration": "172800000000000"
+    },
+    "validator": {
+      "minimum_stake": 16.0,
+      "initial_block_reward": 21.0,
+      "halving_interval": 210000,
+      "minimum_transaction_fee": 1e-08
+    }
+  },
+  "genesis_wallet": {
+    "address": "QURXm1GK0MmsYdo+/5g/Dok1XX88CD6fnHzlfxo6",
+    "public_key": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA24OlgGEisb/6qhzNKz0s\n+BiaK0OOkC7SR/hLOl4rTo4Ewse/DzmRRrXhzzunM85K+FqGz9NWlCSfF/BwIcJe\nE8PjCnsQUZvVk876kUG9CpotIY+gMKNkOsvyHeFABCWuFcYa3wzJP09+rbHGw/Jw\nQvPG156K5cc6CQ4YiilkRU0rXBEQtJVHAmR1LrVcHYrrSxoooOX6cyHvCqOm8i1p\nik+CW2kgnc3FnEjRlK2bdE6s0+93UN/Gjlc+SImOWqyqhPsgMzp+FV1btMR7uv2R\nA1jqhNw/8RcuMv1TxwR+VazhFGSpf2ATKK+8CuraibwMp/XGyZIm5L83IKShG8wO\nfQIDAQAB\n-----END PUBLIC KEY-----",
+    "initial_balance": 1200.0
+  },
+  "app_state": {
+    "accounts": [
+      {
+        "address": "QURXm1GK0MmsYdo+/5g/Dok1XX88CD6fnHzlfxo6",
+        "balance": 1200.0,
+        "unspendable": 100.0
+      }
+    ],
+    "staking": {
+      "params": {
+        "minimum_stake": 16.0,
+        "max_validators": 100,
+        "unbonding_time": "1814400000000000",
+        "reward_halving_interval": 210000
+      },
+      "current_block_reward": 21.0
+    }
+  }
+}

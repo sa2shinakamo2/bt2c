@@ -1,0 +1,39 @@
+{
+    "node": {
+        "id": "validator_mxahzxai",
+        "type": "validator",
+        "home_dir": "/Users/segosounonfranck/Documents/Projects/bt2c/validator_config_bt2c_4peou3qsaohqeaobcemxahzxai",
+        "log_level": "INFO"
+    },
+    "network": {
+        "listen": "0.0.0.0",
+        "port": 9011,
+        "max_connections": 100,
+        "network_type": "testnet",
+        "seed_nodes": [
+            "127.0.0.1:26656",
+            "127.0.0.1:26658"
+        ]
+    },
+    "api": {
+        "enabled": true,
+        "host": "0.0.0.0",
+        "port": 8091
+    },
+    "blockchain": {
+        "block_time": 60,
+        "block_reward": 21.0,
+        "halving_interval": 210000
+    },
+    "validation": {
+        "enabled": true,
+        "min_stake": 0.1,
+        "wallet_address": "bt2c_4peou3qsaohqeaobcemxahzxai"
+    },
+    "security": {
+        "replay_protection": true,
+        "double_spend_prevention": true,
+        "mempool_cleaning": true,
+        "transaction_finality_confirmations": 6
+    }
+}

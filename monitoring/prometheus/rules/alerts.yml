@@ -1,0 +1,92 @@
+groups:
+  - name: bt2c_alerts
+    rules:
+      - alert: HighBlockTime
+        expr: bt2c_block_time_seconds > 600  # 10 minutes
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High block time detected"
+          description: "Block production time is higher than 10 minutes"
+
+      - alert: LowValidatorCount
+        expr: bt2c_active_validators < 3
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Low validator count"
+          description: "Number of active validators is below minimum threshold"
+
+      - alert: HighTransactionFailureRate
+        expr: rate(bt2c_transaction_failures_total[5m]) / rate(bt2c_transactions_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High transaction failure rate"
+          description: "More than 10% of transactions are failing"
+
+      - alert: NodeSyncIssue
+        expr: bt2c_node_height_difference > 10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Node sync issue detected"
+          description: "Node is more than 10 blocks behind the network"
+
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is above 90%"
+
+      - alert: HighCPUUsage
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is above 90%"
+
+      - alert: DiskSpaceLow
+        expr: node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"} * 100 < 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low disk space"
+          description: "Less than 10% disk space remaining"
+
+      - alert: HighErrorRate
+        expr: rate(bt2c_http_requests_total{status=~"5.."}[5m]) / rate(bt2c_http_requests_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate"
+          description: "More than 5% of HTTP requests are failing"
+
+      - alert: SlowAPIResponse
+        expr: histogram_quantile(0.95, rate(bt2c_http_request_duration_seconds_bucket[5m])) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow API response"
+          description: "95th percentile of API response time is above 1 second"
+
+      - alert: HighMempoolSize
+        expr: bt2c_mempool_size > 10000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High mempool size"
+          description: "More than 10,000 transactions in mempool"

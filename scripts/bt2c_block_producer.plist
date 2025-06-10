@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.bt2c.block_producer</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/bin/python3</string>
+        <string>/Users/segosounonfranck/Documents/Projects/bt2c/tools/produce_blocks_scheduled.py</string>
+        <string>bt2c_uinhatq4pjnjcxjjiywcbzgn</string>
+        <string>mainnet</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/Users/segosounonfranck/.bt2c/logs/block_producer_output.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/segosounonfranck/.bt2c/logs/block_producer_error.log</string>
+    <key>WorkingDirectory</key>
+    <string>/Users/segosounonfranck/Documents/Projects/bt2c</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+    </dict>
+    <key>ThrottleInterval</key>
+    <integer>30</integer>
+</dict>
+</plist>

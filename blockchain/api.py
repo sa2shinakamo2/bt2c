@@ -138,23 +138,57 @@ class BlockInfo(BaseModel):
 @app.on_event("startup")
 async def startup_event():
     """Initialize the blockchain on startup."""
-    logger.info("node_starting")
-    app.state.start_time = time.time()
-    
-    # Initialize blockchain with genesis config
-    network_type = os.getenv("NETWORK_TYPE", "mainnet")
-    genesis_config = GenesisConfig(NetworkType(network_type))
-    genesis_config.initialize()
-    app.state.blockchain = BT2CBlockchain(genesis_config)
-    
-    # Update metrics
-    ACTIVE_VALIDATORS.set(len(app.state.blockchain.validator_set))
-    total_staked = sum(v.stake for v in app.state.blockchain.validator_set.values())
-    STAKED_AMOUNT.set(total_staked)
-    
-    logger.info("node_started",
-                network=network_type,
-                address=app.state.blockchain.wallet.address)
+    try:
+        # Get network type from environment
+        network_type = os.getenv("NETWORK_TYPE", "mainnet")
+        network_type_enum = NetworkType(network_type)
+        
+        # Initialize database manager
+        db_manager = DatabaseManager(network_type=network_type_enum)
+        app.state.db_manager = db_manager
+        
+        # Initialize validator manager
+        validator_manager = ValidatorManager(db_manager=db_manager)
+        app.state.validator_manager = validator_manager
+        
+        # Initialize genesis config
+        genesis_config = GenesisConfig(network_type=network_type_enum)
+        genesis_config.initialize()
+        
+        # Initialize blockchain
+        blockchain = BT2CBlockchain(genesis_config)
+        app.state.blockchain = blockchain
+        
+        logger.info("blockchain_initialized", network=network_type)
+        
+    except Exception as e:
+        logger.error("startup_error", error=str(e))
+        raise e
+
+@app.get("/api/v1/blocks/latest")
+async def get_latest_block():
+    """Get the latest block."""
+    try:
+        if not hasattr(app.state, "blockchain"):
+            raise HTTPException(status_code=503, detail="Blockchain not initialized")
+            
+        latest_block = app.state.blockchain.get_latest_block()
+        if not latest_block:
+            raise HTTPException(status_code=404, detail="No blocks found")
+            
+        return {
+            "height": latest_block.index,  # Changed from height to index
+            "hash": latest_block.hash,
+            "timestamp": latest_block.timestamp,
+            "transactions": len(latest_block.transactions),
+            "validator": latest_block.validator_address,
+            "previous_hash": latest_block.previous_hash
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("get_latest_block_error", error=str(e))
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
@@ -187,6 +221,9 @@ async def health_check():
             "uptime": time.time() - app.state.start_time
         }
         
+        # Calculate sync status
+        sync_status = await _get_sync_status(app.state.blockchain)
+        
         # Build response
         response = HealthResponse(
             status="online",
@@ -203,7 +240,7 @@ async def health_check():
                 "validators": len(app.state.blockchain.validator_set),
                 "pending_transactions": len(app.state.blockchain.pending_transactions),
                 "peers": p2p_status.get("connected_peers", 0),
-                "synced": True  # TODO: Implement proper sync status
+                "synced": sync_status["synced"]
             },
             metrics=metrics
         )
@@ -256,6 +293,9 @@ async def node_info():
         # Check if this is a developer node
         is_developer_node = validator_manager.is_developer_node(address)
         
+        # Calculate sync status
+        sync_status = await _get_sync_status(app.state.blockchain)
+        
         # Create response
         response = NodeInfo(
             address=address,
@@ -265,7 +305,7 @@ async def node_info():
             peers_connected=peers_connected,
             latest_block_height=len(app.state.blockchain.chain) - 1,
             latest_block_hash=latest_block.hash,
-            synced=True,  # TODO: Implement proper sync status
+            synced=sync_status["synced"],
             staked_amount=staked_amount,
             is_developer_node=is_developer_node,
             node_id=node_id,
@@ -378,6 +418,9 @@ async def blockchain_status():
             
         latest_block = app.state.blockchain.get_latest_block()
         
+        # Calculate sync status
+        sync_status = await _get_sync_status(app.state.blockchain)
+        
         return {
             "status": "online",
             "network": app.state.blockchain.network_type.value,
@@ -390,7 +433,7 @@ async def blockchain_status():
             "validators": len(app.state.blockchain.validator_set),
             "pending_transactions": len(app.state.blockchain.pending_transactions),
             "peers": len(app.state.blockchain.peers),
-            "synced": app.state.blockchain.is_synced() if hasattr(app.state.blockchain, "is_synced") else True
+            "synced": sync_status["synced"]
         }
     except Exception as e:
         logger.error("blockchain_status_error", error=str(e))
@@ -930,3 +973,50 @@ async def start_api_server(config, p2p_manager=None):
     
     # Run the server
     await server.serve()
+
+async def _get_sync_status(blockchain):
+    """Calculate detailed sync status."""
+    try:
+        # Get max height from peers
+        max_peer_height = 0
+        for peer in blockchain.peers:
+            try:
+                height = await blockchain.get_peer_height(peer)
+                max_peer_height = max(max_peer_height, height)
+            except Exception as e:
+                logger.warning("peer_height_error", peer=peer, error=str(e))
+
+        our_height = len(blockchain.chain)
+        
+        # We're synced if:
+        # 1. We have peers and we're at the same height
+        # 2. We have no peers (we're the only node)
+        if len(blockchain.peers) == 0:
+            return {
+                "synced": True,
+                "progress": 1.0,
+                "current_height": our_height,
+                "target_height": our_height,
+                "blocks_behind": 0,
+                "peer_count": 0
+            }
+
+        blocks_behind = max(0, max_peer_height - our_height)
+        progress = our_height / max_peer_height if max_peer_height > 0 else 1.0
+
+        return {
+            "synced": blocks_behind <= 1,  # Allow 1 block difference
+            "progress": progress,
+            "current_height": our_height,
+            "target_height": max_peer_height,
+            "blocks_behind": blocks_behind,
+            "peer_count": len(blockchain.peers)
+        }
+
+    except Exception as e:
+        logger.error("sync_status_error", error=str(e))
+        return {
+            "synced": False,
+            "progress": 0.0,
+            "error": str(e)
+        }

@@ -65,7 +65,7 @@ def load_config():
         logger.error(f"Failed to load validator configuration: {e}")
         return {
             "node_name": os.environ.get("NODE_NAME", "validator1"),
-            "wallet_address": os.environ.get("WALLET_ADDRESS", "bt2c_4k3qn2qmiwjeqkhf44wtowxb"),
+            "wallet_address": os.environ.get("WALLET_ADDRESS", ""YOUR_WALLET_ADDRESS""),
             "stake_amount": float(os.environ.get("STAKE_AMOUNT", "1001.0")),
             "network": {
                 "listen_addr": "0.0.0.0:8334",

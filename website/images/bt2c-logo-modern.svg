@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="60" viewBox="0 0 200 60">
+  <!-- Modern Hexagon Background -->
+  <polygon points="30,5 50,15 50,45 30,55 10,45 10,15" fill="#8B5CF6" />
+  
+  <!-- B2C Symbol -->
+  <path d="M22,20 h8 c2.2,0 4,1.8 4,4 c0,1.5 -0.8,2.8 -2,3.5 c1.8,0.6 3,2.3 3,4.3 c0,2.5 -2,4.5 -4.5,4.5 h-8.5 v-16 z" fill="white" stroke="#4F46E5" stroke-width="1" />
+  <path d="M26,24 v3 h3 c0.8,0 1.5,-0.7 1.5,-1.5 c0,-0.8 -0.7,-1.5 -1.5,-1.5 h-3 z" fill="#4F46E5" />
+  <path d="M26,31 v3 h3.5 c0.8,0 1.5,-0.7 1.5,-1.5 c0,-0.8 -0.7,-1.5 -1.5,-1.5 h-3.5 z" fill="#4F46E5" />
+  
+  <!-- Text -->
+  <text x="65" y="35" font-family="Arial, sans-serif" font-weight="bold" font-size="24" fill="#4F46E5">BT2C</text>
+  <text x="65" y="50" font-family="Arial, sans-serif" font-size="12" fill="#8B5CF6">bit2coin</text>
+</svg>

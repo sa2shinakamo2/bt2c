@@ -41,13 +41,13 @@ class GenesisConfig:
         self.nonce = GENESIS_NONCE
         
     def get_genesis_coinbase_tx(self) -> Transaction:
-        """Create the genesis coinbase transaction."""
+        """Get the genesis coinbase transaction"""
         return Transaction(
             sender_address=GENESIS_COINBASE,
             recipient_address=GENESIS_COINBASE,  # Unspendable like Bitcoin's genesis
-            amount=21.0,  # First block reward as per whitepaper
+            amount=self.developer_reward,
             timestamp=self.timestamp,
-            network_type=self.network_type,
+            network_type="mainnet",  # Explicitly set network type
             payload={"message": self.message}  # Include the genesis message
         )
         

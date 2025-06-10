@@ -168,57 +168,51 @@ class MempoolTransaction:
         return True
 
 class Mempool:
-    def __init__(self, network_type: NetworkType, metrics: BlockchainMetrics):
+    def __init__(self, network_type: NetworkType, metrics: BlockchainMetrics, blockchain=None):
         """Initialize mempool.
         
         Args:
             network_type (NetworkType): Network type (mainnet/testnet)
             metrics (BlockchainMetrics): Metrics tracker
+            blockchain: Optional reference to the blockchain for nonce validation
         """
         self.network_type = network_type
         self.metrics = metrics
-        self.config = BT2CConfig.get_config(network_type)
+        self.config = BT2CConfig()
+        self.blockchain = blockchain  # Store reference to blockchain for nonce validation
         
-        # Main storage
-        self.transactions: Dict[str, MempoolTransaction] = {}
-        self.priority_queue: List[MempoolEntry] = []
+        # Main transaction storage
+        self.transactions: Dict[str, MempoolTransaction] = {}  # tx_hash -> MempoolTransaction
         
-        # Indexes for quick lookup
-        self.address_txs: Dict[str, Set[str]] = defaultdict(set)
-        self.nonce_index: Dict[str, Dict[int, str]] = defaultdict(dict)
+        # Priority queue for transaction selection
+        self.priority_queue: List[MempoolEntry] = []  # Heap of MempoolEntry
         
-        # Size tracking
-        self.total_size = 0
-        self.last_pruned = time.time()
+        # Indexes for efficient lookups
+        self.address_txs: Dict[str, Set[str]] = defaultdict(set)  # address -> set of tx_hashes
+        self.nonce_index: Dict[str, Dict[int, str]] = defaultdict(dict)  # address -> nonce -> tx_hash
         
-        # Transaction validation cache
-        self.validation_cache: Dict[str, Tuple[bool, str]] = {}
-        self.validation_cache_lock = threading.RLock()
-        self.MAX_VALIDATION_CACHE_SIZE = 10000
+        # Dependency tracking
+        self.dependency_graph: Dict[str, Set[str]] = defaultdict(set)  # tx_hash -> set of dependent tx_hashes
         
-        # Pending validation queue
-        self.validation_queue = deque()
-        self.validation_in_progress = set()
-        self.validation_lock = threading.RLock()
+        # Validation tracking
+        self.validation_queue: deque = deque()  # Queue of tx_hashes to validate
+        self.validation_results: Dict[str, Tuple[bool, str]] = {}  # tx_hash -> (is_valid, message)
+        self.validation_lock = threading.Lock()
+        self.validation_worker_running = False
         
-        # Transaction dependency graph
-        self.dependency_graph: Dict[str, Set[str]] = defaultdict(set)
-        
-        # Thread pool for parallel validation
-        self.executor = concurrent.futures.ThreadPoolExecutor(
-            max_workers=min(32, getattr(self.config, 'max_threads', 4))
-        )
-        
-        # Congestion control
-        self.congestion_level = 0.0  # 0.0 to 1.0 scale
-        self.min_fee_rate = Decimal('0.00000001')  # 1 satoshi per byte minimum
-        self.last_congestion_update = time.time()
-        self.congestion_update_interval = 30  # seconds
-        
-        # RBF tracking
+        # Replacement tracking
         self.replaced_transactions: Dict[str, str] = {}  # old_tx_hash -> new_tx_hash
         
-        # Start background validation worker
+        # Size tracking
+        self.total_size = 0  # Total size in bytes
+        
+        # Congestion management
+        self.congestion_level = 0.0  # 0.0 to 1.0
+        self.min_fee_rate = Decimal('0.00000001')  # Minimum fee rate (BT2C per byte)
+        self.last_congestion_update = 0.0  # Last time congestion was updated
+        self.congestion_update_interval = 10.0  # Update interval in seconds
+        
+        # Start validation worker
         self._start_validation_worker()
         
         # Performance metrics
@@ -301,92 +295,86 @@ class Mempool:
                 for tx_hash in batch:
                     self.validation_in_progress.discard(tx_hash)
                     
-    def _validate_transaction(self, tx_hash: str) -> bool:
+    def _validate_transaction(self, tx_hash: str) -> None:
         """Validate a single transaction."""
+        # Skip if transaction is no longer in mempool
         if tx_hash not in self.transactions:
-            return False
+            return
             
         mempool_tx = self.transactions[tx_hash]
         tx = mempool_tx.transaction
         
-        # Check validation cache first
-        with self.validation_cache_lock:
-            if tx_hash in self.validation_cache:
-                is_valid, message = self.validation_cache[tx_hash]
-                if not is_valid:
-                    mempool_tx.mark_invalid(message)
-                return is_valid
-        
-        start_time = time.time()
-        blockchain = BT2CBlockchain.get_instance()
+        validation_start = time.time()
+        is_valid = True
+        validation_message = "Transaction is valid"
         
         try:
-            # Verify transaction signature
-            if not tx.verify():
-                mempool_tx.mark_invalid("Invalid signature")
-                self._cache_validation_result(tx_hash, False, "Invalid signature")
-                return False
-                
-            # Check if transaction has expired
+            # Basic validation
             if tx.is_expired():
-                mempool_tx.mark_invalid("Transaction expired")
-                self._cache_validation_result(tx_hash, False, "Transaction expired")
-                return False
+                is_valid = False
+                validation_message = "Transaction has expired"
+            
+            # Signature validation
+            elif not tx.verify():
+                is_valid = False
+                validation_message = "Invalid signature"
                 
-            # Get sender's current balance
-            sender_balance = blockchain.get_balance(tx.sender_address)
-            
-            # Calculate total pending amount for this sender
-            sender_txs = self.address_txs[tx.sender_address]
-            total_pending = sum(
-                self.transactions[pending_hash].transaction.amount + self.transactions[pending_hash].transaction.fee
-                for pending_hash in sender_txs
-                if pending_hash != tx_hash and self.transactions[pending_hash].is_valid
-            )
-            
-            # Check if sender has enough balance
-            if total_pending + tx.amount + tx.fee > sender_balance:
-                mempool_tx.mark_invalid("Insufficient balance")
-                self._cache_validation_result(tx_hash, False, "Insufficient balance")
-                return False
+            # Nonce validation with blockchain integration
+            elif tx.sender_address in self.nonce_index or (self.blockchain and tx.sender_address in self.blockchain.nonce_tracker):
+                # Get the highest nonce from blockchain and mempool
+                blockchain_nonce = self.blockchain.nonce_tracker.get(tx.sender_address, -1) if self.blockchain else -1
+                mempool_nonce = max(self.nonce_index[tx.sender_address].keys()) if self.nonce_index[tx.sender_address] else -1
+                expected_nonce = max(blockchain_nonce, mempool_nonce) + 1
                 
-            # Additional validation logic based on transaction type
-            if not self._validate_transaction_type(tx):
-                mempool_tx.mark_invalid("Invalid transaction type")
-                self._cache_validation_result(tx_hash, False, "Invalid transaction type")
-                return False
-                
-            # Transaction is valid
-            self._cache_validation_result(tx_hash, True, "")
-            
-            # Update validation time
-            validation_time = time.time() - start_time
-            mempool_tx.validation_time = validation_time
-            
-            # Record validation time metric
-            self.metrics.mempool_validation_time.labels(
-                network=self.network_type.value
-            ).observe(validation_time)
-            
-            return True
-            
+                if tx.nonce != expected_nonce:
+                    is_valid = False
+                    validation_message = f"Invalid nonce: expected {expected_nonce}, got {tx.nonce} (blockchain: {blockchain_nonce}, mempool: {mempool_nonce})"
+                    
+                # Check for replay protection
+                elif self.blockchain and hasattr(self.blockchain, 'spent_transactions') and tx.hash in self.blockchain.spent_transactions:
+                    is_valid = False
+                    validation_message = "Transaction replay attempt detected"
+                    
+            # Type-specific validation
+            else:
+                type_validation = self._validate_transaction_type(tx)
+                if not type_validation[0]:
+                    is_valid = False
+                    validation_message = type_validation[1]
+                    
         except Exception as e:
-            logger.error("transaction_validation_error", 
-                        tx_hash=tx_hash[:8], 
-                        error=str(e))
-            mempool_tx.mark_invalid(f"Validation error: {str(e)}")
-            self._cache_validation_result(tx_hash, False, f"Validation error: {str(e)}")
-            return False
+            is_valid = False
+            validation_message = f"Validation error: {str(e)}"
+            logger.error("tx_validation_error", tx_hash=tx_hash[:8], error=str(e))
             
+        # Update validation time
+        validation_time = time.time() - validation_start
+        mempool_tx.validation_time = validation_time
+        
+        # Update validation result
+        if not is_valid:
+            mempool_tx.mark_invalid(validation_message)
+            
+        # Cache validation result
+        self._cache_validation_result(tx_hash, is_valid, validation_message)
+        
+        # Update metrics
+        self.metrics.mempool_validation_time.labels(
+            network=self.network_type.value,
+            result="valid" if is_valid else "invalid"
+        ).observe(validation_time)
+        
+        logger.info("transaction_validated",
+                   tx_hash=tx_hash[:8],
+                   is_valid=is_valid,
+                   message=validation_message,
+                   time_ms=f"{validation_time * 1000:.2f}")
+        
     def _cache_validation_result(self, tx_hash: str, is_valid: bool, message: str):
         """Cache transaction validation result."""
-        with self.validation_cache_lock:
-            # Limit cache size
-            if len(self.validation_cache) >= self.MAX_VALIDATION_CACHE_SIZE:
-                # Remove random entry (simple approach)
-                self.validation_cache.pop(next(iter(self.validation_cache)))
-                
-            self.validation_cache[tx_hash] = (is_valid, message)
+        with self.validation_lock:
+            # Store result in validation results
+            self.validation_results[tx_hash] = (is_valid, message)
             
     def _validate_transaction_type(self, tx: Transaction) -> bool:
         """Validate transaction based on its type."""
@@ -417,12 +405,23 @@ class Mempool:
         
         # If not a replacement, check transaction nonce
         if not replaced_tx_hash:
-            expected_nonce = len(self.nonce_index[tx.sender_address])
+            # Get the expected nonce from blockchain's nonce tracker or from mempool
+            blockchain_nonce = self.blockchain.nonce_tracker.get(tx.sender_address, -1) if hasattr(self.blockchain, 'nonce_tracker') else -1
+            mempool_nonce = max(self.nonce_index[tx.sender_address].keys()) if self.nonce_index[tx.sender_address] else -1
+            expected_nonce = max(blockchain_nonce, mempool_nonce) + 1
+            
             if tx.nonce != expected_nonce:
                 logger.error("invalid_nonce",
                             sender=tx.sender_address,
                             expected=expected_nonce,
-                            received=tx.nonce)
+                            received=tx.nonce,
+                            blockchain_nonce=blockchain_nonce,
+                            mempool_nonce=mempool_nonce)
+                return False
+                
+            # Check if transaction is already in blockchain (replay protection)
+            if hasattr(self.blockchain, 'spent_transactions') and tx.hash in self.blockchain.spent_transactions:
+                logger.warning("replay_attempt", tx_hash=tx.hash)
                 return False
                 
         # Check congestion-based minimum fee

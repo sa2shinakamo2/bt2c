@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <!-- Bitcoin-style circle background -->
+  <circle cx="100" cy="100" r="90" fill="#F7931A" />
+  
+  <!-- Inner shadow for 3D effect -->
+  <circle cx="100" cy="100" r="85" fill="#F7931A" stroke="#E78018" stroke-width="5" />
+  
+  <!-- B2 symbol -->
+  <g transform="rotate(14, 100, 100)">
+    <!-- Main B shape -->
+    <path d="M75,45 
+             L110,45 
+             C130,45 145,55 145,75 
+             C145,85 140,95 130,100 
+             C140,105 150,115 150,135 
+             C150,155 135,165 110,165 
+             L75,165 
+             L75,45 Z" 
+          fill="#FFFFFF" />
+    
+    <!-- Inner cuts for the B with 2 integrated -->
+    <path d="M90,65 
+             L90,85 
+             L110,85 
+             C115,85 120,80 120,75 
+             C120,70 115,65 110,65 
+             L90,65 Z" 
+          fill="#F7931A" />
+    
+    <!-- The "2" prominently displayed in the lower part of the B -->
+    <path d="M90,105
+             L115,105
+             C125,105 130,110 130,120
+             C130,130 125,135 115,135
+             L105,135
+             L130,155
+             L130,165
+             L90,165
+             L90,145
+             L110,145
+             L90,125
+             L90,105
+             Z" 
+          fill="#F7931A" />
+  </g>
+</svg>

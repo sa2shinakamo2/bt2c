@@ -1,0 +1,29 @@
+{
+    "network": {
+        "listen_addr": "0.0.0.0:26656",
+        "external_addr": "${PUBLIC_IP}:26656",
+        "max_connections": 1000,
+        "rate_limit": 100
+    },
+    "monitoring": {
+        "prometheus_enabled": true,
+        "prometheus_port": 26660,
+        "grafana_enabled": true,
+        "grafana_port": 3000,
+        "alert_email": "${ALERT_EMAIL}"
+    },
+    "storage": {
+        "db_backend": "postgres",
+        "db_host": "${DB_HOST}",
+        "db_port": "${DB_PORT}",
+        "db_name": "${DB_NAME}",
+        "db_user": "${DB_USER}",
+        "db_password": "${DB_PASSWORD}"
+    },
+    "logging": {
+        "level": "info",
+        "format": "json",
+        "output": "file",
+        "log_file": "/var/log/bt2c/seed.log"
+    }
+}

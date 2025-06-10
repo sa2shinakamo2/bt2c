@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <!-- Bitcoin-style circle background -->
+  <circle cx="100" cy="100" r="90" fill="#F7931A" />
+  
+  <!-- Inner shadow for 3D effect -->
+  <circle cx="100" cy="100" r="85" fill="#F7931A" stroke="#E78018" stroke-width="5" />
+  
+  <!-- B2C symbol -->
+  <g transform="rotate(14, 100, 100)">
+    <!-- Main B shape -->
+    <path d="M100,40 
+             C125,40 145,55 145,75 
+             C145,90 135,100 125,105 
+             C140,110 150,125 150,145 
+             C150,165 130,175 100,175 
+             L60,175 
+             L60,40 
+             L100,40 Z" 
+          fill="#FFFFFF" />
+    
+    <!-- Inner cuts for the B -->
+    <path d="M80,65 
+             L80,90 
+             L100,90 
+             C110,90 115,85 115,75 
+             C115,65 110,65 100,65 
+             L80,65 Z 
+             
+             M80,120 
+             L80,150 
+             L105,150 
+             C115,150 120,145 120,135 
+             C120,125 115,120 105,120 
+             L80,120 Z" 
+          fill="#F7931A" />
+    
+    <!-- The "2" prominently displayed in the center -->
+    <path d="M85,95
+             L120,95
+             C120,105 115,115 105,115
+             L90,115
+             L120,145
+             L120,150
+             L80,150
+             L80,140
+             L105,140
+             L80,115
+             L80,105
+             C80,100 82,95 85,95
+             Z" 
+          fill="#FFFFFF" stroke="#F7931A" stroke-width="1" />
+  </g>
+  
+  <!-- Small "C" to complete BT2C -->
+  <text x="130" y="170" font-family="Arial, sans-serif" font-weight="bold" font-size="24" fill="#FFFFFF" transform="rotate(14, 100, 100)">C</text>
+</svg>

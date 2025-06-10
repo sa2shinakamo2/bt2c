@@ -655,17 +655,32 @@ class P2PManager:
         await peer.send_message(status_message)
 
     async def _maintenance_loop(self):
-        """Periodic maintenance of the P2P network."""
-        while self.running:
+        """Background task to maintain peer connections"""
+        while True:
             try:
-                await self._maintain_connections()
-                await self._ping_peers()
-                await self._prune_inactive_peers()
+                # Get potential peers
+                potential_peers = await self.discovery.get_potential_peers(max_peers=self.max_peers)
+                if not potential_peers:
+                    logger.warning("No connected peers for discovery")
+                    await asyncio.sleep(5)
+                    continue
+                    
+                # Try to connect to new peers
+                for peer in potential_peers:
+                    if len(self.connections) >= self.max_peers:
+                        break
+                    if peer not in self.connections:
+                        await self.connect_to_peer(peer)
+                        
+                # Remove inactive peers
+                for peer_id in list(self.connections.keys()):
+                    if not self.connections[peer_id].is_active():
+                        await self.disconnect_peer(peer_id)
+                        
             except Exception as e:
                 logger.error("Error in maintenance loop", error=str(e))
-            
-            # Wait before next maintenance round
-            await asyncio.sleep(60)  # Run maintenance every minute
+                
+            await asyncio.sleep(5)
 
     async def _ping_peers(self):
         """Ping all connected peers to check if they're still alive."""

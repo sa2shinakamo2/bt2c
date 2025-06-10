@@ -1,0 +1,81 @@
+version: '3.8'
+
+services:
+  validator:
+    build: .
+    image: bt2c/validator:latest
+    container_name: bt2c-validator
+    ports:
+      - "443:8000"
+    volumes:
+      - ./config:/config
+      - ./data:/data
+      - ./certs:/certs
+    environment:
+      - CONFIG_PATH=/config/validator.json
+      - SSL_CERT_PATH=/certs/fullchain.pem
+      - SSL_KEY_PATH=/certs/privkey.pem
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - bt2c_network
+    restart: always
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: bt2c-postgres
+    environment:
+      - POSTGRES_USER=bt2c
+      - POSTGRES_PASSWORD=bt2c_secure_password
+      - POSTGRES_DB=bt2c
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bt2c"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - bt2c_network
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    container_name: bt2c-redis
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - bt2c_network
+    restart: always
+
+  nginx:
+    image: nginx:alpine
+    container_name: bt2c-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./certs:/etc/nginx/certs
+      - ./website:/usr/share/nginx/html
+    depends_on:
+      - validator
+    networks:
+      - bt2c_network
+    restart: always
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  bt2c_network:
+    driver: bridge

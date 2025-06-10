@@ -1,0 +1,82 @@
+groups:
+  - name: bt2c_api_alerts
+    rules:
+      # High rate of requests
+      - alert: HighRequestRate
+        expr: rate(http_requests_total[1m]) > 500
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High request rate detected"
+          description: "The API server is receiving {{ $value }} requests per second, which is above the threshold of 500."
+
+      # Rate limiting triggered
+      - alert: RateLimitingTriggered
+        expr: rate(rate_limit_triggered_total[1m]) > 10
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Rate limiting triggered frequently"
+          description: "Rate limiting has been triggered {{ $value }} times in the last minute."
+
+      # Circuit breaker open
+      - alert: CircuitBreakerOpen
+        expr: circuit_breaker_open > 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Circuit breaker open"
+          description: "The circuit breaker for {{ $labels.endpoint }} has been open for more than 5 minutes."
+
+      # High error rate
+      - alert: HighErrorRate
+        expr: rate(http_requests_errors_total[1m]) / rate(http_requests_total[1m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate"
+          description: "Error rate is above 10% for the last 2 minutes."
+
+      # Slow response time
+      - alert: SlowResponseTime
+        expr: http_request_duration_seconds{quantile="0.95"} > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow response time"
+          description: "95th percentile of response time is above 1 second for the last 5 minutes."
+
+      # Potential DoS attack
+      - alert: PotentialDoSAttack
+        expr: rate(http_requests_total{status=~"429|503"}[1m]) > 50
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Potential DoS attack"
+          description: "High rate of rate-limited or service unavailable responses detected."
+
+      # Mempool overload
+      - alert: MempoolOverload
+        expr: mempool_size > 10000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Mempool overload"
+          description: "The mempool contains more than 10,000 transactions."
+
+      # Transaction validation failures
+      - alert: TransactionValidationFailures
+        expr: rate(transaction_validation_failures_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High transaction validation failure rate"
+          description: "More than 10 transaction validations are failing per minute."

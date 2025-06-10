@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  bt2c-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: bt2c-api
+    restart: unless-stopped
+    volumes:
+      - ./testnet:/app/testnet
+      - ./logs:/app/logs
+    environment:
+      - NODE_ID=node1
+      - RATE_LIMIT=100
+      - TIME_WINDOW=60
+    command: python scripts/enhanced_api_server.py --testnet-dir testnet --node-id node1 --port 8080 --rate-limit 100 --time-window 60
+    networks:
+      - bt2c-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  nginx:
+    image: nginx:latest
+    container_name: bt2c-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/bt2c_api.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx/bt2c_validators.conf:/etc/nginx/conf.d/bt2c_validators.conf
+      - ./nginx/html:/usr/share/nginx/html
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./nginx/logs:/var/log/nginx
+    depends_on:
+      - bt2c-api
+    networks:
+      - bt2c-network
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  monitoring:
+    image: prom/prometheus:latest
+    container_name: bt2c-monitoring
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - bt2c-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: bt2c-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - monitoring
+    networks:
+      - bt2c-network
+
+networks:
+  bt2c-network:
+    driver: bridge
+
+volumes:
+  prometheus_data:
+  grafana_data:

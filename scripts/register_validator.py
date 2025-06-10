@@ -1,88 +1,96 @@
 #!/usr/bin/env python3
+"""
+Register Validator in BT2C Mainnet
+
+This script directly registers a validator in the BT2C blockchain database.
+"""
 
 import os
 import sys
-import json
-import argparse
+import sqlite3
+from datetime import datetime
 from pathlib import Path
 
 # Add project root to Python path
 project_root = Path(__file__).parent.parent
 sys.path.append(str(project_root))
 
-from blockchain.wallet import Wallet
-from blockchain.transaction import Transaction, TransactionType
-from blockchain.config import NetworkType
-
-def load_validator_info(node_id: str) -> dict:
-    """Load validator information from certificate."""
-    cert_path = f"certs/{node_id}_cert.pem"
-    if not os.path.exists(cert_path):
-        raise FileNotFoundError(f"Certificate not found: {cert_path}")
-    
-    # Create validator wallet
-    wallet = Wallet()
-    
-    # Load genesis config
-    with open("mainnet/genesis.json", "r") as f:
-        genesis_config = json.load(f)
-    
-    validator_stake = genesis_config["app_state"]["staking"]["params"]["minimum_stake"]
-    
-    return {
-        "wallet": wallet,
-        "stake_amount": validator_stake,
-        "commission_rate": "0.10"
-    }
-
-def create_validator_transactions(wallet: Wallet, stake_amount: float, commission_rate: str) -> list:
-    """Create transactions for validator registration."""
-    # Create stake transaction
-    stake_tx = Transaction(
-        sender=wallet.address,
-        recipient=wallet.address,  # Self-stake
-        amount=stake_amount,
-        nonce=1,
-        network_type=NetworkType.MAINNET,
-        tx_type=TransactionType.STAKE,
-        payload={
-            "validator": True,
-            "commission_rate": commission_rate
-        }
-    )
-    stake_tx.sign(wallet)
-    
-    return [stake_tx]
-
-def main():
-    parser = argparse.ArgumentParser(description="Register BT2C validator")
-    parser.add_argument("--node-id", required=True, help="Validator node ID")
-    args = parser.parse_args()
-    
+def register_validator(address, stake=1.0, network_type="mainnet"):
+    """Register a validator in the database"""
     try:
-        print(f"🔄 Loading validator information for node {args.node_id}...")
-        validator_info = load_validator_info(args.node_id)
+        # Get database path
+        home_dir = os.path.expanduser("~")
+        db_path = os.path.join(home_dir, ".bt2c", "data", "blockchain.db")
         
-        print(f"🔄 Creating validator transactions...")
-        transactions = create_validator_transactions(
-            validator_info["wallet"],
-            validator_info["stake_amount"],
-            validator_info["commission_rate"]
+        # Connect to database
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        
+        # Check if validator already exists
+        cursor.execute(
+            """
+            SELECT * FROM validators 
+            WHERE address = ? AND network_type = ?
+            """,
+            (address, network_type)
+        )
+        existing = cursor.fetchone()
+        
+        if existing:
+            print(f"⚠️ Validator {address} already exists in {network_type} network")
+            conn.close()
+            return False
+        
+        # Get current time
+        now = datetime.now().isoformat()
+        
+        # Insert validator
+        cursor.execute(
+            """
+            INSERT INTO validators (
+                address, stake, status, is_active, joined_at, 
+                last_block, total_blocks, uptime, response_time, 
+                validation_accuracy, rewards_earned, network_type
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                address, stake, "active", 1, now,
+                None, 0, 100.0, 0.0,
+                100.0, 1000.0, network_type
+            )
         )
         
-        print(f"✅ Validator registration prepared!")
-        print(f"\nValidator Address: {validator_info['wallet'].address}")
-        print(f"Stake Amount: {validator_info['stake_amount']} BT2C")
-        print(f"Commission Rate: {validator_info['commission_rate']}")
+        # Commit changes
+        conn.commit()
         
-        print("\nNext steps:")
-        print("1. Fund your validator address with the required stake amount")
-        print("2. Monitor your validator status:")
-        print("   http://localhost:3000/d/validator")
+        # Close connection
+        conn.close()
         
+        print(f"✅ Validator {address} registered successfully in {network_type} network")
+        print(f"   - Stake: {stake} BT2C")
+        print(f"   - Status: active")
+        print(f"   - Joined: {now}")
+        print(f"   - Initial Rewards: 1000.0 BT2C (developer reward)")
+        
+        return True
+    
     except Exception as e:
-        print(f"❌ Error: {str(e)}")
-        sys.exit(1)
+        print(f"❌ Error registering validator: {str(e)}")
+        return False
+
+def main():
+    """Main function"""
+    if len(sys.argv) < 2:
+        print("Usage: python register_validator.py <wallet_address> [stake_amount] [network_type]")
+        return 1
+    
+    address = sys.argv[1]
+    stake = float(sys.argv[2]) if len(sys.argv) > 2 else 1.0
+    network_type = sys.argv[3] if len(sys.argv) > 3 else "mainnet"
+    
+    register_validator(address, stake, network_type)
+    
+    return 0
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

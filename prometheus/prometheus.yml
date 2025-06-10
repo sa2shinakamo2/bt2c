@@ -1,0 +1,76 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+# Rule files to load
+rule_files:
+  - "rules/node_rules.yml"
+  - "rules/api_rules.yml"
+
+# Scrape configurations
+scrape_configs:
+  # BT2C API Server metrics
+  - job_name: 'bt2c_api'
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['bt2c-api:8080']
+        labels:
+          instance: 'bt2c-api'
+          service: 'blockchain'
+
+  # Node exporter for system metrics
+  - job_name: 'node_exporter'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          instance: 'bt2c-host'
+
+  # Nginx metrics
+  - job_name: 'nginx'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['nginx-exporter:9113']
+        labels:
+          instance: 'nginx'
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Blockchain-specific metrics
+  - job_name: 'blockchain_metrics'
+    metrics_path: '/metrics/blockchain'
+    scrape_interval: 30s
+    static_configs:
+      - targets: ['bt2c-api:8080']
+        labels:
+          instance: 'blockchain'
+          service: 'blockchain'
+
+  # DoS protection metrics
+  - job_name: 'dos_protection'
+    metrics_path: '/metrics/dos'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['bt2c-api:8080']
+        labels:
+          instance: 'dos_protection'
+          service: 'security'
+
+  # BT2C developer node metrics
+  - job_name: 'bt2c_developer_node'
+    static_configs:
+      - targets: ['developer_node:31111']
+    metrics_path: '/metrics'

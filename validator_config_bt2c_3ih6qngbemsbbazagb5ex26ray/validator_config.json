@@ -1,0 +1,13 @@
+{
+    "address": "bt2c_3ih6qngbemsbbazagb5ex26ray",
+    "network_type": "testnet",
+    "p2p_port": 9006,
+    "api_port": 8086,
+    "seed_nodes": [
+        "127.0.0.1:9001",
+        "127.0.0.1:9002",
+        "127.0.0.1:9003",
+        "127.0.0.1:9004",
+        "127.0.0.1:9005"
+    ]
+}

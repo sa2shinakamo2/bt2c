@@ -1,0 +1,16 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'validator1'
+    static_configs:
+      - targets: ['validator1:27660']
+    metrics_path: '/metrics'
+
+  - job_name: 'validator2'
+    static_configs:
+      - targets: ['validator2:27661']
+    metrics_path: '/metrics'
+
+  # Add more validators as needed
