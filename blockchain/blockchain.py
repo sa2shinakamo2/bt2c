@@ -122,8 +122,8 @@ class BT2CBlockchain:
         # Add block reward transaction
         if reward > 0:
             reward_tx = Transaction(
-                sender="0" * 64,  # Coinbase
-                recipient=validator_address,
+                sender_address="0" * 64,  # Coinbase
+                recipient_address=validator_address,
                 amount=reward,
                 timestamp=block.timestamp,
                 tx_type=TransactionType.REWARD
@@ -137,6 +137,23 @@ class BT2CBlockchain:
         if current_height >= self.genesis_config.distribution_blocks:
             self.validator_set[validator_address] = self.validator_set.get(validator_address, 0) + reward
             
+        # Process all transactions in the block through the double-spend detector
+        current_height = len(self.chain)
+        for tx in block.transactions:
+            # Skip processing if it's a coinbase transaction (already handled)
+            if tx.tx_type == TransactionType.REWARD:
+                # For reward transactions, just add the UTXO directly
+                self.utxo_tracker.add_utxo(
+                    tx.hash, 
+                    tx.amount, 
+                    tx.recipient_address, 
+                    current_height, 
+                    tx.timestamp
+                )
+            else:
+                # Process regular transactions through the double-spend detector
+                self.double_spend_detector.process_transaction(tx, current_height)
+    
         # Clean up mempool by removing transactions that are now in the block
         self._cleanup_mempool(block.transactions)
             
@@ -157,7 +174,7 @@ class BT2CBlockchain:
         
         # Add processed transactions to spent_transactions set (replay protection)
         for tx in block_transactions:
-            self.replay_protection.add_spent_transaction(tx.hash)
+            self.replay_protection.mark_spent(tx)
             
             # Update nonce tracker for the sender
             if tx.sender_address != "0" * 64:  # Skip coinbase transactions
