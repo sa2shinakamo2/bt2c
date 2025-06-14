@@ -44,6 +44,7 @@ local_settings.py
 *credentials*
 plan.md
 */.codeium/windsurf/brain/*/plan.md
+bt2c_backup_before_cleanup.tar.gz
 
 # Logs
 logs/
