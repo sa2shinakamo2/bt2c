@@ -1,6 +1,6 @@
 # BT2C (Bit2Coin)
 
-BT2C is a decentralized blockchain platform designed with Bitcoin's minimalist principles while incorporating modern validator technology. This README provides comprehensive instructions for running nodes, creating wallets, and participating in the BT2C network.
+BT2C is a decentralized blockchain platform designed with Bitcoin's minimalist principles while incorporating modern validator technology and enhanced security features. This README provides comprehensive instructions for running nodes, creating wallets, and participating in the BT2C network.
 
 ## Table of Contents
 - [Overview](#overview)
@@ -13,6 +13,7 @@ BT2C is a decentralized blockchain platform designed with Bitcoin's minimalist p
 - [Viewing Blockchain Data](#viewing-blockchain-data)
 - [Transferring Funds](#transferring-funds)
 - [Block Production](#block-production)
+- [Security Features](#security-features)
 - [Technical Specifications](#technical-specifications)
 - [Platform-Specific Instructions](#platform-specific-instructions)
 - [Troubleshooting](#troubleshooting)
@@ -29,6 +30,10 @@ BT2C is a blockchain with the following key features:
 - 14-day distribution period with special rewards
 - Proper merkle root implementation for transaction verification
 - Bitcoin-like structure with modern improvements
+- Enhanced security modules for production readiness
+- Formal verification of critical blockchain properties
+- Advanced mempool management with DoS protection
+- Secure key derivation and wallet implementation
 
 ## Requirements
 
@@ -47,6 +52,10 @@ BT2C is a blockchain with the following key features:
 - `argparse`: Command-line argument parsing
 - `secrets`: Secure random number generation
 - `base64`: Encoding/decoding
+- `argon2-cffi`: Secure key derivation (optional, falls back to PBKDF2)
+- `cryptography`: Advanced cryptographic operations
+- `prometheus-client`: Metrics collection and monitoring
+- `structlog`: Structured logging
 
 ## Installation
 
@@ -269,8 +278,15 @@ This updates the merkle roots for all blocks in the blockchain to ensure proper 
 - 2048-bit RSA keys
 - BIP39 seed phrases (256-bit)
 - BIP44 HD wallets
-- Password-protected storage
+- Password-protected storage with Argon2id KDF
 - SSL/TLS encryption
+- Formal verification of blockchain invariants
+- Enhanced mempool with DoS protection
+- Replay protection with nonce validation
+- Double-spend detection
+- Suspicious transaction monitoring
+- Time-based transaction eviction
+- Key rotation support
 
 ### Network
 - Target block time: 300s (5 minutes)
@@ -355,6 +371,41 @@ python3 tools/create_fresh_database.py YOUR_WALLET_ADDRESS mainnet
 
 For more detailed troubleshooting information, see the [Installation Troubleshooting Guide](docs/installation_troubleshooting.md).
 
+## Security Features
+
+BT2C implements several advanced security features to ensure network integrity and protect user funds:
+
+### Enhanced Mempool
+- Time-based transaction eviction to prevent mempool flooding
+- Memory usage monitoring to prevent resource exhaustion attacks
+- Suspicious transaction detection based on fee anomalies and nonce irregularities
+- Transaction prioritization based on fee rates and other metrics
+- Congestion control with dynamic fee thresholds
+
+### Formal Verification
+- Mathematical guarantees about critical blockchain properties
+- Nonce monotonicity invariant ensures transaction nonces increase properly
+- Double-spend prevention invariant prevents the same funds from being spent twice
+- Balance consistency property ensures the sum of all balances matches total supply
+- Conservation of value property ensures tokens are neither created nor destroyed improperly
+
+### Secure Key Derivation
+- Argon2id implementation (winner of the Password Hashing Competition)
+- PBKDF2 fallback with high iteration count
+- Secure salt generation and management
+- Configurable memory cost, parallelism, and iteration count
+
+### Enhanced Wallet
+- Deterministic key generation from seed phrases
+- Key rotation functionality for improved security
+- Encrypted storage using AES-GCM
+- Multiple key support for different purposes
+
+### Replay Protection
+- Nonce tracking to prevent transaction replay attacks
+- Spent transaction tracking to prevent reuse
+- Transaction expiry to limit the validity period of transactions
+
 ## Documentation
 
 Comprehensive documentation is available in the `docs/` directory:
@@ -364,9 +415,12 @@ Comprehensive documentation is available in the `docs/` directory:
 - [Security Architecture](docs/security_architecture.md) - Overview of security features
 - [Validator Guide](docs/validator_guide.md) - Detailed instructions for validators
 - [Wallet Guide](docs/wallet_guide.md) - Guide to creating and managing wallets
-- [check_wallet_balance.py](docs/check_wallet_balance.md) - Documentation for the check_wallet_balance.py script
-- [check_block_height.py](docs/check_block_height.md) - Documentation for the check_block_height.py script
-- [Installation Troubleshooting](docs/installation_troubleshooting.md) - Solutions to common installation and setup issues
+- [Security Modules](docs/security_modules.md) - Detailed documentation of security features
+- [Security API](docs/security_api.md) - API reference for security modules
+- [Backup & Recovery](docs/backup_recovery.md) - Backup and recovery procedures
+- [Deployment Guide](docs/deployment_guide.md) - Comprehensive deployment instructions
+- [Production Readiness](docs/production_readiness.md) - Production readiness checklist
+- [Installation Troubleshooting](docs/installation_troubleshooting.md) - Solutions to common issues
 
 ## License
 
@@ -374,4 +428,4 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
- 2025 BT2C Network. All rights reserved.
+© 2025 BT2C Network. All rights reserved.

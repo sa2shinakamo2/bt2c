@@ -36,7 +36,7 @@ class Block(BaseModel):
         block_dict = {
             "index": self.index,
             "timestamp": self.timestamp,
-            "transactions": [tx.dict() for tx in self.transactions],
+            "transactions": [self._convert_decimals(tx.dict()) for tx in self.transactions],
             "previous_hash": self.previous_hash,
             "validator": self.validator,
             "nonce": self.nonce,
@@ -44,6 +44,22 @@ class Block(BaseModel):
         }
         block_string = json.dumps(block_dict, sort_keys=True)
         return hashlib.sha3_256(block_string.encode()).hexdigest()
+        
+    def _convert_decimals(self, obj):
+        """Convert all Decimal objects and enum types to serializable formats for JSON serialization."""
+        from decimal import Decimal
+        import enum
+        
+        if isinstance(obj, dict):
+            return {k: self._convert_decimals(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [self._convert_decimals(item) for item in obj]
+        elif isinstance(obj, Decimal):
+            return float(obj)
+        elif isinstance(obj, enum.Enum):
+            return obj.value
+        else:
+            return obj
     
     def sign(self, private_key) -> None:
         """Sign the block with the validator's private key."""
@@ -77,7 +93,7 @@ class Block(BaseModel):
             
         # Convert transactions to bytes for Merkle tree
         tx_bytes = [
-            hashlib.sha3_256(json.dumps(tx.dict()).encode()).digest()
+            hashlib.sha3_256(json.dumps(self._convert_decimals(tx.dict())).encode()).digest()
             for tx in self.transactions
         ]
 
@@ -90,7 +106,7 @@ class Block(BaseModel):
         
     def to_dict(self) -> dict:
         """Convert block to dictionary format."""
-        return {
+        return self._convert_decimals({
             'index': self.index,
             'transactions': [tx.dict() for tx in self.transactions],
             'timestamp': self.timestamp,
@@ -104,7 +120,7 @@ class Block(BaseModel):
             'finalized': self.finalized,
             'finalization_time': self.finalization_time,
             'confirmations': self.confirmations
-        }
+        })
         
     def finalize(self):
         """Finalize the block."""

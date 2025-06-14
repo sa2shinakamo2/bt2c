@@ -385,14 +385,64 @@ class Transaction(BaseModel):
         
         return size
 
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert transaction to dictionary format."""
+    def is_valid(self) -> bool:
+        """Validate the transaction.
+        
+        Returns:
+            bool: True if the transaction is valid, False otherwise
+        """
+        try:
+            # Check if transaction has all required fields
+            if not self.sender_address or not self.recipient_address:
+                logger.warning("invalid_transaction_addresses", tx_hash=self.hash)
+                return False
+                
+            # Skip further validation for coinbase/reward transactions
+            if self.sender_address == "0" * 64:
+                return True
+                
+            # Check if amount is positive
+            if self.amount <= 0:
+                logger.warning("invalid_transaction_amount", tx_hash=self.hash, amount=str(self.amount))
+                return False
+                
+            # Check if fee is valid
+            if self.fee < Decimal('0.00000001'):  # Minimum fee
+                logger.warning("invalid_transaction_fee", tx_hash=self.hash, fee=str(self.fee))
+                return False
+                
+            # Verify signature
+            if not self.verify():
+                logger.warning("invalid_transaction_signature", tx_hash=self.hash)
+                return False
+                
+            # Check if transaction has expired
+            if self.expiry and (self.timestamp + self.expiry) < time.time():
+                logger.warning("expired_transaction", tx_hash=self.hash, expiry=self.expiry, 
+                              expiry_time=self.timestamp + self.expiry, current_time=time.time())
+                return False
+                
+            return True
+            
+        except Exception as e:
+            logger.error("transaction_validation_error", error=str(e), tx_hash=self.hash if hasattr(self, 'hash') else None)
+            return False
+    
+    def to_dict(self, exclude=None) -> Dict[str, Any]:
+        """Convert transaction to dictionary format.
+        
+        Args:
+            exclude: Optional dictionary of fields to exclude from the result
+    
+        Returns:
+            Dictionary representation of the transaction
+        """
         try:
             # Ensure hash is calculated
             if not self.hash:
                 self._calculate_hash()
                 
-            return {
+            result = {
                 "sender": self.sender_address,
                 "recipient": self.recipient_address,
                 "amount": str(self.amount),
@@ -408,6 +458,14 @@ class Transaction(BaseModel):
                 "hash": self.hash,
                 "expiry": self.expiry
             }
+            
+            # Remove excluded fields if specified
+            if exclude:
+                for field in exclude:
+                    if field in result:
+                        result.pop(field)
+                        
+            return result
             
         except Exception as e:
             logger.error("to_dict_error", error=str(e))

@@ -33,6 +33,11 @@ class GenesisConfig:
         self.distribution_period_days = 14  # Initial 2-week distribution period
         self.developer_reward = 1000  # Amount for first node (developer) - 1000 BT2C as per whitepaper
         self.distribution_amount = 1  # Amount given to each new node during distribution
+        self.distribution_reward = self.distribution_amount  # Alias for backward compatibility
+        
+        # Calculate distribution blocks based on period days and block time (5 minutes)
+        blocks_per_day = 24 * 60 // 5  # 288 blocks per day with 5-minute block time
+        self.distribution_blocks = self.distribution_period_days * blocks_per_day
         
         # Genesis block specific data
         self.timestamp = GENESIS_TIMESTAMP

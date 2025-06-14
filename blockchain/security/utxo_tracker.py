@@ -94,7 +94,10 @@ class UTXOTracker:
         else:
             self.balance_cache[owner] = amount
             
-        logger.debug("utxo_added", tx_hash=tx_hash[:8], amount=str(amount), owner=owner[:8])
+        # Safe logging with hash prefix check
+        tx_hash_prefix = tx_hash[:8] if tx_hash else "None"
+        owner_prefix = owner[:8] if owner else "None"
+        logger.debug("utxo_added", tx_hash=tx_hash_prefix, amount=str(amount), owner=owner_prefix)
         
     def remove_utxo(self, tx_hash: str, owner: str) -> bool:
         """
@@ -132,7 +135,10 @@ class UTXOTracker:
             self.spent_outputs[tx_hash] = []
         self.spent_outputs[tx_hash].append(owner)
         
-        logger.debug("utxo_spent", tx_hash=tx_hash[:8], amount=str(utxo_to_remove.amount), owner=owner[:8])
+        # Safe logging with hash prefix check
+        tx_hash_prefix = tx_hash[:8] if tx_hash else "None"
+        owner_prefix = owner[:8] if owner else "None"
+        logger.debug("utxo_spent", tx_hash=tx_hash_prefix, amount=str(utxo_to_remove.amount), owner=owner_prefix)
         return True
         
     def get_balance(self, address: str) -> Decimal:
@@ -209,7 +215,7 @@ class UTXOTracker:
         amount = transaction.amount + transaction.fee
         
         # Skip balance check for system address (coinbase/reward transactions)
-        if sender != "0":
+        if sender != "0" * 64:
             # Check if sender has sufficient funds
             if not self.has_sufficient_funds(sender, amount):
                 balance = self.get_balance(sender)
@@ -257,7 +263,7 @@ class UTXOTracker:
                           tx_hash=transaction.hash, 
                           error=error_msg)
             return False
-            
+        
         # Process the transaction
         # In a full UTXO model, we'd remove specific UTXOs and create new ones
         # For BT2C's account model, we're updating balances
@@ -303,24 +309,26 @@ class UTXOTracker:
             # If there's change, create a new UTXO for the sender
             change_amount = spent_amount - total_deduction
             if change_amount > Decimal('0'):
+                self.add_utxo(transaction.hash + "_change", change_amount, sender, block_height, timestamp)
+        
+        # Create a fee UTXO for the validator (if specified)
+        # Note: In the integration test, the fee is just deducted from sender and not assigned to any validator
+        # This is expected behavior for the test, so we don't need to create a fee UTXO in this case
+        # In production, the fee would be assigned to the block validator
+        if fee > Decimal('0'):
+            if hasattr(transaction, 'validator_address') and transaction.validator_address:
                 self.add_utxo(
-                    transaction.hash + "_change", 
-                    change_amount, 
-                    sender, 
+                    transaction.hash + "_fee", 
+                    fee, 
+                    transaction.validator_address, 
                     block_height, 
                     timestamp
                 )
-                
-        # Create a fee UTXO for the validator (if specified)
-        if fee > Decimal('0') and hasattr(transaction, 'validator_address') and transaction.validator_address:
-            self.add_utxo(
-                transaction.hash + "_fee", 
-                fee, 
-                transaction.validator_address, 
-                block_height, 
-                timestamp
-            )
+            # For integration test compatibility: If no validator_address is specified,
+            # the fee is still deducted from sender (as handled above) but not reassigned to anyone
+            # This matches the test's expectation that sender balance is reduced by amount + fee
             
+        # Log the transaction processing
         logger.info("transaction_processed", 
                    tx_hash=transaction.hash, 
                    sender=sender[:8], 
