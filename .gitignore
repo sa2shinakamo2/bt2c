@@ -42,6 +42,8 @@ local_settings.py
 *secret_key*
 *password*
 *credentials*
+plan.md
+*/.codeium/windsurf/brain/*/plan.md
 
 # Logs
 logs/
