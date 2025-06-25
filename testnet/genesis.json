@@ -1,0 +1,40 @@
+{
+  "network_type": "testnet",
+  "timestamp": 1750652993,
+  "initial_validators": [
+    {
+      "address": "bt2c1testvalidator1example",
+      "power": "100",
+      "name": "Test Validator 1",
+      "commission_rate": "0.05"
+    },
+    {
+      "address": "bt2c1testvalidator2example",
+      "power": "100",
+      "name": "Test Validator 2",
+      "commission_rate": "0.05"
+    },
+    {
+      "address": "bt2c1testvalidator3example",
+      "power": "100",
+      "name": "Test Validator 3",
+      "commission_rate": "0.05"
+    },
+    {
+      "address": "bt2c1testvalidator4example",
+      "power": "100",
+      "name": "Test Validator 4",
+      "commission_rate": "0.05"
+    },
+    {
+      "address": "bt2c1testvalidator5example",
+      "power": "100",
+      "name": "Test Validator 5",
+      "commission_rate": "0.05"
+    }
+  ],
+  "initial_supply": 10000000,
+  "minimum_stake": 0.1,
+  "block_reward": 21.0,
+  "block_time": 60
+}

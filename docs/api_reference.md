@@ -57,6 +57,18 @@ balance = await client.get_balance(address="bt2c1...")
 # Get account transaction history
 transactions = await client.get_transactions(address="bt2c1...")
 # Returns: List of transaction objects
+
+# Rotate account keys
+rotated_account = client.rotate_keys(address="bt2c1...", password="your_password")
+# Returns: {'address': 'bt2c1...', 'public_key': '...', 'previous_public_keys': ['...']}
+
+# Create wallet backup
+backup_path = client.create_backup(address="bt2c1...", password="your_password", backup_password="backup_password")
+# Returns: Path to backup file
+
+# Restore wallet from backup
+restored_wallet = client.restore_from_backup(backup_path="/path/to/backup.json", backup_password="backup_password")
+# Returns: {'address': 'bt2c1...', 'public_key': '...', 'previous_public_keys': ['...']}
 ```
 
 ### Transaction Operations
@@ -67,13 +79,22 @@ tx = client.create_transaction(
     sender="bt2c1sender...",
     recipient="bt2c1recipient...",
     amount=10.5,
-    fee=0.001
+    fee=0.001,
+    nonce=1,  # Prevents replay attacks
+    expiry=int(time.time()) + 3600  # Transaction valid for 1 hour
 )
 
 # Sign a transaction
 signed_tx = client.sign_transaction(
     transaction=tx,
     private_key="sender_private_key"
+)
+
+# Verify transaction signature
+is_valid = client.verify_transaction_signature(
+    transaction=tx,
+    signature=signed_tx['signature'],
+    public_key=sender_public_key
 )
 
 # Send a transaction
@@ -383,6 +404,9 @@ signature = crypto.sign_data(data)
 # Verify a signature
 is_valid = crypto.verify_signature(data, signature, public_key)
 
+# Verify a signature with previous public key (after key rotation)
+is_valid = crypto.verify_signature_with_previous_key(data, signature, previous_public_key)
+
 # Hash data
 hash_value = crypto.hash_data(data)
 
@@ -391,6 +415,15 @@ signature = crypto.sign_transaction(transaction_data)
 
 # Verify a transaction signature
 is_valid = crypto.verify_transaction(transaction_data, signature, public_key)
+
+# Generate deterministic key pair from seed phrase
+private_key, public_key = crypto.generate_deterministic_key_pair(seed_phrase)
+
+# Encrypt private key with password
+encrypted_key = crypto.encrypt_private_key(private_key, password)
+
+# Decrypt private key with password
+decrypted_key = crypto.decrypt_private_key(encrypted_key, password)
 ```
 
 ## REST API Endpoints
@@ -493,6 +526,28 @@ Get node status
 GET /api/v1/node/version
 ```
 Get node version
+
+### Wallet Endpoints
+
+```
+POST /api/v1/wallet/rotate-keys
+```
+Rotate wallet keys while preserving address and transaction history
+
+```
+POST /api/v1/wallet/backup
+```
+Create an encrypted backup of a wallet
+
+```
+POST /api/v1/wallet/restore
+```
+Restore a wallet from an encrypted backup
+
+```
+GET /api/v1/wallet/key-status
+```
+Check if wallet keys need rotation (based on age)
 
 ## WebSocket API
 

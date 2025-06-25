@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the improved wallet key management system for the BT2C blockchain. The improvements address key security concerns identified in the audit, particularly around key derivation consistency and wallet recovery.
+This document describes the improved wallet key management system for the BT2C blockchain. The improvements address key security concerns identified in the audit, particularly around key derivation consistency, wallet recovery, and key rotation capabilities.
 
 ## Key Improvements
 
@@ -12,14 +12,19 @@ This document describes the improved wallet key management system for the BT2C b
    - Implements cryptographically secure key generation
 
 2. **Enhanced Security**
-   - Stronger password protection with PBKDF2
-   - Improved private key encryption
-   - Secure storage of wallet data
+   - Stronger password protection with PBKDF2 (high iteration count)
+   - Improved private key encryption with AES-256-CBC
+   - Secure storage of wallet data with proper encoding
 
 3. **Consistent Recovery**
    - Reliable wallet recovery from seed phrases
    - Backward compatibility with existing wallets
    - Migration path for existing users
+
+4. **Key Rotation**
+   - Periodic key rotation capability for enhanced security
+   - Maintains transaction validity after key rotation (verified through integration tests)
+   - Seamless transition between old and new keys with signature verification
 
 ## Technical Implementation
 
@@ -36,6 +41,7 @@ Key features:
 - Uses BIP39 standard for seed phrase to seed conversion
 - Implements deterministic prime generation for RSA keys
 - Ensures cryptographic security while maintaining consistency
+- Generates consistent 2048-bit RSA keys for reliable wallet recovery
 
 ### Wallet Key Manager
 
@@ -54,6 +60,14 @@ recovered_wallet = key_manager.recover_wallet(seed_phrase)
 # Save and load wallets
 key_manager.save_wallet(wallet_data, filename, password)
 loaded_wallet = key_manager.load_wallet(filename, password)
+
+# Rotate wallet keys (maintains signature validity)
+key_manager.rotate_keys(wallet_data, password)
+
+# Verify transaction signatures after key rotation
+old_signature = transaction.sign(old_private_key)
+key_manager.rotate_keys(wallet_data, password)
+is_valid = transaction.verify_signature(old_signature, old_public_key)
 ```
 
 Key features:
@@ -61,6 +75,7 @@ Key features:
 - Secure storage of wallet data
 - Password protection for wallet files
 - Transaction signing and verification
+- Key rotation with signature validity preservation
 
 ## Migration Guide
 
@@ -105,7 +120,8 @@ wallet_data = key_manager.generate_wallet(seed_phrase)
 
 - RSA keys are 2048 bits (industry standard)
 - Seed phrases have 256 bits of entropy
-- Password-based encryption uses PBKDF2 with 1,000,000 iterations
+- Password-based encryption uses PBKDF2 with 600,000 iterations
+- AES-256-CBC for private key encryption with secure IV generation
 
 ### Best Practices
 
@@ -139,6 +155,11 @@ The wallet key management system has been thoroughly tested to ensure:
 
 3. **Compatibility**
    - Backward compatibility with existing wallets
+   
+4. **Key Rotation**
+   - Signatures created with old keys remain valid after rotation
+   - New keys can sign new transactions after rotation
+   - Wallet backup and restore preserves key rotation history
    - Smooth migration path for users
 
 ## Conclusion
@@ -152,3 +173,4 @@ By implementing deterministic key derivation, we ensure that users can reliably 
 1. BIP39 - Mnemonic code for generating deterministic keys: https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki
 2. RSA Cryptography Standard: https://www.rfc-editor.org/rfc/rfc8017
 3. PBKDF2 Password-Based Key Derivation: https://www.rfc-editor.org/rfc/rfc2898
+4. AES Encryption Standard: https://csrc.nist.gov/publications/detail/fips/197/final

@@ -14,7 +14,7 @@ sys.path.append(str(project_root))
 
 from blockchain.genesis import GenesisConfig
 from blockchain.config import NetworkType, BT2CConfig
-from blockchain.security import SecurityManager
+from blockchain.security.security_manager import SecurityManager
 from blockchain.production_config import ProductionConfig
 
 class MockSecurityManager:

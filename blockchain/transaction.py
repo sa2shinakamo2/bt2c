@@ -168,35 +168,52 @@ class Transaction(BaseModel):
     @field_validator('nonce')
     @classmethod
     def validate_nonce(cls, v: int) -> int:
-        """Validate transaction nonce.
+        """
+        Validate transaction nonce.
         
         Nonce is a counter that must be incremented by 1 for each transaction from the same sender.
         This prevents replay attacks by ensuring each transaction can only be processed once.
         """
-        # Nonce must be non-negative
         if v < 0:
             raise ValueError("Nonce must be non-negative")
+            
+        # Upper bound check to prevent overflow attacks
+        if v > 2**32 - 1:  # Reasonable upper limit
+            raise ValueError(f"Nonce value too large (max: {2**32 - 1})")
+            
         return v
 
     @field_validator('expiry')
     @classmethod
     def validate_expiry(cls, v: int) -> int:
-        """Validate transaction expiration time."""
+        """Validate transaction expiry timestamp.
+        
+        Expiry timestamp must be in the future but not too far in the future.
+        This prevents replay attacks by ensuring transactions have a limited validity window.
+        """
         try:
             # Ensure expiry is an integer
             v = int(v)
             
-            # Check minimum and maximum expiry time
+            current_time = int(time.time())
+            
+            # Check minimum expiry time
             if v < MIN_TRANSACTION_EXPIRY:
                 raise ValueError(f"Expiry time must be at least {MIN_TRANSACTION_EXPIRY} seconds")
-            
+                
+            # Ensure transaction hasn't expired
+            if v <= current_time:
+                raise ValueError("Transaction has already expired")
+                
+            # Limit maximum expiry window to prevent long-lived transactions
+            # that could be replayed much later
             if v > MAX_TRANSACTION_EXPIRY:
                 raise ValueError(f"Expiry time cannot exceed {MAX_TRANSACTION_EXPIRY} seconds")
                 
             return v
             
         except (TypeError, ValueError) as e:
-            raise ValueError(f"Invalid expiry time: {e}")
+            raise ValueError(f"Invalid expiry value: {e}")
 
     def set_fee(self, fee: Union[Decimal, str, float, int]):
         """Set transaction fee with safe conversion and validation.
@@ -267,9 +284,16 @@ class Transaction(BaseModel):
                 "expiry": self.expiry
             }
             
+            # Add chain ID to prevent cross-chain replay attacks
+            chain_id = {
+                NetworkType.MAINNET: "bt2c-mainnet-1",
+                NetworkType.TESTNET: "bt2c-testnet-1"
+            }.get(self.network_type, "bt2c-unknown")
+            
+            tx_data["chain_id"] = chain_id
+            
             if self.payload:
                 tx_data["payload"] = self.payload
-                
             # Convert to JSON and hash
             tx_json = json.dumps(tx_data, sort_keys=True)
             tx_hash = hashlib.sha256(tx_json.encode()).hexdigest()
@@ -323,46 +347,48 @@ class Transaction(BaseModel):
         """Verify the transaction signature.
         
         Returns:
-            True if the signature is valid, False otherwise
         """
-        try:
-            # Skip verification for coinbase transactions
-            if self.sender_address == "0" * 64:
-                return True
-                
-            # Check if signature exists
-            if not self.signature:
-                return False
-                
-            # For testing purposes, we'll be lenient with verification
-            # In a real implementation, we would strictly verify the signature
-            import os
-            if os.environ.get('BT2C_TEST_MODE') == '1' or 'test' in __file__:
-                return True
-                
-            # Convert transaction to string for verification
-            tx_data = json.dumps(self.to_dict(exclude={'signature'}), sort_keys=True).encode('utf-8')
+        if not self.signature:
+            logger.warning(f"Transaction {self.hash} has no signature")
+            return False
             
-            # Get the public key
+        # For testing purposes, we'll be lenient with verification
+        import os
+        if os.environ.get('BT2C_TEST_MODE') == '1' or 'test' in __file__:
+            return True
+            
+        try:
+            # Get public key from sender address
             from .wallet import Wallet
             wallet = Wallet()
             public_key = wallet.get_public_key_from_address(self.sender_address)
             
             if not public_key:
+                logger.warning(f"Could not retrieve public key for address {self.sender_address}")
                 return False
                 
+            # Convert transaction to string for verification
+            tx_data = json.dumps(self.to_dict(exclude={'signature'}), sort_keys=True).encode('utf-8')
+            
             # Verify signature
+            from Crypto.Hash import SHA256
+            from Crypto.Signature import pkcs1_15
+            
             h = SHA256.new(tx_data)
             signature = base64.b64decode(self.signature)
             
             try:
                 pkcs1_15.new(public_key).verify(h, signature)
                 return True
-            except (ValueError, TypeError):
+            except (ValueError, TypeError) as e:
+                logger.warning(f"Invalid signature format for transaction {self.hash}: {e}")
                 return False
                 
+        except ImportError as e:
+            logger.error(f"Missing crypto library: {e}")
+            return False
         except Exception as e:
-            logger.error("transaction_verification_error", error=str(e), tx_hash=self.hash)
+            logger.error(f"Unexpected error verifying signature for transaction {self.hash}: {e}")
             return False
 
     def is_expired(self) -> bool:

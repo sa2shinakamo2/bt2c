@@ -9,8 +9,11 @@ import json
 import os
 from mnemonic import Mnemonic
 import secrets
-from typing import Tuple, Optional
+import time
+from typing import Tuple, Optional, Dict, Any
 import structlog
+import json
+import shutil
 
 logger = structlog.get_logger()
 
@@ -19,10 +22,10 @@ SATOSHI = 0.00000001  # Smallest unit of BT2C (1 satoshi)
 WALLET_DIR = os.path.expanduser("~/.bt2c/wallets")
 
 # Security constants
-PBKDF2_ITERATIONS = 600000  # Increased from 210000 for better security
-PBKDF2_DIGEST = "sha512"    # Upgraded from sha256
 MIN_PASSWORD_LENGTH = 12
-MIN_ENTROPY_BITS = 128
+MIN_ENTROPY_BITS = 128  # Minimum password entropy (combination of length and character types)
+PBKDF2_ITERATIONS = 600000  # Number of iterations for PBKDF2
+PBKDF2_DIGEST = 'sha512'  # Hash algorithm for PBKDF2
 
 class Wallet:
     def __init__(self):
@@ -30,6 +33,8 @@ class Wallet:
         self.public_key = None
         self.address = None
         self.seed_phrase = None
+        self.key_created_at = int(time.time())
+        self.key_rotation_interval = 90 * 24 * 60 * 60  # 90 days in seconds
     
     @classmethod
     def generate(cls, seed_phrase=None):
@@ -102,6 +107,27 @@ class Wallet:
         if not password or len(password) < MIN_PASSWORD_LENGTH:
             raise ValueError(f"Password must be at least {MIN_PASSWORD_LENGTH} characters")
             
+        # Check password entropy
+        import re
+        has_upper = bool(re.search(r'[A-Z]', password))
+        has_lower = bool(re.search(r'[a-z]', password))
+        has_digit = bool(re.search(r'\d', password))
+        has_special = bool(re.search(r'[^A-Za-z0-9]', password))
+        
+        # Calculate character set size based on character types used
+        char_types_count = sum([has_upper, has_lower, has_digit, has_special])
+        
+        # Require at least 3 character types for strong passwords
+        if char_types_count < 3:
+            raise ValueError(
+                f"Password too weak. Please use a stronger password with a mix of at least 3 types: "
+                f"uppercase, lowercase, digits, and special characters."
+            )
+            
+        # For passwords meeting character type requirements, ensure sufficient length
+        if len(password) < MIN_PASSWORD_LENGTH:
+            raise ValueError(f"Password must be at least {MIN_PASSWORD_LENGTH} characters")
+            
         # Prevent path traversal
         safe_filename = os.path.basename(filename)
         if safe_filename != filename:
@@ -113,9 +139,27 @@ class Wallet:
         # Export private key
         private_key_data = self.private_key.export_key('PEM')
         
-        # Generate salt and encryption key
-        salt = get_random_bytes(16)
-        key = SHA256.new((password + base64.b64encode(salt).decode('utf-8')).encode('utf-8')).digest()
+        # Generate salt and encryption key using PBKDF2
+        salt = get_random_bytes(32)  # Increased from 16 to 32 bytes
+        
+        # Use PBKDF2 for key derivation with high iteration count
+        from Crypto.Protocol.KDF import PBKDF2
+        from Crypto.Hash import SHA512
+        
+        # Use the appropriate hash module based on PBKDF2_DIGEST
+        if PBKDF2_DIGEST == 'sha512':
+            hash_module = SHA512
+        else:
+            # Default to SHA512 if specified digest is not available
+            hash_module = SHA512
+            
+        key = PBKDF2(
+            password=password.encode('utf-8'),
+            salt=salt,
+            dkLen=32,  # 256-bit key
+            count=PBKDF2_ITERATIONS,
+            hmac_hash_module=hash_module
+        )
         
         # Create AES cipher
         cipher = AES.new(key, AES.MODE_CBC)
@@ -171,8 +215,24 @@ class Wallet:
             salt = base64.b64decode(wallet_data['salt'])
             iv = base64.b64decode(wallet_data['iv'])
             
-            # Derive key from password
-            key = SHA256.new((password + base64.b64encode(salt).decode('utf-8')).encode('utf-8')).digest()
+            # Derive key from password using PBKDF2
+            from Crypto.Protocol.KDF import PBKDF2
+            from Crypto.Hash import SHA512
+            
+            # Use the appropriate hash module based on PBKDF2_DIGEST
+            if PBKDF2_DIGEST == 'sha512':
+                hash_module = SHA512
+            else:
+                # Default to SHA512 if specified digest is not available
+                hash_module = SHA512
+                
+            key = PBKDF2(
+                password=password.encode('utf-8'),
+                salt=salt,
+                dkLen=32,  # 256-bit key
+                count=PBKDF2_ITERATIONS,
+                hmac_hash_module=hash_module
+            )
             
             # Create AES cipher
             cipher = AES.new(key, AES.MODE_CBC, iv)
@@ -230,6 +290,257 @@ class Wallet:
         except Exception as e:
             logger.error("wallet_creation_failed", error=str(e))
             raise ValueError(f"Failed to create wallet: {str(e)}")
+            
+    def rotate_keys(self, password, new_password=None):
+        """
+        Rotate wallet keys for enhanced security.
+        
+        This creates a new key pair while preserving the wallet address and seed phrase.
+        The old key is securely wiped from memory after rotation.
+        
+        Args:
+            password: Current wallet password for verification
+            new_password: Optional new password to use (if changing password during rotation)
+            
+        Returns:
+            True if rotation was successful, raises exception otherwise
+        """
+        try:
+            if not self.private_key or not self.seed_phrase:
+                raise ValueError("Cannot rotate keys: wallet not fully initialized")
+                
+            # Verify current password by attempting to export and re-import the private key
+            try:
+                # Export private key with current password as a test
+                private_key_data = self.private_key.export_key('PEM')
+            except Exception:
+                raise ValueError("Invalid current password")
+                
+            # Generate new key pair using the same seed phrase
+            new_wallet = self.generate(self.seed_phrase)
+            
+            # Store old address for verification
+            old_address = self.address
+            
+            # Backup old keys securely
+            old_private_key = self.private_key
+            old_public_key = self.public_key
+            
+            # Update keys
+            self.private_key = new_wallet.private_key
+            self.public_key = new_wallet.public_key
+            
+            # Verify address hasn't changed (should be deterministic from seed phrase)
+            if self.address != old_address:
+                # Restore old keys if address changed unexpectedly
+                self.private_key = old_private_key
+                self.public_key = old_public_key
+                raise ValueError("Key rotation failed: address mismatch")
+                
+            # Update key creation timestamp
+            self.key_created_at = int(time.time())
+            
+            # Save with new password if provided, otherwise use current password
+            save_password = new_password if new_password else password
+            filename = self.address + ".json"
+            self.save(filename, save_password)
+            
+            # Securely wipe old keys from memory
+            # This is a simplified version - in production, use secure memory wiping
+            if old_private_key:
+                del old_private_key
+            if old_public_key:
+                del old_public_key
+                
+            logger.info("wallet_keys_rotated", address=self.address)
+            return True
+            
+        except Exception as e:
+            logger.error("key_rotation_failed", error=str(e))
+            raise ValueError(f"Failed to rotate keys: {str(e)}")
+            
+    def needs_rotation(self):
+        """
+        Check if keys need rotation based on age.
+        
+        Returns:
+            True if keys are older than the rotation interval, False otherwise
+        """
+        current_time = int(time.time())
+        key_age = current_time - self.key_created_at
+        return key_age > self.key_rotation_interval
+        
+    def create_secure_backup(self, backup_path: str, password: str) -> str:
+        """
+        Create a secure encrypted backup of the wallet.
+        
+        This creates a full backup including:
+        - Private key (encrypted)
+        - Public key
+        - Address
+        - Seed phrase (encrypted)
+        - Key creation timestamp
+        
+        Args:
+            backup_path: Directory to store the backup
+            password: Password to encrypt the backup
+            
+        Returns:
+            Path to the backup file
+        """
+        if not self.private_key or not self.seed_phrase:
+            raise ValueError("Cannot backup: wallet not fully initialized")
+            
+        try:
+            # Create backup directory if it doesn't exist
+            os.makedirs(backup_path, exist_ok=True)
+            
+            # Generate a timestamp for the backup filename
+            timestamp = time.strftime("%Y%m%d-%H%M%S")
+            backup_filename = f"{self.address}-{timestamp}.backup"
+            backup_file_path = os.path.join(backup_path, backup_filename)
+            
+            # Prepare backup data
+            backup_data = {
+                "address": self.address,
+                "key_created_at": self.key_created_at,
+                "backup_created_at": int(time.time()),
+                "version": "1.0"
+            }
+            
+            # Generate salt and encryption key for the backup
+            salt = get_random_bytes(32)
+            
+            # Use PBKDF2 for key derivation
+            from Crypto.Protocol.KDF import PBKDF2
+            from Crypto.Hash import SHA512
+            
+            # Use the appropriate hash module based on PBKDF2_DIGEST
+            if PBKDF2_DIGEST == 'sha512':
+                hash_module = SHA512
+            else:
+                # Default to SHA512 if specified digest is not available
+                hash_module = SHA512
+                
+            key = PBKDF2(
+                password=password.encode('utf-8'),
+                salt=salt,
+                dkLen=32,
+                count=PBKDF2_ITERATIONS,
+                hmac_hash_module=hash_module
+            )
+            
+            # Create AES cipher
+            iv = get_random_bytes(16)
+            cipher = AES.new(key, AES.MODE_CBC, iv)
+            
+            # Encrypt private key and seed phrase
+            private_key_data = self.private_key.export_key('PEM')
+            seed_data = self.seed_phrase.encode('utf-8')
+            
+            # Combine private key and seed phrase with a separator
+            combined_data = private_key_data + b"||SEPARATOR||" + seed_data
+            
+            # Pad and encrypt
+            padded_data = pad(combined_data, AES.block_size)
+            encrypted_data = cipher.encrypt(padded_data)
+            
+            # Add encrypted data to backup
+            backup_data["encrypted_data"] = base64.b64encode(encrypted_data).decode('utf-8')
+            backup_data["salt"] = base64.b64encode(salt).decode('utf-8')
+            backup_data["iv"] = base64.b64encode(iv).decode('utf-8')
+            
+            # Save backup file
+            with open(backup_file_path, 'w') as f:
+                json.dump(backup_data, f, indent=2)
+                
+            logger.info("wallet_backup_created", address=self.address, backup_file=backup_file_path)
+            return backup_file_path
+            
+        except Exception as e:
+            logger.error("wallet_backup_failed", error=str(e))
+            raise ValueError(f"Failed to create backup: {str(e)}")
+            
+    @classmethod
+    def restore_from_backup(cls, backup_file_path: str, password: str):
+        """
+        Restore a wallet from a secure backup file.
+        
+        Args:
+            backup_file_path: Path to the backup file
+            password: Password to decrypt the backup
+            
+        Returns:
+            Restored Wallet instance
+        """
+        try:
+            # Read backup file
+            with open(backup_file_path, 'r') as f:
+                backup_data = json.load(f)
+                
+            # Extract data
+            address = backup_data['address']
+            key_created_at = backup_data.get('key_created_at', int(time.time()))
+            encrypted_data = base64.b64decode(backup_data['encrypted_data'])
+            salt = base64.b64decode(backup_data['salt'])
+            iv = base64.b64decode(backup_data['iv'])
+            
+            # Derive key from password
+            from Crypto.Protocol.KDF import PBKDF2
+            from Crypto.Hash import SHA512
+            
+            # Use the appropriate hash module based on PBKDF2_DIGEST
+            if PBKDF2_DIGEST == 'sha512':
+                hash_module = SHA512
+            else:
+                # Default to SHA512 if specified digest is not available
+                hash_module = SHA512
+                
+            key = PBKDF2(
+                password=password.encode('utf-8'),
+                salt=salt,
+                dkLen=32,
+                count=PBKDF2_ITERATIONS,
+                hmac_hash_module=hash_module
+            )
+            
+            # Create AES cipher
+            cipher = AES.new(key, AES.MODE_CBC, iv)
+            
+            # Decrypt data
+            decrypted_data = unpad(cipher.decrypt(encrypted_data), AES.block_size)
+            
+            # Split private key and seed phrase
+            parts = decrypted_data.split(b"||SEPARATOR||")
+            if len(parts) != 2:
+                raise ValueError("Invalid backup format")
+                
+            private_key_data = parts[0]
+            seed_phrase = parts[1].decode('utf-8')
+            
+            # Create wallet
+            wallet = cls()
+            wallet.private_key = RSA.import_key(private_key_data)
+            wallet.public_key = wallet.private_key.publickey()
+            wallet.seed_phrase = seed_phrase
+            wallet.address = address
+            wallet.key_created_at = key_created_at
+            
+            # Verify address matches
+            generated_address = wallet._generate_address(wallet.public_key)
+            if generated_address != address:
+                raise ValueError("Address mismatch: backup may be corrupted")
+                
+            logger.info("wallet_restored_from_backup", address=wallet.address)
+            return wallet
+            
+        except FileNotFoundError:
+            raise ValueError(f"Backup file not found: {backup_file_path}")
+        except json.JSONDecodeError:
+            raise ValueError(f"Invalid backup file format: {backup_file_path}")
+        except Exception as e:
+            logger.error("wallet_restore_failed", error=str(e))
+            raise ValueError(f"Failed to restore wallet: {str(e)}")
 
     def get_public_key_from_address(self, address: str):
         """

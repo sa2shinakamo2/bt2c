@@ -1,0 +1,199 @@
+version: '3.8'
+
+services:
+  seed-1:
+    image: bt2c/node:latest
+    container_name: seed-1
+    command: --role seed --network testnet --p2p-port 26657
+    ports:
+      - 26657:26657
+    volumes:
+      - /Users/segosounonfranck/Documents/Projects/bt2c/testnet/certs/seed-1:/app/certs
+      - /Users/segosounonfranck/Documents/Projects/bt2c/testnet/data/seed-1:/app/data
+      - /Users/segosounonfranck/Documents/Projects/bt2c/testnet/logs/seed-1:/app/logs
+      - /Users/segosounonfranck/Documents/Projects/bt2c/testnet/genesis.json:/app/config/genesis.json
+    environment:
+      - BT2C_NETWORK=testnet
+      - BT2C_LOG_LEVEL=debug
+      - BT2C_NODE_ID=seed-1
+    networks:
+      - bt2c_testnet
+    restart: unless-stopped
+
+  seed-2:
+    image: bt2c/node:latest
+    container_name: seed-2
+    command: --role seed --network testnet --p2p-port 26658
+    ports:
+      - 26658:26658
+    volumes:
+      - /Users/segosounonfranck/Documents/Projects/bt2c/testnet/certs/seed-2:/app/certs
+      - /Users/segosounonfranck/Documents/Projects/bt2c/testnet/data/seed-2:/app/data
+      - /Users/segosounonfranck/Documents/Projects/bt2c/testnet/logs/seed-2:/app/logs
+      - /Users/segosounonfranck/Documents/Projects/bt2c/testnet/genesis.json:/app/config/genesis.json
+    environment:
+      - BT2C_NETWORK=testnet
+      - BT2C_LOG_LEVEL=debug
+      - BT2C_NODE_ID=seed-2
+    networks:
+      - bt2c_testnet
+    restart: unless-stopped
+
+  validator-1:
+    image: bt2c/node:latest
+    container_name: validator-1
+    command: --role validator --network testnet --p2p-port 26659
+    ports:
+      - 8001:8000
+      - 26659:26659
+    volumes:
+      - /Users/segosounonfranck/Documents/Projects/bt2c/testnet/certs/validator-1:/app/certs
+      - /Users/segosounonfranck/Documents/Projects/bt2c/testnet/data/validator-1:/app/data
+      - /Users/segosounonfranck/Documents/Projects/bt2c/testnet/logs/validator-1:/app/logs
+      - /Users/segosounonfranck/Documents/Projects/bt2c/testnet/genesis.json:/app/config/genesis.json
+    environment:
+      - BT2C_NETWORK=testnet
+      - BT2C_LOG_LEVEL=debug
+      - BT2C_NODE_ID=validator-1
+      - BT2C_SEED_NODES=seed-1@127.0.0.1:26657,seed-2@127.0.0.1:26658
+    networks:
+      - bt2c_testnet
+    restart: unless-stopped
+    depends_on:
+      - seed-1
+      - seed-2
+
+  validator-2:
+    image: bt2c/node:latest
+    container_name: validator-2
+    command: --role validator --network testnet --p2p-port 26660
+    ports:
+      - 8002:8000
+      - 26660:26660
+    volumes:
+      - /Users/segosounonfranck/Documents/Projects/bt2c/testnet/certs/validator-2:/app/certs
+      - /Users/segosounonfranck/Documents/Projects/bt2c/testnet/data/validator-2:/app/data
+      - /Users/segosounonfranck/Documents/Projects/bt2c/testnet/logs/validator-2:/app/logs
+      - /Users/segosounonfranck/Documents/Projects/bt2c/testnet/genesis.json:/app/config/genesis.json
+    environment:
+      - BT2C_NETWORK=testnet
+      - BT2C_LOG_LEVEL=debug
+      - BT2C_NODE_ID=validator-2
+      - BT2C_SEED_NODES=seed-1@127.0.0.1:26657,seed-2@127.0.0.1:26658
+    networks:
+      - bt2c_testnet
+    restart: unless-stopped
+    depends_on:
+      - seed-1
+      - seed-2
+
+  validator-3:
+    image: bt2c/node:latest
+    container_name: validator-3
+    command: --role validator --network testnet --p2p-port 26661
+    ports:
+      - 8003:8000
+      - 26661:26661
+    volumes:
+      - /Users/segosounonfranck/Documents/Projects/bt2c/testnet/certs/validator-3:/app/certs
+      - /Users/segosounonfranck/Documents/Projects/bt2c/testnet/data/validator-3:/app/data
+      - /Users/segosounonfranck/Documents/Projects/bt2c/testnet/logs/validator-3:/app/logs
+      - /Users/segosounonfranck/Documents/Projects/bt2c/testnet/genesis.json:/app/config/genesis.json
+    environment:
+      - BT2C_NETWORK=testnet
+      - BT2C_LOG_LEVEL=debug
+      - BT2C_NODE_ID=validator-3
+      - BT2C_SEED_NODES=seed-1@127.0.0.1:26657,seed-2@127.0.0.1:26658
+    networks:
+      - bt2c_testnet
+    restart: unless-stopped
+    depends_on:
+      - seed-1
+      - seed-2
+
+  validator-4:
+    image: bt2c/node:latest
+    container_name: validator-4
+    command: --role validator --network testnet --p2p-port 26662
+    ports:
+      - 8004:8000
+      - 26662:26662
+    volumes:
+      - /Users/segosounonfranck/Documents/Projects/bt2c/testnet/certs/validator-4:/app/certs
+      - /Users/segosounonfranck/Documents/Projects/bt2c/testnet/data/validator-4:/app/data
+      - /Users/segosounonfranck/Documents/Projects/bt2c/testnet/logs/validator-4:/app/logs
+      - /Users/segosounonfranck/Documents/Projects/bt2c/testnet/genesis.json:/app/config/genesis.json
+    environment:
+      - BT2C_NETWORK=testnet
+      - BT2C_LOG_LEVEL=debug
+      - BT2C_NODE_ID=validator-4
+      - BT2C_SEED_NODES=seed-1@127.0.0.1:26657,seed-2@127.0.0.1:26658
+    networks:
+      - bt2c_testnet
+    restart: unless-stopped
+    depends_on:
+      - seed-1
+      - seed-2
+
+  validator-5:
+    image: bt2c/node:latest
+    container_name: validator-5
+    command: --role validator --network testnet --p2p-port 26663
+    ports:
+      - 8005:8000
+      - 26663:26663
+    volumes:
+      - /Users/segosounonfranck/Documents/Projects/bt2c/testnet/certs/validator-5:/app/certs
+      - /Users/segosounonfranck/Documents/Projects/bt2c/testnet/data/validator-5:/app/data
+      - /Users/segosounonfranck/Documents/Projects/bt2c/testnet/logs/validator-5:/app/logs
+      - /Users/segosounonfranck/Documents/Projects/bt2c/testnet/genesis.json:/app/config/genesis.json
+    environment:
+      - BT2C_NETWORK=testnet
+      - BT2C_LOG_LEVEL=debug
+      - BT2C_NODE_ID=validator-5
+      - BT2C_SEED_NODES=seed-1@127.0.0.1:26657,seed-2@127.0.0.1:26658
+    networks:
+      - bt2c_testnet
+    restart: unless-stopped
+    depends_on:
+      - seed-1
+      - seed-2
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: bt2c_prometheus
+    command: ['--config.file=/etc/prometheus/prometheus.yml', '--storage.tsdb.path=/prometheus', '--web.console.libraries=/usr/share/prometheus/console_libraries', '--web.console.templates=/usr/share/prometheus/consoles']
+    ports:
+      - 9090:9090
+    volumes:
+      - /Users/segosounonfranck/Documents/Projects/bt2c/testnet/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - bt2c_testnet
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: bt2c_grafana
+    ports:
+      - 3000:3000
+    volumes:
+      - /Users/segosounonfranck/Documents/Projects/bt2c/testnet/monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - /Users/segosounonfranck/Documents/Projects/bt2c/testnet/monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    networks:
+      - bt2c_testnet
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+networks:
+  bt2c_testnet:
+    driver: bridge
+
+volumes:
+  prometheus_data:
+  grafana_data:

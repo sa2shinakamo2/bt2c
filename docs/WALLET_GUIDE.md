@@ -17,7 +17,10 @@ All BT2C wallets include these security features:
 - BIP39 seed phrases (256-bit, 24 words)
 - BIP44 HD wallet implementation
 - 2048-bit RSA keys for transaction signing
-- Password-protected storage
+- Password-protected storage with PBKDF2 (600,000 iterations)
+- AES-256-CBC encryption for private keys
+- Secure key rotation with signature verification
+- Transaction replay protection (nonce, expiry, chain ID)
 - Wallet files stored in `~/.bt2c/wallets`
 
 ## Creating a New Wallet
@@ -54,6 +57,7 @@ python cli_wallet.py recover --seed-phrase "your 24 word seed phrase" --password
    - Store in a secure, waterproof, and fireproof location
    - Consider using a metal backup for long-term storage
    - Never share your seed phrase with anyone
+   - Verify your seed phrase recovery process periodically
 
 2. **Password Management**
    - Use a strong, unique password (12+ characters)
@@ -146,6 +150,15 @@ python cli_wallet.py balance --address your-wallet-address
 
 # List all wallets
 python cli_wallet.py list
+
+# Rotate wallet keys
+python cli_wallet.py rotate-keys --address your-wallet-address --password your-password
+
+# Create wallet backup
+python cli_wallet.py backup --address your-wallet-address --password your-password
+
+# Restore from backup
+python cli_wallet.py restore --backup-file path/to/backup.json --password your-password
 ```
 
 For more information on wallet security, refer to the [Wallet Security](WALLET_SECURITY.md) guide.

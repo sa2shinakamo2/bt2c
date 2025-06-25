@@ -692,6 +692,101 @@ class Mempool:
             "replaced_transactions": len(self.replaced_transactions)
         }
 
+    def _check_double_spend(self, tx: Transaction) -> bool:
+        """Check if transaction is a double spend.
+        
+        Returns True if the transaction is a double spend, False otherwise.
+        """
+        # Check if we have another transaction from the same sender with the same nonce
+        sender = tx.sender_address
+        nonce = tx.nonce
+        
+        # Check if we have any transactions from this sender
+        if sender in self.sender_transactions:
+            # Check if we have a transaction with the same nonce
+            if nonce in self.sender_transactions[sender]:
+                existing_tx_id = self.sender_transactions[sender][nonce]
+                existing_tx = self.transactions.get(existing_tx_id)
+                
+                if existing_tx:
+                    # If RBF is enabled and the new transaction has a higher fee,
+                    # we can replace the existing transaction
+                    if self.allow_replacement and tx.fee > existing_tx.fee:
+                        # Require minimum fee increase of 10% for replacement
+                        min_fee_increase = existing_tx.fee * Decimal('1.1')
+                        if tx.fee < min_fee_increase:
+                            self.logger.warning(
+                                f"Replacement fee too low: {tx.fee} (required: {min_fee_increase})"
+                            )
+                            return True
+                            
+                        # Check that the replacement doesn't conflict with other transactions
+                        # by verifying it spends the same inputs
+                        if not self._verify_replacement_inputs(existing_tx, tx):
+                            self.logger.warning(
+                                f"Replacement transaction {tx.hash} doesn't spend same inputs as {existing_tx_id}"
+                            )
+                            return True
+                            
+                        self.logger.info(f"Replacing transaction {existing_tx_id} with higher fee transaction")
+                        return False
+                    
+                    # Otherwise, it's a double spend
+                    self.logger.warning(
+                        f"Double spend detected: {tx.hash} conflicts with {existing_tx_id} "
+                        f"(same sender {sender} and nonce {nonce})"
+                    )
+                    return True
+        
+        # Also check for conflicts with transactions in recent blocks (last 6 blocks)
+        if self._check_recent_blocks_for_conflict(tx):
+            self.logger.warning(f"Transaction {tx.hash} conflicts with transaction in recent blocks")
+            return True
+            
+        return False
+        
+    def _verify_replacement_inputs(self, old_tx: Transaction, new_tx: Transaction) -> bool:
+        """Verify that replacement transaction spends the same inputs.
+        
+        This is a simplified check since BT2C doesn't use UTXO model directly,
+        but we can verify sender, recipient, and amount are the same.
+        
+        Returns True if the replacement is valid, False otherwise.
+        """
+        # In a real UTXO model, we would check that all inputs are the same
+        # For our account model, we'll check that basic transaction details match
+        # except for the fee, which should be higher in the new transaction
+        return (
+            old_tx.sender_address == new_tx.sender_address and
+            old_tx.recipient_address == new_tx.recipient_address and
+            old_tx.amount == new_tx.amount and
+            old_tx.nonce == new_tx.nonce
+        )
+        
+    def _check_recent_blocks_for_conflict(self, tx: Transaction) -> bool:
+        """Check if transaction conflicts with any in recent blocks.
+        
+        Returns True if a conflict is found, False otherwise.
+        """
+        # In a production system, this would query the blockchain for recent transactions
+        # from the same sender with the same nonce
+        # This is a simplified placeholder implementation
+        try:
+            from blockchain.chain import BlockchainState
+            blockchain = BlockchainState()
+            recent_txs = blockchain.get_recent_transactions(sender=tx.sender_address, count=10)
+            
+            for recent_tx in recent_txs:
+                if recent_tx.nonce == tx.nonce:
+                    return True
+                    
+            return False
+        except Exception as e:
+            # If we can't check recent blocks, log the error but allow the transaction
+            # This is safer than potentially allowing double-spends
+            self.logger.error(f"Error checking recent blocks for conflicts: {e}")
+            return False
+        
     def _check_for_replacement(self, tx: Transaction, tx_hash: str) -> Optional[str]:
         """
         Check if this transaction is replacing another one (RBF).

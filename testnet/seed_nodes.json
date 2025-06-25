@@ -1,0 +1,14 @@
+[
+  {
+    "id": "seed-1",
+    "ip": "127.0.0.1",
+    "port": 26657,
+    "persistent": true
+  },
+  {
+    "id": "seed-2",
+    "ip": "127.0.0.1",
+    "port": 26658,
+    "persistent": true
+  }
+]

@@ -1,0 +1,22 @@
+{
+    "network_type": "testnet",
+    "initial_supply": 150,
+    "block_reward": 21.0,
+    "halving_interval": 210000,
+    "minimum_stake": 1,
+    "distribution_period_days": 14,
+    "distribution_amount": 1,
+    "developer_reward": 1000,
+    "developer_address": "bt2c_3hmox33p62sgcvko2tkultb6gq",
+    "genesis_block": {
+        "timestamp": 1750655242,
+        "message": "The world needs a better financial system - BT2C Genesis",
+        "hash": "000000000025d6689c085ae165831e934ff763ae46a2a6c172b3f1b60a8ce26f",
+        "nonce": 2083236893,
+        "previous_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+        "merkle_root": "0000000000000000000000000000000000000000000000000000000000000000",
+        "version": 1,
+        "difficulty": 486604799,
+        "total_supply": 0
+    }
+}

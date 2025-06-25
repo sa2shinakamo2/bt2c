@@ -164,21 +164,34 @@ metrics:
 ```yaml
 # Security Configuration
 key_derivation:
-  argon2_memory_cost: 65536  # 64 MB
-  argon2_parallelism: 4
-  argon2_iterations: 3
-  pbkdf2_iterations: 600000
+  pbkdf2_iterations: 600000  # Password-based key derivation
+  pbkdf2_hash_module: sha512  # Hash algorithm for PBKDF2
+  key_size_bytes: 32  # AES-256 key size
+  
+key_rotation:
+  max_key_age_days: 90  # Recommended key rotation period
+  preserve_previous_keys: true  # Keep previous keys for signature verification
+  max_previous_keys: 5  # Maximum number of previous keys to store
+  
+wallet_security:
+  encryption_algorithm: AES-256-CBC  # Private key encryption
+  backup_encryption_algorithm: AES-256-CBC  # Backup file encryption
+  min_password_entropy: 60  # Minimum password strength
   
 formal_verification:
   enabled: true
   check_interval_seconds: 300  # 5 minutes
   
 replay_protection:
-  expiry_seconds: 3600  # 1 hour
+  nonce_required: true  # Require unique nonce for each transaction
+  expiry_seconds: 86400  # 24 hours maximum transaction validity
+  chain_id_in_signature: true  # Include chain ID in transaction signatures
   
 mempool_security:
   suspicious_transaction_age_seconds: 1800  # 30 minutes
   memory_threshold_percent: 80
+  conflict_detection: true  # Detect conflicting transactions
+  replacement_fee_percent: 110  # Require 10% higher fee for replacement
 ```
 
 #### metrics.conf
@@ -350,6 +363,8 @@ groups:
 | Task | Frequency | Description |
 |------|-----------|-------------|
 | Backup | Daily | Backup blockchain data and configuration |
+| Wallet Backup | Weekly | Create encrypted backups of validator wallets |
+| Key Rotation | Quarterly | Rotate validator and wallet keys |
 | Log Rotation | Weekly | Rotate and compress logs |
 | Disk Space Check | Daily | Ensure sufficient disk space |
 | Security Updates | Weekly | Apply security patches |
@@ -478,6 +493,35 @@ iostat -x 1
 
 # Check network connections
 netstat -tunapl | grep bt2c
+```
+
+### Wallet Management
+
+#### Key Rotation
+
+Rotate validator keys regularly (recommended every 90 days):
+
+```bash
+# Create a backup before key rotation
+bt2c-cli wallet backup --address bt2c1... --output /secure/backup/location/
+
+# Rotate keys
+bt2c-cli wallet rotate-keys --address bt2c1...
+
+# Verify key rotation was successful
+bt2c-cli wallet verify --address bt2c1...
+```
+
+#### Wallet Backup and Restore
+
+Create regular wallet backups:
+
+```bash
+# Create encrypted backup
+bt2c-cli wallet backup --address bt2c1... --output /secure/backup/location/
+
+# Restore from backup (if needed)
+bt2c-cli wallet restore --backup-file /secure/backup/location/wallet-bt2c1...-backup.json
 ```
 
 ### Support Resources

@@ -148,7 +148,7 @@ python tools/create_wallet.py
 
 This will generate:
 - A new BT2C wallet address
-- A private key
+- A private key (encrypted with your password)
 - A recovery seed phrase
 
 **IMPORTANT**: Save your seed phrase and private key in a secure location. If you lose them, you will lose access to your funds.
@@ -164,31 +164,33 @@ python tools/import_wallet.py --seed "your seed phrase here"
 ### Check Wallet Balance
 
 ```bash
-python tools/check_wallet_balance.py YOUR_WALLET_ADDRESS --network mainnet
+python tools/check_wallet_balance.py YOUR_WALLET_ADDRESS
 ```
 
-To see transaction history:
+### View Wallet Transactions
 
 ```bash
-python tools/check_wallet_balance.py YOUR_WALLET_ADDRESS --network mainnet --transactions
+python tools/check_wallet_balance.py YOUR_WALLET_ADDRESS --transactions
 ```
 
-### Check Blockchain Height
+### Rotate Wallet Keys
 
 ```bash
-python tools/check_block_height.py --network mainnet
+python tools/rotate_wallet_keys.py YOUR_WALLET_ADDRESS
 ```
 
-For more detailed information about the latest block:
+This will generate new keys while preserving your wallet address and transaction history.
+
+### Create Wallet Backup
 
 ```bash
-python tools/check_block_height.py --network mainnet --verbose
+python tools/backup_wallet.py YOUR_WALLET_ADDRESS --output /path/to/backup/directory
 ```
 
-### Backup Your Wallet
+### Restore Wallet from Backup
 
 ```bash
-python tools/backup_wallet.py --address YOUR_WALLET_ADDRESS --output wallet_backup.json
+python tools/restore_wallet.py --backup-file /path/to/backup/wallet-YOUR_WALLET_ADDRESS-backup.json
 ```
 
 ## Viewing Blockchain Data
@@ -228,8 +230,10 @@ python tools/view_blockchain.py transaction --hash TRANSACTION_HASH --network ma
 ### Send BT2C to Another Address
 
 ```bash
-python tools/send_transaction.py --from YOUR_WALLET_ADDRESS --to RECIPIENT_ADDRESS --amount 1.0 --network mainnet
+python tools/send_transaction.py --sender YOUR_WALLET_ADDRESS --recipient RECIPIENT_ADDRESS --amount 10.5 --network mainnet --nonce 1 --expiry 3600
 ```
+
+The `nonce` parameter should be incremented for each transaction to prevent replay attacks. The `expiry` parameter sets the transaction validity period in seconds (maximum 86400 seconds / 24 hours).
 
 You will be prompted to enter your private key to sign the transaction.
 
@@ -278,7 +282,10 @@ This updates the merkle roots for all blocks in the blockchain to ensure proper 
 - 2048-bit RSA keys
 - BIP39 seed phrases (256-bit)
 - BIP44 HD wallets
-- Password-protected storage with Argon2id KDF
+- Password-protected storage with PBKDF2 (600,000 iterations)
+- AES-256-CBC encryption for private keys
+- Secure key rotation with signature continuity
+- Encrypted wallet backup and restore
 - SSL/TLS encryption
 - Formal verification of blockchain invariants
 - Enhanced mempool with DoS protection
@@ -390,21 +397,26 @@ BT2C implements several advanced security features to ensure network integrity a
 - Conservation of value property ensures tokens are neither created nor destroyed improperly
 
 ### Secure Key Derivation
-- Argon2id implementation (winner of the Password Hashing Competition)
-- PBKDF2 fallback with high iteration count
+- PBKDF2 implementation with 600,000 iterations
+- SHA-512 hash algorithm for PBKDF2
 - Secure salt generation and management
-- Configurable memory cost, parallelism, and iteration count
+- 32-byte key size for AES-256 encryption
 
 ### Enhanced Wallet
 - Deterministic key generation from seed phrases
-- Key rotation functionality for improved security
-- Encrypted storage using AES-GCM
+- Key rotation with previous key preservation
+- Signature verification with both current and previous keys
+- Encrypted storage using AES-256-CBC
+- Password strength enforcement (minimum entropy: 60)
+- Secure wallet backup and restore functionality
 - Multiple key support for different purposes
 
 ### Replay Protection
-- Nonce tracking to prevent transaction replay attacks
-- Spent transaction tracking to prevent reuse
-- Transaction expiry to limit the validity period of transactions
+- Unique nonce required for each transaction
+- Chain ID included in transaction signatures
+- Transaction expiry (maximum 86400 seconds / 24 hours)
+- Double-spending prevention in mempool
+- Conflict detection with replacement fee requirements (110%)
 
 ## Documentation
 
