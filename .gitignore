@@ -71,3 +71,15 @@ Thumbs.db
 .project
 .classpath
 .settings/
+# Ignore private keys and certificates
+*.pem
+*.key
+*.crt
+mainnet/validators/*/config/private_key.pem
+testnet/certs/*.key
+# Ignore wallet files with private keys
+testnet/data/*wallet*.json
+mainnet/validators/*/config/private_key.pem
+*.pem
+*.key
+*.crt
