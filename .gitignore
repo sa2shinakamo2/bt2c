@@ -46,6 +46,12 @@ plan.md
 */.codeium/windsurf/brain/*/plan.md
 bt2c_backup_before_cleanup.tar.gz
 
+# All wallet files that might contain private keys
+*wallet*.json
+wallets/*.json
+developer_node/.bt2c/wallets/*.json
+testnet/data/*wallet*.json
+
 # Logs
 logs/
 *.log
