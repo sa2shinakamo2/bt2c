@@ -79,15 +79,15 @@ class WalletKeyConsistencyTest(unittest.TestCase):
             wallet = Wallet.generate()
             seed_phrase = wallet.seed_phrase
             wallet_file = "test_wallet.json"
-            password = "YOUR_PASSWORD"
+            password = "StrongP@ssw0rd123!" # Using a strong password that meets requirements
             
             # Save the wallet
             wallet.save(wallet_file, password)
             
             print(f"Original wallet address: {wallet.address}")
             
-            # Recover the wallet using the seed phrase
-            recovered_wallet = Wallet.recover(seed_phrase)
+            # Recover the wallet using the seed phrase and password
+            recovered_wallet = Wallet.recover(seed_phrase, password="StrongP@ssw0rd123!")
             
             print(f"Recovered wallet address: {recovered_wallet.address}")
             
@@ -227,7 +227,7 @@ class WalletKeyConsistencyTest(unittest.TestCase):
                 print("❌ FAIL: Patched implementation - Different signatures produced from same seed phrase")
                 
             # Test wallet recovery
-            recovered_wallet = Wallet.recover(seed_phrase)
+            recovered_wallet = Wallet.recover(seed_phrase, password="StrongP@ssw0rd123!")
             
             print(f"Recovered wallet address: {recovered_wallet.address}")
             

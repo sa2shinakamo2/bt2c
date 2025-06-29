@@ -221,7 +221,7 @@ class Block(BaseModel):
                 return False
             
             # Verify transaction
-            if not transaction.is_valid():
+            if not transaction.validate():
                 logger.warning("invalid_transaction",
                              block_hash=self.hash[:8],
                              tx_hash=transaction.hash[:8])

@@ -106,8 +106,8 @@ class TestWalletKeyManager(unittest.TestCase):
         # Create wallet key manager
         self.key_manager = WalletKeyManager()
         
-        # Test password
-        self.test_password = "YOUR_PASSWORD"
+        # Strong test password for regular tests
+        self.test_password = "StrongP@ssw0rd123!"
     
     def tearDown(self):
         """Clean up after tests"""
@@ -239,20 +239,20 @@ class TestWalletKeyManager(unittest.TestCase):
         
         # Generate a wallet
         wallet_data = self.key_manager.generate_wallet()
-        address = wallet_data["address"]
-        filename = f"{address}.json"
         
-        # Save the wallet
-        self.key_manager.save_wallet(wallet_data, filename, self.test_password)
+        # Save the wallet with a password
+        wallet_file = "test_wallet.json"
+        self.key_manager.save_wallet(wallet_data, wallet_file, self.test_password)
         
         # Try to load with incorrect password
-        incorrect_password = "YOUR_PASSWORD"
-        
-        with self.assertRaises(ValueError):
-            self.key_manager.load_wallet(filename, incorrect_password)
+        try:
+            self.key_manager.load_wallet(wallet_file, "wrong_password")
+            self.fail("Loaded wallet with incorrect password")
+        except ValueError as e:
+            print(f"✅ Correctly rejected incorrect password: {str(e)}")
         
         # Try to load with correct password
-        loaded_wallet = self.key_manager.load_wallet(filename, self.test_password)
+        loaded_wallet = self.key_manager.load_wallet(wallet_file, self.test_password)
         
         # Verify wallet was loaded correctly
         self.assertEqual(
@@ -260,6 +260,16 @@ class TestWalletKeyManager(unittest.TestCase):
             loaded_wallet["address"],
             "Loaded wallet has different address than original"
         )
+        
+        # Test with weak password - should raise ValueError
+        weak_password = "password"
+        wallet_file_weak = "weak_password_wallet.json"
+        
+        try:
+            self.key_manager.save_wallet(wallet_data, wallet_file_weak, weak_password)
+            self.fail("Saved wallet with weak password")
+        except ValueError as e:
+            print(f"✅ Correctly rejected weak password: {str(e)}")
         
         print("✅ Password protection verified")
     

@@ -83,8 +83,8 @@ IP_WHITELIST = [
 # Validator Wallet Addresses
 # These wallet addresses are associated with validators and get higher rate limits
 VALIDATOR_ADDRESSES = [
-    ""YOUR_WALLET_ADDRESS"",  # Developer node wallet
-    ""YOUR_WALLET_ADDRESS"",  # Standalone wallet
+    "YOUR_WALLET_ADDRESS",  # Developer node wallet
+    "YOUR_WALLET_ADDRESS",  # Standalone wallet
     # Add more validator addresses as needed
 ]
 
