@@ -1,0 +1,1125 @@
+/**
+ * BT2C Monitoring Service
+ * 
+ * Provides monitoring, metrics collection, and performance tracking for BT2C nodes.
+ * Features:
+ * - System metrics (CPU, memory, disk usage)
+ * - Blockchain metrics (block production rate, transaction throughput)
+ * - Network metrics (peer count, message rates)
+ * - Performance tracking (transaction verification time, block propagation time)
+ * - Alerting for critical issues
+ */
+
+const EventEmitter = require('events');
+const os = require('os');
+
+/**
+ * Metric types enum
+ * @enum {string}
+ */
+const MetricType = {
+  COUNTER: 'counter',   // Monotonically increasing value (e.g., total transactions)
+  GAUGE: 'gauge',       // Value that can go up and down (e.g., mempool size)
+  HISTOGRAM: 'histogram' // Distribution of values (e.g., transaction verification times)
+};
+
+/**
+ * Monitoring service for BT2C
+ */
+class MonitoringService extends EventEmitter {
+  /**
+   * Create a new monitoring service
+   * @param {Object} options - Monitor options
+   */
+  constructor(options = {}) {
+    super();
+    
+    this.options = {
+      // Collection intervals in milliseconds
+      metricsInterval: options.metricsInterval || 10000, // 10 seconds
+      alertsInterval: options.alertsInterval || 30000,   // 30 seconds
+      persistInterval: options.persistInterval || 60000,  // 60 seconds
+      
+      // Redis key prefix
+      redisKeyPrefix: options.redisKeyPrefix || 'bt2c:monitoring:',
+      
+      // Alert thresholds
+      alertThresholds: options.alertThresholds || {
+        system: {
+          cpu: { warning: 70, critical: 90 },
+          memory: { warning: 80, critical: 95 },
+          disk: { warning: 80, critical: 95 }
+        },
+        network: {
+          peerCount: { warning: 5, critical: 3 }
+        },
+        performance: {
+          txVerificationTime: { warning: 200, critical: 500 }
+        },
+        mempool: {
+          transactionCount: { warning: 1000, critical: 5000 }
+        }
+      },
+      
+      // Dependencies
+      redisClient: options.redisClient,
+      blockchainStore: options.blockchainStore,
+      transactionPool: options.transactionPool,
+      p2pNetwork: options.p2pNetwork,
+      
+      // Histogram size
+      histogramSize: options.histogramSize || 100
+    };
+    
+    // Initialize metrics
+    this.metrics = {
+      system: {
+        cpu: 0,
+        memoryUsage: 0,
+        diskUsage: 0,
+        uptime: 0,
+        startTime: Date.now()
+      },
+      blockchain: {
+        height: 0,
+        lastBlockHash: '',
+        lastBlockTime: 0,
+        transactionsPerBlock: 0,
+        averageBlockTime: 0
+      },
+      mempool: {
+        size: 0,
+        transactions: {},
+        transactionCount: 0
+      },
+      network: {
+        peerCount: 0,
+        inboundMessages: 0,
+        outboundMessages: 0,
+        messageRatio: 0,
+        messageRate: 0
+      },
+      performance: {
+        txVerificationTime: 0,
+        blockPropagationTime: 0,
+        consensusRoundTime: 0
+      },
+      custom: {},
+      test: { value: 123 }
+    };
+    
+    // Initialize histograms for performance metrics
+    this.histograms = {
+      transactionVerification: [],
+      blockPropagationTime: [],
+      blockValidationTime: [],
+      consensusRoundTime: []
+    };
+    
+    // Initialize block times array for average block time calculation
+    this.blockTimes = [];
+    
+    // Alert history
+    this.alerts = [];
+    
+    // Timers
+    this.timers = {
+      metrics: null,
+      alerts: null,
+      persist: null
+    };
+    
+    // Running flag
+    this.running = false;
+  }
+  
+  /**
+   * Start the monitoring service
+   */
+  async start() {
+    if (this.running) return;
+    
+    // Load metrics from Redis if available
+    if (this.options.redisClient && typeof this.options.redisClient.isConnected === 'function' && this.options.redisClient.isConnected()) {
+      await this.loadMetricsFromRedis();
+    }
+    
+    // Set up event listeners
+    this.setupEventListeners();
+    
+    // Start collection timers
+    this.timers.metrics = setInterval(() => this.collectMetrics(), this.options.metricsInterval);
+    this.timers.alerts = setInterval(() => this.checkAlerts(), this.options.alertsInterval);
+    
+    // Start persistence timer if Redis client is available
+    if (this.options.redisClient) {
+      this.timers.persist = setInterval(() => this.persistMetrics(), this.options.persistInterval);
+    }
+    
+    this.running = true;
+    this.emit('started');
+    
+    return true;
+  }
+  
+  /**
+   * Stop the monitoring service
+   */
+  async stop() {
+    if (!this.running) return;
+    
+    // Clear all timers
+    if (this.timers.metrics) clearInterval(this.timers.metrics);
+    if (this.timers.alerts) clearInterval(this.timers.alerts);
+    if (this.timers.persist) clearInterval(this.timers.persist);
+    
+    // Reset timers
+    this.timers = {
+      metrics: null,
+      alerts: null,
+      persist: null
+    };
+    
+    // Remove event listeners
+    this.removeEventListeners();
+    
+    // Persist metrics before stopping if Redis client is available
+    if (this.options.redisClient && typeof this.options.redisClient.isConnected === 'function' && this.options.redisClient.isConnected()) {
+      await this.persistMetrics();
+    }
+    
+    this.running = false;
+    this.emit('stopped');
+    
+    return true;
+  }
+  
+  /**
+   * Set up event listeners for monitored components
+   */
+  setupEventListeners() {
+    // Blockchain events
+    if (this.options.blockchainStore) {
+      this.options.blockchainStore.on('newBlock', this.handleNewBlock.bind(this));
+    }
+    
+    // Transaction pool events
+    if (this.options.transactionPool) {
+      this.options.transactionPool.on('newTransaction', this.handleNewTransaction.bind(this));
+      this.options.transactionPool.on('transactionRemoved', this.handleRemovedTransaction.bind(this));
+    }
+    
+    // P2P network events
+    if (this.options.p2pNetwork) {
+      this.options.p2pNetwork.on('peerConnected', this.handlePeerConnected.bind(this));
+      this.options.p2pNetwork.on('peerDisconnected', this.handlePeerDisconnected.bind(this));
+      this.options.p2pNetwork.on('inboundMessage', this.handleInboundMessage.bind(this));
+      this.options.p2pNetwork.on('outboundMessage', this.handleOutboundMessage.bind(this));
+    }
+  }
+  
+  /**
+   * Remove event listeners
+   */
+  removeEventListeners() {
+    // Blockchain events
+    if (this.options.blockchainStore) {
+      this.options.blockchainStore.removeListener('newBlock', this.handleNewBlock.bind(this));
+    }
+    
+    // Transaction pool events
+    if (this.options.transactionPool) {
+      this.options.transactionPool.removeListener('newTransaction', this.handleNewTransaction.bind(this));
+      this.options.transactionPool.removeListener('transactionRemoved', this.handleRemovedTransaction.bind(this));
+    }
+    
+    // P2P network events
+    if (this.options.p2pNetwork) {
+      this.options.p2pNetwork.removeListener('peerConnected', this.handlePeerConnected.bind(this));
+      this.options.p2pNetwork.removeListener('peerDisconnected', this.handlePeerDisconnected.bind(this));
+      this.options.p2pNetwork.removeListener('inboundMessage', this.handleInboundMessage.bind(this));
+      this.options.p2pNetwork.removeListener('outboundMessage', this.handleOutboundMessage.bind(this));
+    }
+  }
+  
+  /**
+   * Collect system, blockchain, and network metrics
+   */
+  async collectMetrics() {
+    if (!this.running) return;
+    
+    try {
+      // Collect system metrics
+      this.collectSystemMetrics();
+      
+      // Collect blockchain metrics
+      if (this.options.blockchainStore) {
+        await this.collectBlockchainMetrics();
+      }
+      
+      // Collect mempool metrics
+      if (this.options.transactionPool) {
+        this.collectMempoolMetrics();
+      }
+      
+      // Collect network metrics
+      if (this.options.p2pNetwork) {
+        this.collectNetworkMetrics();
+      }
+      
+      // Calculate derived metrics
+      this.calculateDerivedMetrics();
+      
+      // Emit metrics update event
+      this.emit('metricsUpdated', this.getMetrics());
+      
+    } catch (error) {
+      this.emit('error', { source: 'collectMetrics', error });
+    }
+  }
+  
+  /**
+   * Collect system metrics (CPU, memory, disk usage)
+   */
+  collectSystemMetrics() {
+    try {
+      // CPU usage (average of all cores)
+      const cpuUsage = os.loadavg()[0] * 100 / os.cpus().length;
+      this.metrics.system.cpu = Math.min(100, Math.round(cpuUsage * 100) / 100);
+      
+      // Memory usage
+      const totalMem = os.totalmem();
+      const freeMem = os.freemem();
+      const usedMem = totalMem - freeMem;
+      this.metrics.system.memoryUsage = Math.round((usedMem / totalMem) * 100 * 100) / 100;
+      
+      // Disk usage (mock for now, would need additional library for actual disk usage)
+      this.metrics.system.diskUsage = 50; // Placeholder value
+      
+      // Uptime
+      this.metrics.system.uptime = Math.round(process.uptime());
+      
+    } catch (error) {
+      this.emit('error', { source: 'collectSystemMetrics', error });
+    }
+  }
+  
+  /**
+   * Collect blockchain metrics
+   */
+  async collectBlockchainMetrics() {
+    try {
+      if (!this.options.blockchainStore) return;
+      
+      // Get blockchain height
+      const height = await this.options.blockchainStore.getHeight();
+      this.metrics.blockchain.height = height;
+      
+      // Get latest block
+      const latestBlock = await this.options.blockchainStore.getBlockByHeight(height);
+      if (latestBlock) {
+        this.metrics.blockchain.lastBlockHash = latestBlock.hash;
+        this.metrics.blockchain.lastBlockTime = latestBlock.timestamp;
+        this.metrics.blockchain.transactionsPerBlock = latestBlock.transactions ? latestBlock.transactions.length : 0;
+      }
+      
+    } catch (error) {
+      this.emit('error', { source: 'collectBlockchainMetrics', error });
+    }
+  }
+  
+  /**
+   * Collect mempool metrics
+   */
+  collectMempoolMetrics() {
+    try {
+      if (!this.options.transactionPool) return;
+      
+      // Get mempool transactions
+      const transactions = this.options.transactionPool.getPendingTransactions();
+      
+      // Update metrics
+      this.metrics.mempool.transactions = transactions;
+      this.metrics.mempool.size = Object.keys(transactions).length;
+      this.metrics.mempool.transactionCount = this.metrics.mempool.size;
+      
+    } catch (error) {
+      this.emit('error', { source: 'collectMempoolMetrics', error });
+    }
+  }
+  
+  /**
+   * Collect network metrics
+   */
+  collectNetworkMetrics() {
+    try {
+      if (!this.options.p2pNetwork) return;
+      
+      // Get peer count
+      const peers = this.options.p2pNetwork.getPeers();
+      this.metrics.network.peerCount = peers.length;
+      
+      // Calculate message ratio
+      if (this.metrics.network.outboundMessages > 0) {
+        this.metrics.network.messageRatio = this.metrics.network.inboundMessages / this.metrics.network.outboundMessages;
+      } else {
+        this.metrics.network.messageRatio = 0;
+      }
+      
+    } catch (error) {
+      this.emit('error', { source: 'collectNetworkMetrics', error });
+    }
+  }
+  
+  /**
+   * Calculate derived metrics
+   */
+  calculateDerivedMetrics() {
+    // Calculate average block time
+    if (this.blockTimes.length > 0) {
+      this.metrics.blockchain.averageBlockTime = this.calculateAverage(this.blockTimes);
+    }
+    
+    // Calculate average transaction verification time
+    if (this.histograms.transactionVerification.length > 0) {
+      this.metrics.performance.txVerificationTime = this.calculateAverage(this.histograms.transactionVerification);
+    }
+    
+    // Calculate average block propagation time
+    if (this.histograms.blockPropagationTime.length > 0) {
+      this.metrics.performance.blockPropagationTime = this.calculateAverage(this.histograms.blockPropagationTime);
+    }
+    
+    // Calculate average consensus round time
+    if (this.histograms.consensusRoundTime.length > 0) {
+      this.metrics.performance.consensusRoundTime = this.calculateAverage(this.histograms.consensusRoundTime);
+    }
+  }
+  
+  /**
+   * Calculate average of an array of numbers
+   * @param {Array<number>} values - Array of values
+   * @returns {number} - Average value
+   */
+  calculateAverage(values) {
+    if (!values || values.length === 0) return 0;
+    const sum = values.reduce((a, b) => a + b, 0);
+    return Math.round((sum / values.length) * 100) / 100;
+  }
+  
+  /**
+   * Handle new block event
+   * @param {Object} block - New block
+   */
+  handleNewBlock(block) {
+    if (!this.running) return;
+    
+    try {
+      // Update blockchain metrics
+      this.metrics.blockchain.height = block.height;
+      this.metrics.blockchain.lastBlockHash = block.hash;
+      this.metrics.blockchain.lastBlockTime = block.timestamp;
+      this.metrics.blockchain.transactionsPerBlock = block.transactions ? block.transactions.length : 0;
+      
+      // Update block times array for average calculation
+      const now = Date.now();
+      if (this.metrics.blockchain.lastBlockTime > 0) {
+        const blockTime = now - this.metrics.blockchain.lastBlockTime;
+        this.blockTimes.push(blockTime);
+        
+        // Keep only the last 100 block times
+        if (this.blockTimes.length > this.options.histogramSize) {
+          this.blockTimes.shift();
+        }
+      }
+      
+      // Emit block metrics event
+      this.emit('blockMetrics', {
+        height: block.height,
+        hash: block.hash,
+        timestamp: block.timestamp,
+        transactionCount: block.transactions ? block.transactions.length : 0
+      });
+      
+    } catch (error) {
+      this.emit('error', { source: 'handleNewBlock', error });
+    }
+  }
+  
+  /**
+   * Handle new transaction event
+   * @param {Object} transaction - New transaction
+   */
+  handleNewTransaction(transaction) {
+    if (!this.running) return;
+    
+    try {
+      // Update mempool metrics
+      if (this.options.transactionPool) {
+        const transactions = this.options.transactionPool.getPendingTransactions();
+        this.metrics.mempool.transactions = transactions;
+        this.metrics.mempool.size = Object.keys(transactions).length;
+        this.metrics.mempool.transactionCount = this.metrics.mempool.size;
+      }
+      
+      // Emit transaction metrics event
+      this.emit('transactionMetrics', {
+        id: transaction.id,
+        size: JSON.stringify(transaction).length,
+        timestamp: Date.now()
+      });
+      
+    } catch (error) {
+      this.emit('error', { source: 'handleNewTransaction', error });
+    }
+  }
+  
+  /**
+   * Handle removed transaction event
+   * @param {Object} transaction - Removed transaction
+   */
+  handleRemovedTransaction(transaction) {
+    if (!this.running) return;
+    
+    try {
+      // Update mempool metrics
+      if (this.options.transactionPool) {
+        const transactions = this.options.transactionPool.getPendingTransactions();
+        this.metrics.mempool.transactions = transactions;
+        this.metrics.mempool.size = Object.keys(transactions).length;
+        this.metrics.mempool.transactionCount = this.metrics.mempool.size;
+      }
+      
+      // Emit transaction removed event
+      this.emit('transactionRemoved', {
+        id: transaction.id,
+        reason: transaction.reason || 'unknown'
+      });
+      
+    } catch (error) {
+      this.emit('error', { source: 'handleRemovedTransaction', error });
+    }
+  }
+  
+  /**
+   * Handle peer connected event
+   * @param {Object} peer - Connected peer
+   */
+  handlePeerConnected(peer) {
+    if (!this.running) return;
+    
+    try {
+      // Update peer count
+      if (this.options.p2pNetwork) {
+        const peers = this.options.p2pNetwork.getPeers();
+        this.metrics.network.peerCount = peers.length;
+      }
+      
+      // Emit peer connected event
+      this.emit('peerConnected', {
+        id: peer.id,
+        address: peer.address,
+        timestamp: Date.now()
+      });
+      
+    } catch (error) {
+      this.emit('error', { source: 'handlePeerConnected', error });
+    }
+  }
+  
+  /**
+   * Handle peer disconnected event
+   * @param {Object} peer - Disconnected peer
+   */
+  handlePeerDisconnected(peer) {
+    if (!this.running) return;
+    
+    try {
+      // Update peer count
+      if (this.options.p2pNetwork) {
+        const peers = this.options.p2pNetwork.getPeers();
+        this.metrics.network.peerCount = peers.length;
+      }
+      
+      // Emit peer disconnected event
+      this.emit('peerDisconnected', {
+        id: peer.id,
+        address: peer.address,
+        reason: peer.reason || 'unknown',
+        timestamp: Date.now()
+      });
+      
+    } catch (error) {
+      this.emit('error', { source: 'handlePeerDisconnected', error });
+    }
+  }
+  
+  /**
+   * Handle inbound message event
+   * @param {Object} message - Inbound message
+   */
+  handleInboundMessage(message) {
+    if (!this.running) return;
+    
+    try {
+      // Increment inbound message count
+      this.metrics.network.inboundMessages++;
+      
+      // Update message ratio
+      if (this.metrics.network.outboundMessages > 0) {
+        this.metrics.network.messageRatio = this.metrics.network.inboundMessages / this.metrics.network.outboundMessages;
+      } else {
+        this.metrics.network.messageRatio = 0;
+      }
+      
+    } catch (error) {
+      this.emit('error', { source: 'handleInboundMessage', error });
+    }
+  }
+  
+  /**
+   * Handle outbound message event
+   * @param {Object} message - Outbound message
+   */
+  handleOutboundMessage(message) {
+    if (!this.running) return;
+    
+    try {
+      // Increment outbound message count
+      this.metrics.network.outboundMessages++;
+      
+      // Update message ratio
+      if (this.metrics.network.outboundMessages > 0) {
+        this.metrics.network.messageRatio = this.metrics.network.inboundMessages / this.metrics.network.outboundMessages;
+      } else {
+        this.metrics.network.messageRatio = 0;
+      }
+      
+    } catch (error) {
+      this.emit('error', { source: 'handleOutboundMessage', error });
+    }
+  }
+  
+  /**
+   * Record transaction verification time
+   * @param {number} time - Verification time in milliseconds
+   */
+  recordTransactionVerificationTime(time) {
+    if (!this.running) return;
+    
+    try {
+      // Add to histogram
+      this.histograms.transactionVerification.push(time);
+      
+      // Keep histogram size limited
+      if (this.histograms.transactionVerification.length > this.options.histogramSize) {
+        this.histograms.transactionVerification.shift();
+      }
+      
+      // Update average
+      this.metrics.performance.txVerificationTime = this.calculateAverage(this.histograms.transactionVerification);
+      
+      // Emit performance metric event
+      this.emit('performanceMetric', {
+        metric: 'txVerificationTime',
+        value: time,
+        average: this.metrics.performance.txVerificationTime
+      });
+      
+    } catch (error) {
+      this.emit('error', { source: 'recordTransactionVerificationTime', error });
+    }
+  }
+  
+  /**
+   * Record block propagation time
+   * @param {number} time - Propagation time in milliseconds
+   */
+  recordBlockPropagationTime(time) {
+    if (!this.running) return;
+    
+    try {
+      // Add to histogram
+      this.histograms.blockPropagationTime.push(time);
+      
+      // Keep histogram size limited
+      if (this.histograms.blockPropagationTime.length > this.options.histogramSize) {
+        this.histograms.blockPropagationTime.shift();
+      }
+      
+      // Update average
+      this.metrics.performance.blockPropagationTime = this.calculateAverage(this.histograms.blockPropagationTime);
+      
+      // Emit performance metric event
+      this.emit('performanceMetric', {
+        metric: 'blockPropagationTime',
+        value: time,
+        average: this.metrics.performance.blockPropagationTime
+      });
+      
+    } catch (error) {
+      this.emit('error', { source: 'recordBlockPropagationTime', error });
+    }
+  }
+  
+  /**
+   * Record consensus round time
+   * @param {number} time - Consensus round time in milliseconds
+   */
+  recordConsensusRoundTime(time) {
+    if (!this.running) return;
+    
+    try {
+      // Add to histogram
+      this.histograms.consensusRoundTime.push(time);
+      
+      // Keep histogram size limited
+      if (this.histograms.consensusRoundTime.length > this.options.histogramSize) {
+        this.histograms.consensusRoundTime.shift();
+      }
+      
+      // Update average
+      this.metrics.performance.consensusRoundTime = this.calculateAverage(this.histograms.consensusRoundTime);
+      
+      // Emit performance metric event
+      this.emit('performanceMetric', {
+        metric: 'consensusRoundTime',
+        value: time,
+        average: this.metrics.performance.consensusRoundTime
+      });
+      
+    } catch (error) {
+      this.emit('error', { source: 'recordConsensusRoundTime', error });
+    }
+  }
+  
+  /**
+   * Record a custom metric
+   * @param {string|Array} path - Metric path (e.g., 'app.requests' or ['app', 'requests'])
+   * @param {number} value - Metric value
+   * @param {string} type - Metric type (counter, gauge, histogram)
+   */
+  recordMetric(path, value, type = MetricType.GAUGE) {
+    if (!this.running) return;
+    
+    try {
+      // Convert string path to array if needed
+      const pathArray = Array.isArray(path) ? path : path.split('.');
+      
+      // Create nested objects as needed
+      let current = this.metrics.custom;
+      for (let i = 0; i < pathArray.length - 1; i++) {
+        if (!current[pathArray[i]]) {
+          current[pathArray[i]] = {};
+        }
+        current = current[pathArray[i]];
+      }
+      
+      // Set the value based on metric type
+      const metricName = pathArray[pathArray.length - 1];
+      
+      switch (type) {
+        case MetricType.COUNTER:
+          // Initialize if not exists
+          if (current[metricName] === undefined) {
+            current[metricName] = 0;
+          }
+          // Increment counter by value
+          current[metricName] += value;
+          break;
+          
+        case MetricType.GAUGE:
+          // Set gauge to value
+          current[metricName] = value;
+          break;
+          
+        case MetricType.HISTOGRAM:
+          // Initialize histogram array if not exists
+          if (!Array.isArray(current[metricName])) {
+            current[metricName] = [];
+          }
+          // Add value to histogram
+          current[metricName].push(value);
+          // Limit histogram size
+          if (current[metricName].length > this.options.histogramSize) {
+            current[metricName].shift();
+          }
+          break;
+          
+        default:
+          throw new Error(`Unknown metric type: ${type}`);
+      }
+      
+      // Emit custom metric event
+      this.emit('customMetric', {
+        path: Array.isArray(path) ? path.join('.') : path,
+        value,
+        type
+      });
+      
+    } catch (error) {
+      this.emit('error', { source: 'recordMetric', error });
+    }
+  }
+  
+  /**
+   * Check for alerts based on current metrics and thresholds
+   */
+  checkAlerts() {
+    if (!this.running) return;
+    
+    try {
+      const newAlerts = [];
+      const now = Date.now();
+      
+      // Check system metrics
+      if (this.options.alertThresholds.system) {
+        // CPU usage
+        if (this.options.alertThresholds.system.cpu) {
+          if (this.metrics.system.cpu >= this.options.alertThresholds.system.cpu.critical) {
+            newAlerts.push({
+              id: `system-cpu-critical-${now}`,
+              type: 'system',
+              metric: 'cpu',
+              severity: 'critical',
+              threshold: this.options.alertThresholds.system.cpu.critical,
+              value: this.metrics.system.cpu,
+              message: `CPU usage is critically high: ${this.metrics.system.cpu}% (threshold: ${this.options.alertThresholds.system.cpu.critical}%)`,
+              timestamp: now
+            });
+          } else if (this.metrics.system.cpu >= this.options.alertThresholds.system.cpu.warning) {
+            newAlerts.push({
+              id: `system-cpu-warning-${now}`,
+              type: 'system',
+              metric: 'cpu',
+              severity: 'warning',
+              threshold: this.options.alertThresholds.system.cpu.warning,
+              value: this.metrics.system.cpu,
+              message: `CPU usage is high: ${this.metrics.system.cpu}% (threshold: ${this.options.alertThresholds.system.cpu.warning}%)`,
+              timestamp: now
+            });
+          }
+        }
+        
+        // Memory usage
+        if (this.options.alertThresholds.system.memory) {
+          if (this.metrics.system.memoryUsage >= this.options.alertThresholds.system.memory.critical) {
+            newAlerts.push({
+              id: `system-memory-critical-${now}`,
+              type: 'system',
+              metric: 'memory',
+              severity: 'critical',
+              threshold: this.options.alertThresholds.system.memory.critical,
+              value: this.metrics.system.memoryUsage,
+              message: `Memory usage is critically high: ${this.metrics.system.memoryUsage}% (threshold: ${this.options.alertThresholds.system.memory.critical}%)`,
+              timestamp: now
+            });
+          } else if (this.metrics.system.memoryUsage >= this.options.alertThresholds.system.memory.warning) {
+            newAlerts.push({
+              id: `system-memory-warning-${now}`,
+              type: 'system',
+              metric: 'memory',
+              severity: 'warning',
+              threshold: this.options.alertThresholds.system.memory.warning,
+              value: this.metrics.system.memoryUsage,
+              message: `Memory usage is high: ${this.metrics.system.memoryUsage}% (threshold: ${this.options.alertThresholds.system.memory.warning}%)`,
+              timestamp: now
+            });
+          }
+        }
+        
+        // Disk usage
+        if (this.options.alertThresholds.system.disk) {
+          if (this.metrics.system.diskUsage >= this.options.alertThresholds.system.disk.critical) {
+            newAlerts.push({
+              id: `system-disk-critical-${now}`,
+              type: 'system',
+              metric: 'disk',
+              severity: 'critical',
+              threshold: this.options.alertThresholds.system.disk.critical,
+              value: this.metrics.system.diskUsage,
+              message: `Disk usage is critically high: ${this.metrics.system.diskUsage}% (threshold: ${this.options.alertThresholds.system.disk.critical}%)`,
+              timestamp: now
+            });
+          } else if (this.metrics.system.diskUsage >= this.options.alertThresholds.system.disk.warning) {
+            newAlerts.push({
+              id: `system-disk-warning-${now}`,
+              type: 'system',
+              metric: 'disk',
+              severity: 'warning',
+              threshold: this.options.alertThresholds.system.disk.warning,
+              value: this.metrics.system.diskUsage,
+              message: `Disk usage is high: ${this.metrics.system.diskUsage}% (threshold: ${this.options.alertThresholds.system.disk.warning}%)`,
+              timestamp: now
+            });
+          }
+        }
+      }
+      
+      // Check network metrics
+      if (this.options.alertThresholds.network) {
+        // Peer count
+        if (this.options.alertThresholds.network.peerCount) {
+          if (this.metrics.network.peerCount <= this.options.alertThresholds.network.peerCount.critical) {
+            newAlerts.push({
+              id: `network-peerCount-critical-${now}`,
+              type: 'network',
+              metric: 'peerCount',
+              severity: 'critical',
+              threshold: this.options.alertThresholds.network.peerCount.critical,
+              value: this.metrics.network.peerCount,
+              message: `Peer count is critically low: ${this.metrics.network.peerCount} (threshold: ${this.options.alertThresholds.network.peerCount.critical})`,
+              timestamp: now
+            });
+          } else if (this.metrics.network.peerCount <= this.options.alertThresholds.network.peerCount.warning) {
+            newAlerts.push({
+              id: `network-peerCount-warning-${now}`,
+              type: 'network',
+              metric: 'peerCount',
+              severity: 'warning',
+              threshold: this.options.alertThresholds.network.peerCount.warning,
+              value: this.metrics.network.peerCount,
+              message: `Peer count is low: ${this.metrics.network.peerCount} (threshold: ${this.options.alertThresholds.network.peerCount.warning})`,
+              timestamp: now
+            });
+          }
+        }
+      }
+      
+      // Check performance metrics
+      if (this.options.alertThresholds.performance) {
+        // Transaction verification time
+        if (this.options.alertThresholds.performance.txVerificationTime) {
+          if (this.metrics.performance.txVerificationTime >= this.options.alertThresholds.performance.txVerificationTime.critical) {
+            newAlerts.push({
+              id: `performance-txVerificationTime-critical-${now}`,
+              type: 'performance',
+              metric: 'txVerificationTime',
+              severity: 'critical',
+              threshold: this.options.alertThresholds.performance.txVerificationTime.critical,
+              value: this.metrics.performance.txVerificationTime,
+              message: `Transaction verification time is critically high: ${this.metrics.performance.txVerificationTime}ms (threshold: ${this.options.alertThresholds.performance.txVerificationTime.critical}ms)`,
+              timestamp: now
+            });
+          } else if (this.metrics.performance.txVerificationTime >= this.options.alertThresholds.performance.txVerificationTime.warning) {
+            newAlerts.push({
+              id: `performance-txVerificationTime-warning-${now}`,
+              type: 'performance',
+              metric: 'txVerificationTime',
+              severity: 'warning',
+              threshold: this.options.alertThresholds.performance.txVerificationTime.warning,
+              value: this.metrics.performance.txVerificationTime,
+              message: `Transaction verification time is high: ${this.metrics.performance.txVerificationTime}ms (threshold: ${this.options.alertThresholds.performance.txVerificationTime.warning}ms)`,
+              timestamp: now
+            });
+          }
+        }
+      }
+      
+      // Check mempool metrics
+      if (this.options.alertThresholds.mempool) {
+        // Transaction count
+        if (this.options.alertThresholds.mempool.transactionCount) {
+          if (this.metrics.mempool.transactionCount >= this.options.alertThresholds.mempool.transactionCount.critical) {
+            newAlerts.push({
+              id: `mempool-transactionCount-critical-${now}`,
+              type: 'mempool',
+              metric: 'transactionCount',
+              severity: 'critical',
+              threshold: this.options.alertThresholds.mempool.transactionCount.critical,
+              value: this.metrics.mempool.transactionCount,
+              message: `Mempool transaction count is critically high: ${this.metrics.mempool.transactionCount} (threshold: ${this.options.alertThresholds.mempool.transactionCount.critical})`,
+              timestamp: now
+            });
+          } else if (this.metrics.mempool.transactionCount >= this.options.alertThresholds.mempool.transactionCount.warning) {
+            newAlerts.push({
+              id: `mempool-transactionCount-warning-${now}`,
+              type: 'mempool',
+              metric: 'transactionCount',
+              severity: 'warning',
+              threshold: this.options.alertThresholds.mempool.transactionCount.warning,
+              value: this.metrics.mempool.transactionCount,
+              message: `Mempool transaction count is high: ${this.metrics.mempool.transactionCount} (threshold: ${this.options.alertThresholds.mempool.transactionCount.warning})`,
+              timestamp: now
+            });
+          }
+        }
+      }
+      
+      // Add new alerts to the list
+      if (newAlerts.length > 0) {
+        this.alerts = [...this.alerts, ...newAlerts];
+        
+        // Emit alert events
+        for (const alert of newAlerts) {
+          this.emit('alert', alert);
+        }
+      }
+      
+    } catch (error) {
+      this.emit('error', { source: 'checkAlerts', error });
+    }
+  }
+  
+  /**
+   * Persist metrics to Redis
+   */
+  async persistMetrics() {
+    if (!this.running || !this.options.redisClient) return;
+    
+    try {
+      // Serialize metrics
+      const serializedMetrics = JSON.stringify(this.metrics);
+      
+      // Save to Redis
+      await this.options.redisClient.set(
+        `${this.options.redisKeyPrefix}metrics`,
+        serializedMetrics
+      );
+      
+      // Serialize histograms
+      const serializedHistograms = JSON.stringify(this.histograms);
+      
+      // Save histograms to Redis
+      await this.options.redisClient.set(
+        `${this.options.redisKeyPrefix}histograms`,
+        serializedHistograms
+      );
+      
+      // Serialize block times
+      const serializedBlockTimes = JSON.stringify(this.blockTimes);
+      
+      // Save block times to Redis
+      await this.options.redisClient.set(
+        `${this.options.redisKeyPrefix}blockTimes`,
+        serializedBlockTimes
+      );
+      
+      // Emit persistence event
+      this.emit('metricsPersisted', {
+        timestamp: Date.now()
+      });
+      
+    } catch (error) {
+      this.emit('error', { source: 'persistMetrics', error });
+    }
+  }
+  
+  /**
+   * Load metrics from Redis
+   */
+  async loadMetricsFromRedis() {
+    if (!this.options.redisClient) return;
+    
+    try {
+      // Load metrics
+      const serializedMetrics = await this.options.redisClient.get(
+        `${this.options.redisKeyPrefix}metrics`
+      );
+      
+      if (serializedMetrics) {
+        const loadedMetrics = JSON.parse(serializedMetrics);
+        this.metrics = {
+          ...this.metrics,
+          ...loadedMetrics
+        };
+      }
+      
+      // Load histograms
+      const serializedHistograms = await this.options.redisClient.get(
+        `${this.options.redisKeyPrefix}histograms`
+      );
+      
+      if (serializedHistograms) {
+        const loadedHistograms = JSON.parse(serializedHistograms);
+        this.histograms = {
+          ...this.histograms,
+          ...loadedHistograms
+        };
+      }
+      
+      // Load block times
+      const serializedBlockTimes = await this.options.redisClient.get(
+        `${this.options.redisKeyPrefix}blockTimes`
+      );
+      
+      if (serializedBlockTimes) {
+        this.blockTimes = JSON.parse(serializedBlockTimes);
+      }
+      
+      // Emit metrics loaded event
+      this.emit('metricsLoaded', {
+        timestamp: Date.now()
+      });
+      
+      return true;
+      
+    } catch (error) {
+      this.emit('error', { source: 'loadMetricsFromRedis', error });
+      return false;
+    }
+  }
+  
+  /**
+   * Set alert thresholds
+   * @param {Object} thresholds - Alert thresholds
+   */
+  setAlertThresholds(thresholds) {
+    if (!thresholds) return;
+    
+    try {
+      // Merge thresholds with existing ones
+      this.options.alertThresholds = {
+        ...this.options.alertThresholds,
+        ...thresholds
+      };
+      
+      // Emit thresholds updated event
+      this.emit('thresholdsUpdated', {
+        thresholds: this.options.alertThresholds,
+        timestamp: Date.now()
+      });
+      
+    } catch (error) {
+      this.emit('error', { source: 'setAlertThresholds', error });
+    }
+  }
+  
+  /**
+   * Get current metrics
+   * @returns {Object} - Current metrics
+   */
+  getMetrics() {
+    return this.metrics;
+  }
+  
+  /**
+   * Get current alerts
+   * @returns {Array} - Current alerts
+   */
+  getAlerts() {
+    return this.alerts;
+  }
+  
+  /**
+   * Clear alerts
+   * @param {string} type - Alert type to clear (optional, clears all if not specified)
+   */
+  clearAlerts(type) {
+    if (type) {
+      this.alerts = this.alerts.filter(alert => alert.type !== type);
+    } else {
+      this.alerts = [];
+    }
+    
+    this.emit('alertsCleared', {
+      type: type || 'all',
+      timestamp: Date.now()
+    });
+  }
+}
+
+module.exports = {
+  MonitoringService,
+  MetricType
+};

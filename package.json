@@ -1,0 +1,45 @@
+{
+  "name": "bt2c",
+  "version": "1.0.0",
+  "description": "A pure cryptocurrency implementation with reputation-based Proof of Stake (rPoS).",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js"
+  },
+  "keywords": [
+    "blockchain",
+    "cryptocurrency",
+    "proof-of-stake",
+    "bt2c"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bip39": "^3.1.0",
+    "body-parser": "^1.20.2",
+    "bs58": "^6.0.0",
+    "cors": "^2.8.5",
+    "crypto-js": "^4.2.0",
+    "express": "^5.1.0",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0",
+    "node-rsa": "^1.1.1",
+    "pg": "^8.16.3",
+    "redis": "^5.5.6",
+    "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.3",
+    "supertest": "^6.3.4",
+    "redis-mock": "^0.56.3",
+    "pg-mock": "^1.0.1"
+  }
+}
