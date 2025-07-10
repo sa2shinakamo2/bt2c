@@ -6,30 +6,18 @@
  * - Connection pool management
  * - Peer discovery and maintenance
  * - TLS encryption for secure communication
+ * - Bitcoin-style seed node system for network bootstrapping
  */
 
 const EventEmitter = require('events');
 const crypto = require('crypto');
+const path = require('path');
+const os = require('os');
 const { Peer, PeerState } = require('./peer');
+const { SeedNodeSystem } = require('./seed_node_system');
+const { MessageType } = require('./message_types');
 
-/**
- * Message types enum
- * @enum {string}
- */
-const MessageType = {
-  HANDSHAKE: 'handshake',
-  PING: 'ping',
-  PONG: 'pong',
-  GET_PEERS: 'get_peers',
-  PEERS: 'peers',
-  GET_BLOCKS: 'get_blocks',
-  BLOCKS: 'blocks',
-  GET_TRANSACTIONS: 'get_transactions',
-  TRANSACTIONS: 'transactions',
-  NEW_BLOCK: 'new_block',
-  NEW_TRANSACTION: 'new_transaction',
-  VALIDATOR_UPDATE: 'validator_update'
-};
+// Message types are now imported from message_types.js
 
 /**
  * Network manager class for handling P2P communication
@@ -44,7 +32,7 @@ class NetworkManager extends EventEmitter {
     this.options = {
       maxPeers: options.maxPeers || 50,
       minPeers: options.minPeers || 10,
-      port: options.port || 26656,
+      port: options.port || 8334, // Updated default port to 8334
       peerDiscoveryInterval: options.peerDiscoveryInterval || 60000, // 1 minute
       peerPingInterval: options.peerPingInterval || 30000, // 30 seconds
       connectionTimeout: options.connectionTimeout || 5000, // 5 seconds
@@ -53,7 +41,17 @@ class NetworkManager extends EventEmitter {
       seedNodes: options.seedNodes || [],
       nodeId: options.nodeId || this.generateNodeId(),
       validatorAddress: options.validatorAddress || null,
-      validatorPriority: options.validatorPriority || false
+      validatorPriority: options.validatorPriority || false,
+      isSeedNode: options.isSeedNode || false,
+      dataDir: options.dataDir || path.join(os.homedir(), '.bt2c'),
+      dnsSeeds: options.dnsSeeds || [
+        'seed1.bt2c.network',
+        'seed2.bt2c.network',
+        'seed3.bt2c.network'
+      ],
+      hardcodedSeeds: options.hardcodedSeeds || [
+        'bt2c.network:8334' // Main seed node
+      ]
     };
 
     this.peers = new Map(); // Map of peer ID to peer object
@@ -68,8 +66,19 @@ class NetworkManager extends EventEmitter {
       version: '1.0.0',
       height: 0,
       isValidator: !!this.options.validatorAddress,
-      validatorAddress: this.options.validatorAddress
+      validatorAddress: this.options.validatorAddress,
+      isSeedNode: this.options.isSeedNode
     };
+    
+    // Initialize the seed node system
+    this.seedNodeSystem = new SeedNodeSystem({
+      networkManager: this,
+      dnsSeeds: this.options.dnsSeeds,
+      hardcodedSeeds: this.options.hardcodedSeeds,
+      isSeedNode: this.options.isSeedNode,
+      defaultPort: this.options.port,
+      dataDir: this.options.dataDir
+    });
   }
 
   /**
@@ -83,7 +92,7 @@ class NetworkManager extends EventEmitter {
   /**
    * Start the network manager
    */
-  start() {
+  async start() {
     if (this.isRunning) return;
     
     this.isRunning = true;
@@ -91,8 +100,17 @@ class NetworkManager extends EventEmitter {
     // In a real implementation, this would start a TCP server
     // For this example, we'll simulate the network
     
-    // Connect to seed nodes
-    this.connectToSeedNodes();
+    // Start the seed node system
+    await this.seedNodeSystem.start();
+    
+    // Get bootstrap peers from the seed node system
+    const bootstrapPeers = await this.seedNodeSystem.getBootstrapPeers();
+    console.log(`Found ${bootstrapPeers.length} bootstrap peers from seed node system`);
+    
+    // Connect to bootstrap peers
+    for (const peerAddress of bootstrapPeers) {
+      this.addPeer(peerAddress);
+    }
     
     // Start peer discovery
     this.startPeerDiscovery();
@@ -100,13 +118,16 @@ class NetworkManager extends EventEmitter {
     // Start peer ping
     this.startPeerPing();
     
+    // Register events to update peer storage
+    this.setupPeerStorageEvents();
+    
     this.emit('started');
   }
 
   /**
    * Stop the network manager
    */
-  stop() {
+  async stop() {
     if (!this.isRunning) return;
     
     this.isRunning = false;
@@ -122,6 +143,9 @@ class NetworkManager extends EventEmitter {
       this.pingTimer = null;
     }
     
+    // Stop the seed node system
+    await this.seedNodeSystem.stop();
+    
     // Disconnect all peers
     for (const peer of this.peers.values()) {
       peer.disconnect();
@@ -135,12 +159,29 @@ class NetworkManager extends EventEmitter {
   }
 
   /**
-   * Connect to seed nodes
+   * Set up events to update peer storage
    */
-  connectToSeedNodes() {
-    for (const seedNode of this.options.seedNodes) {
-      this.addPeer(seedNode);
-    }
+  setupPeerStorageEvents() {
+    // When a peer connects successfully
+    this.on('peer:connected', (peer) => {
+      this.seedNodeSystem.addPeer(peer.address, { score: 1 });
+    });
+    
+    // When a peer disconnects
+    this.on('peer:disconnected', (peer) => {
+      // Don't remove the peer, just update its last seen time
+      this.seedNodeSystem.addPeer(peer.address);
+    });
+    
+    // When a peer is banned
+    this.on('peer:banned', (peer) => {
+      this.seedNodeSystem.updatePeerScore(peer.address, -10);
+    });
+    
+    // Save peers periodically (every 15 minutes)
+    setInterval(() => {
+      this.seedNodeSystem.savePeers();
+    }, 15 * 60 * 1000);
   }
 
   /**
@@ -172,8 +213,14 @@ class NetworkManager extends EventEmitter {
       .filter(peer => peer.state === PeerState.CONNECTED);
     
     if (connectedPeers.length === 0) {
-      // If no connected peers, try connecting to seed nodes again
-      this.connectToSeedNodes();
+      // If no connected peers, try getting bootstrap peers again
+      this.seedNodeSystem.getBootstrapPeers().then(bootstrapPeers => {
+        for (const peerAddress of bootstrapPeers) {
+          this.addPeer(peerAddress);
+        }
+      }).catch(err => {
+        console.error('Failed to get bootstrap peers:', err);
+      });
       return;
     }
     
@@ -525,13 +572,22 @@ class NetworkManager extends EventEmitter {
    * @param {Peer} peer - Peer that sent the message
    */
   handleGetPeers(peer) {
-    // Get a list of connected peers
-    const peerAddresses = Array.from(this.peers.values())
+    // Get good peers from storage
+    const goodPeers = this.seedNodeSystem.getGoodPeers(50);
+    
+    // Add currently connected peers
+    const connectedPeerAddresses = Array.from(this.peers.values())
       .filter(p => p.state === PeerState.CONNECTED && p.id !== peer.id)
       .map(p => p.address);
     
+    // Combine and deduplicate
+    const allPeers = [...new Set([...goodPeers, ...connectedPeerAddresses])];
+    
+    // Limit to 100 peers max
+    const peersToSend = allPeers.slice(0, 100);
+    
     // Send peers
-    peer.send(MessageType.PEERS, { peers: peerAddresses });
+    peer.send(MessageType.PEERS, { peers: peersToSend });
   }
 
   /**
@@ -547,14 +603,27 @@ class NetworkManager extends EventEmitter {
       return;
     }
     
-    // Add new peers
+    // Add received peers to storage
+    let newPeersCount = 0;
     for (const address of peers) {
-      if (typeof address === 'string' && this.connectedPeers < this.options.maxPeers) {
-        this.addPeer(address);
+      if (typeof address === 'string' && this.isValidPeerAddress(address)) {
+        // Add to peer storage with neutral score
+        this.seedNodeSystem.addPeer(address, { score: 0 });
+        newPeersCount++;
+        
+        // Try to connect if we need more peers
+        if (this.connectedPeers < this.options.maxPeers) {
+          this.addPeer(address);
+        }
       }
     }
     
-    peer.updateReputation(1);
+    // Update peer reputation based on quality of peers provided
+    if (newPeersCount > 0) {
+      peer.updateReputation(Math.min(5, newPeersCount / 10));
+    }
+    
+    console.log(`Received ${peers.length} peers from ${peer.address}, ${newPeersCount} new`);
   }
 
   /**
@@ -669,9 +738,53 @@ class NetworkManager extends EventEmitter {
       validatorAddress: this.options.validatorAddress
     };
   }
+  /**
+   * Check if we need more peers
+   * @returns {boolean} - True if we need more peers
+   */
+  needMorePeers() {
+    return this.connectedPeers < this.options.minPeers;
+  }
+  
+  /**
+   * Get connected peer addresses
+   * @returns {Array} - Array of connected peer addresses
+   */
+  getConnectedPeerAddresses() {
+    return Array.from(this.peers.values())
+      .filter(peer => peer.state === PeerState.CONNECTED)
+      .map(peer => peer.address);
+  }
+  
+  /**
+   * Get random connected peers
+   * @param {number} count - Number of peers to get
+   * @returns {Array} - Array of random connected peers
+   */
+  getRandomConnectedPeers(count) {
+    const connectedPeers = Array.from(this.peers.values())
+      .filter(peer => peer.state === PeerState.CONNECTED);
+    
+    return this.getRandomPeers(connectedPeers, Math.min(count, connectedPeers.length));
+  }
+  
+  /**
+   * Validate peer address format
+   * @param {string} address - Peer address to validate
+   * @returns {boolean} - True if address is valid
+   */
+  isValidPeerAddress(address) {
+    // Basic validation: IP:port or hostname:port
+    const parts = address.split(':');
+    if (parts.length !== 2) return false;
+    
+    const port = parseInt(parts[1], 10);
+    if (isNaN(port) || port <= 0 || port > 65535) return false;
+    
+    return true;
+  }
 }
 
 module.exports = {
-  NetworkManager,
-  MessageType
+  NetworkManager
 };

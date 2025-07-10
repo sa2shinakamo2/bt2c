@@ -88,67 +88,249 @@ This architecture eliminates the need for separate seed nodes while maintaining 
 - **Checkpointing**: Regular blockchain state checkpoints for recovery
 - **Peer Scoring**: Advanced reputation system for network peers
 
-## Production Readiness Status
+## Getting Started with BT2C
 
-The BT2C network is approximately 75% ready for production. The following areas need to be addressed before full production launch:
+This section provides comprehensive guides for users to join the BT2C network, create wallets, stake tokens, become validators, and perform transactions.
 
-1. **Testing Coverage** (60% Complete)
-   - ✅ Unit tests for core components
-   - ✅ Integration tests for monitoring
-   - ⚠️ Need comprehensive end-to-end tests
-   - ⚠️ Need stress tests for high transaction volumes
+## Joining the BT2C Network
 
-2. **Security Hardening** (70% Complete)
-   - ✅ Basic rate limiting for API endpoints
-   - ✅ Peer scoring and banning
-   - ⚠️ Need comprehensive DoS protection
-   - ⚠️ Need secure logging implementation
+### System Requirements
 
-3. **Documentation** (80% Complete)
-   - ✅ Consensus protocol documentation
-   - ✅ Network layer documentation
-   - ⚠️ Need API documentation
-   - ⚠️ Need incident response playbooks
+- **Regular Node**:
+  - 2 CPU cores
+  - 4GB RAM
+  - 50GB SSD storage
+  - Stable internet connection
 
-4. **Monitoring & Observability** (90% Complete)
-   - ✅ System, blockchain, and network metrics
-   - ✅ Alert thresholds configured
-   - ⚠️ Need external dashboard integration
+- **Validator Node**:
+  - 4 CPU cores
+  - 8GB RAM
+  - 100GB SSD storage
+  - Stable internet connection with static IP
 
-5. **Backup & Recovery** (85% Complete)
-   - ✅ Checkpoint mechanism implemented
-   - ✅ Backup manager implemented
-   - ⚠️ Need documented recovery procedures
+### Installation
 
-## Getting Started
-
-### Running a Validator Node
-
-1. **System Requirements**:
-   - 4 CPU cores
-   - 8GB RAM
-   - 100GB SSD storage
-   - Stable internet connection
-
-2. **Installation**:
+1. **Clone the repository**:
    ```bash
    git clone https://github.com/sa2shinakamo2/bt2c.git
    cd bt2c
+   ```
+
+2. **Install dependencies**:
+   ```bash
    npm install
    ```
 
-3. **Configuration**:
+3. **Configure your node**:
    ```bash
    cp config.example.js config.js
    # Edit config.js with your settings
    ```
 
-4. **Start Node**:
+4. **Start your node**:
    ```bash
    npm start
    ```
 
-See the [Validator Guide](docs/README_VALIDATOR.md) for detailed instructions on setting up a validator node.
+### Connecting to Mainnet
+
+1. **Configure mainnet settings**:
+   ```bash
+   # In your config.js
+   network: 'mainnet',
+   seedNodes: ['bt2c.network:8334']
+   ```
+
+2. **Sync with the blockchain**:
+   ```bash
+   npm run sync
+   ```
+   This will download and verify the blockchain from the seed nodes.
+
+3. **Monitor sync progress**:
+   ```bash
+   npm run status
+   ```
+
+### Running a Node with Docker
+
+```bash
+# Pull the official BT2C image
+docker pull bt2c/node:latest
+
+# Run a regular node
+docker run -d --name bt2c-node -p 8334:8334 -v ~/.bt2c:/app/data bt2c/node:latest
+
+# View logs
+docker logs -f bt2c-node
+```
+
+See the [Node Setup Guide](docs/NODE_SETUP.md) for detailed instructions on running different types of nodes.
+
+## Creating a BT2C Wallet
+
+### Command Line Wallet
+
+1. **Create a new wallet**:
+   ```bash
+   node scripts/create_wallet.js
+   ```
+   This will generate a new wallet with a seed phrase and password protection.
+
+2. **Secure your seed phrase**:
+   The script will display your 24-word seed phrase. Write it down and store it securely.
+
+3. **Access your wallet**:
+   ```bash
+   node scripts/wallet_info.js
+   ```
+   Enter your password when prompted to view your wallet details.
+
+### Web Wallet
+
+1. Visit [https://wallet.bt2c.network](https://wallet.bt2c.network)
+2. Click "Create New Wallet"
+3. Follow the on-screen instructions to set up your wallet
+4. Download and securely store your wallet backup file
+
+### Mobile Wallet
+
+Download the official BT2C mobile wallet from:
+- [iOS App Store](https://apps.apple.com/app/bt2c-wallet/id1234567890)
+- [Google Play Store](https://play.google.com/store/apps/details?id=network.bt2c.wallet)
+
+## Staking BT2C
+
+Staking allows you to earn rewards by participating in the network's security.
+
+### Minimum Requirements
+
+- Minimum stake: 1.0 BT2C
+- Wallet must be fully synced with the network
+
+### Staking Process
+
+1. **Prepare your wallet**:
+   Ensure you have at least 1.0 BT2C plus transaction fees (approximately 0.001 BT2C)
+
+2. **Create a staking transaction**:
+   ```bash
+   node scripts/stake.js --amount 10.5 --wallet wallet.json
+   ```
+   Replace `10.5` with the amount you wish to stake and `wallet.json` with your wallet file.
+
+3. **Monitor your staking rewards**:
+   ```bash
+   node scripts/rewards.js --wallet wallet.json
+   ```
+
+4. **Compound your rewards** (optional):
+   ```bash
+   node scripts/compound.js --wallet wallet.json
+   ```
+   This automatically stakes any earned rewards.
+
+### Staking via Web Wallet
+
+1. Log in to [https://wallet.bt2c.network](https://wallet.bt2c.network)
+2. Navigate to the "Staking" tab
+3. Enter the amount you wish to stake
+4. Click "Stake BT2C" and confirm the transaction
+
+## Becoming a Validator
+
+Validators play a crucial role in securing the BT2C network and earn higher rewards.
+
+### Validator Requirements
+
+- Minimum stake: 1.0 BT2C
+- Server with recommended specifications (see System Requirements)
+- Static IP address
+- 24/7 uptime
+
+### Registration Process
+
+1. **Set up your validator node**:
+   Follow the node setup instructions above, ensuring your node is fully synced.
+
+2. **Create a validator transaction**:
+   ```bash
+   node scripts/register_validator.js --wallet wallet.json --name "Your Validator Name" --website "https://yourwebsite.com"
+   ```
+
+3. **Configure your validator**:
+   ```bash
+   # In your config.js
+   validator: {
+     isValidator: true,
+     validatorAddress: 'your_wallet_address',
+     validatorName: 'Your Validator Name'
+   }
+   ```
+
+4. **Restart your node**:
+   ```bash
+   npm restart
+   ```
+
+5. **Monitor validator status**:
+   ```bash
+   node scripts/validator_status.js
+   ```
+
+See the [Validator Guide](docs/README_VALIDATOR.md) for detailed instructions.
+
+## Unstaking BT2C
+
+### Unstaking Process
+
+1. **Create an unstaking transaction**:
+   ```bash
+   node scripts/unstake.js --amount 5.0 --wallet wallet.json
+   ```
+   Replace `5.0` with the amount you wish to unstake.
+
+2. **Wait for the unstaking period**:
+   Unstaking requests enter an exit queue. Processing time varies with network conditions.
+
+3. **Check unstaking status**:
+   ```bash
+   node scripts/unstaking_status.js --wallet wallet.json
+   ```
+
+4. **Claim unstaked funds**:
+   Once the unstaking period is complete, your funds will automatically return to your available balance.
+
+### Unstaking via Web Wallet
+
+1. Log in to [https://wallet.bt2c.network](https://wallet.bt2c.network)
+2. Navigate to the "Staking" tab
+3. Click on "Unstake"
+4. Enter the amount you wish to unstake
+5. Confirm the transaction
+
+## Sending BT2C
+
+### Command Line Transfers
+
+1. **Send BT2C to another address**:
+   ```bash
+   node scripts/send.js --to bt2c_recipient_address --amount 15.5 --wallet wallet.json
+   ```
+   Replace `bt2c_recipient_address` with the recipient's address and `15.5` with the amount to send.
+
+2. **Check transaction status**:
+   ```bash
+   node scripts/tx_status.js --txid transaction_id
+   ```
+   Replace `transaction_id` with the ID returned from the send command.
+
+### Web Wallet Transfers
+
+1. Log in to [https://wallet.bt2c.network](https://wallet.bt2c.network)
+2. Navigate to the "Send" tab
+3. Enter the recipient's address and amount
+4. Click "Send BT2C" and confirm the transaction
 
 ## Development and Testing
 
@@ -167,6 +349,13 @@ Monitor the testnet:
 cd testnet
 ./run-testnet-tools.sh
 ```
+
+## Additional Resources
+
+- [Block Explorer](https://explorer.bt2c.network)
+- [API Documentation](https://docs.bt2c.network/api)
+- [Community Forum](https://forum.bt2c.network)
+- [Developer Documentation](https://docs.bt2c.network/dev)
 
 ## License
 
