@@ -6,15 +6,7 @@ A pure cryptocurrency implementation with reputation-based Proof of Stake (rPoS)
 
 BT2C is designed to function as a pure medium of exchange and store of value without the overhead of smart contracts or decentralized applications. It implements a novel reputation-based Proof of Stake (rPoS) consensus mechanism that addresses the energy consumption concerns of Proof of Work while maintaining security properties through cryptographic verification and economic incentives.
 
-## Current Network Status
 
-- **Mainnet Status**: Operational since March 2025
-- **Current Block Height**: ~392 (as of July 2025)
-- **Distribution Period**: March 23 - April 6, 2025
-- **Network Access**: 
-  - Main domain: bt2c.net
-  - API endpoint: api.bt2c.net
-  - Block explorer: bt2c.net/explorer
 
 ## Key Features
 
