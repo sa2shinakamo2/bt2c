@@ -47,7 +47,7 @@ class RPoSConsensus extends EventEmitter {
   constructor(options = {}) {
     super();
     this.options = {
-      blockTime: options.blockTime || 60000, // 60 seconds
+      blockTime: options.blockTime || 300000, // 5 minutes
       proposalTimeout: options.proposalTimeout || 30000, // 30 seconds
       votingTimeout: options.votingTimeout || 15000, // 15 seconds
       finalizationTimeout: options.finalizationTimeout || 15000, // 15 seconds
@@ -108,18 +108,44 @@ class RPoSConsensus extends EventEmitter {
    * Start the consensus engine
    */
   start() {
-    if (this.isRunning) return;
+    if (this.isRunning) {
+      console.log('Consensus engine already running');
+      return;
+    }
     
+    console.log('Starting consensus engine...');
     this.isRunning = true;
     this.state = ConsensusState.WAITING;
     
     // Load validators if integration is provided
+    console.log('Loading validators...');
     this._loadValidators();
     
-    // Start the block timer
-    this._scheduleNextBlock();
+    // Check if we have enough active validators to start consensus
+    if (this.activeValidators < this.options.minValidators) {
+      console.log(`Not enough active validators (${this.activeValidators}/${this.options.minValidators}) to start consensus`);
+      console.log('Consensus engine will wait for more validators to become active');
+      
+      // Set up a periodic check for validators
+      this.validatorCheckInterval = setInterval(() => {
+        console.log('Checking for active validators...');
+        this._loadValidators();
+        
+        if (this.activeValidators >= this.options.minValidators) {
+          console.log(`Enough active validators (${this.activeValidators}/${this.options.minValidators}) to start consensus`);
+          clearInterval(this.validatorCheckInterval);
+          this.startConsensusLoop();
+        }
+      }, 5000); // Check every 5 seconds
+    } else {
+      // Start consensus loop immediately
+      console.log(`Enough active validators (${this.activeValidators}/${this.options.minValidators}) to start consensus`);
+      this.startConsensusLoop();
+    }
     
+    // Emit started event
     this.emit('started');
+    console.log('Consensus engine started');
   }
 
   /**
@@ -550,7 +576,8 @@ class RPoSConsensus extends EventEmitter {
     this.emit('block:accepted', {
       height: this.currentHeight,
       hash: block.hash,
-      proposer: proposerAddress
+      proposer: proposerAddress,
+      block: block
     });
     
     // Keep finalized blocks list at a reasonable size
@@ -961,6 +988,7 @@ class RPoSConsensus extends EventEmitter {
     // If we have function overrides from ValidatorManager, use them
     if (typeof this.options.getValidators === 'function') {
       const validators = this.options.getValidators();
+      console.log(`Loading validators from ValidatorManager: ${validators.length} validators found`);
       
       // Clear existing validators
       this.validators.clear();
@@ -969,11 +997,20 @@ class RPoSConsensus extends EventEmitter {
       
       // Add validators from ValidatorManager
       for (const validator of validators) {
+        // Log validator details for debugging
+        console.log(`Processing validator: ${validator.address.substring(0, 10)}... State: ${validator.state}, Stake: ${validator.stake}`);
+        
+        // Use the original Validator instance instead of creating a plain object
+        // This ensures all methods like updateStats are available
         this.validators.set(validator.address, validator);
         this.totalStake += validator.stake;
         
+        // Check if validator is active
         if (validator.state === ValidatorState.ACTIVE) {
           this.activeValidators++;
+          console.log(`Validator ${validator.address.substring(0, 10)}... is ACTIVE`);
+        } else {
+          console.log(`Validator ${validator.address.substring(0, 10)}... is NOT active, state: ${validator.state}`);
         }
       }
       
@@ -983,6 +1020,16 @@ class RPoSConsensus extends EventEmitter {
         activeCount: this.activeValidators,
         totalStake: this.totalStake
       });
+      
+      console.log(`Validators loaded: ${this.validators.size} total, ${this.activeValidators} active, ${this.totalStake} total stake`);
+      
+      // If we have active validators but no current proposer, select one
+      if (this.activeValidators > 0 && !this.currentProposer && this.state === ConsensusState.WAITING) {
+        console.log('Active validators found but no proposer selected. Selecting proposer...');
+        this.selectProposer();
+      }
+    } else {
+      console.log('No getValidators function provided, cannot load validators');
     }
   }
   

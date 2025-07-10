@@ -60,7 +60,7 @@ Connects the consensus engine with other system components:
 - Maximum supply: 21,000,000 BT2C
 
 ### Initial Distribution
-- Developer node (first ever node): 100 BT2C one-time reward
+- Developer node (first ever node): 1000 BT2C one-time reward
 - Other validator nodes: 1 BT2C one-time reward for joining during initial 2-week period
 
 ### Penalties

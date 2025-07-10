@@ -1,0 +1,45 @@
+{
+  "timestamp": 1720051233000,
+  "version": "0.1.0",
+  "chainId": "bt2c-testnet",
+  "initialValidators": [
+    {
+      "address": "047131f8d029094a7936186821349dc919fab66ff281efd18cb4229356b8c763a81001b0c7d65eebc5099acf480ace9a91fa344e988756baab5b191b47fff86ef9",
+      "stake": 100,
+      "state": "active",
+      "reputation": 1.0,
+      "isDeveloperNode": true
+    },
+    {
+      "address": "04a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2",
+      "stake": 10,
+      "state": "active",
+      "reputation": 1.0,
+      "isDeveloperNode": false
+    },
+    {
+      "address": "04f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2b1a0f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2b1a0f9e8",
+      "stake": 5,
+      "state": "active",
+      "reputation": 1.0,
+      "isDeveloperNode": false
+    }
+  ],
+  "initialBalances": {
+    "047131f8d029094a7936186821349dc919fab66ff281efd18cb4229356b8c763a81001b0c7d65eebc5099acf480ace9a91fa344e988756baab5b191b47fff86ef9": 100,
+    "04a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2": 10,
+    "04f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2b1a0f9e8d7c6b5a4f3e2d1c0b9a8f7e6d5c4b3a2f1e0d9c8b7a6f5e4d3c2b1a0f9e8": 5
+  },
+  "initialSupply": 115,
+  "blockReward": 21,
+  "halvingInterval": 100,
+  "maxSupply": 21000000,
+  "consensusParams": {
+    "minValidators": 1,
+    "maxValidators": 100,
+    "minStake": 1,
+    "blockProposalTimeout": 5000,
+    "votingTimeout": 3000,
+    "finalizationThreshold": 0.67
+  }
+}

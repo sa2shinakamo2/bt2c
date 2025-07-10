@@ -140,11 +140,26 @@ class ConsensusIntegration extends EventEmitter {
       // Add block to blockchain store
       if (this.blockchainStore) {
         try {
-          await this.blockchainStore.addBlock(data.block);
+          console.log('Attempting to commit block to blockchain store:', {
+            blockExists: !!data.block,
+            proposer: data.proposer,
+            height: data.height,
+            hash: data.hash
+          });
+          
+          // Pass both block and proposer to addBlock method
+          const result = await this.blockchainStore.addBlock(data.block, data.proposer);
+          
+          console.log('Block commit result:', {
+            success: result,
+            newHeight: this.blockchainStore.currentHeight
+          });
         } catch (error) {
+          console.error('Error committing block to blockchain store:', error);
           this.emit('error', {
             source: 'consensus:block:accepted',
-            error: error.message
+            error: error.message,
+            stack: error.stack
           });
         }
       }

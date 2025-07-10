@@ -8,12 +8,16 @@ yarn.lock
 
 # Environment variables and configuration
 .env
+.env.*
+*.env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 config/secrets.js
 config/credentials.js
+**/config/secrets.*
+**/config/credentials.*
 
 # Project planning and sensitive data
 plan.md
@@ -22,6 +26,9 @@ website/
 **/website/
 docs/internal/
 **/docs/internal/
+**/*secret*
+**/*private*
+**/*credential*
 
 # Private keys and wallet data
 **/keys/
@@ -29,6 +36,11 @@ docs/internal/
 **/*.key
 **/*.pem
 **/*.wallet
+**/*.keystore
+**/*.seed
+**/*.mnemonic
+**/*wallet*.json
+**/*key*.json
 
 # Build and distribution files
 dist/
@@ -48,9 +60,11 @@ Thumbs.db
 # Logs
 logs/
 *.log
+log/
 
 # Redis dump
 dump.rdb
+*.rdb
 
 # Test data
 test-data/
@@ -62,6 +76,40 @@ temp/
 **/.tmp/
 **/.temp/
 
-# Docker volumes
+# Docker volumes and configuration
 data/
 volumes/
+**/docker-volumes/
+
+# Validator specific files
+**/validator_data/
+**/node_data/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+*.bak
+*.backup
+**/backups/
+
+# Certificate files
+*.crt
+*.cer
+*.ca-bundle
+
+# Testnet and local network configurations
+**/testnet/config/
+**/localnet/config/
+**/devnet/config/
+
+# Generated documentation
+docs/generated/
+
+# Personal notes
+**/notes/
+*NOTES*
+*TODO*
+

@@ -593,6 +593,68 @@ class CheckpointManager extends EventEmitter {
   }
   
   /**
+   * Save a checkpoint
+   * @param {Object} checkpoint - Checkpoint data
+   * @returns {Promise} Promise that resolves when checkpoint is saved
+   */
+  async saveCheckpoint(checkpoint) {
+    try {
+      if (!checkpoint || typeof checkpoint !== 'object') {
+        throw new Error('Invalid checkpoint data');
+      }
+      
+      if (checkpoint.height === undefined) {
+        throw new Error('Checkpoint height is required');
+      }
+      
+      // Calculate hash if not provided
+      if (!checkpoint.hash) {
+        checkpoint.hash = this.calculateCheckpointHash(checkpoint);
+      }
+      
+      // Add creation timestamp if not provided
+      if (!checkpoint.createdAt) {
+        checkpoint.createdAt = Date.now();
+      }
+      
+      // Sign checkpoint if enabled
+      if (this.options.signCheckpoints && this.options.privateKey) {
+        checkpoint.signature = this.signCheckpoint(checkpoint);
+      }
+      
+      // Add to checkpoints map
+      this.checkpoints.set(checkpoint.height, checkpoint);
+      
+      // Update last checkpoint height
+      if (checkpoint.height > this.lastCheckpointHeight) {
+        this.lastCheckpointHeight = checkpoint.height;
+      }
+      
+      // Save checkpoint to file
+      const checkpointPath = path.join(
+        this.options.checkpointDir,
+        `checkpoint_${checkpoint.height}_${checkpoint.createdAt}.json`
+      );
+      
+      await fs.promises.writeFile(checkpointPath, JSON.stringify(checkpoint, null, 2));
+      
+      this.emit('checkpointSaved', {
+        height: checkpoint.height,
+        hash: checkpoint.hash
+      });
+      
+      return checkpoint;
+    } catch (error) {
+      this.emit('error', {
+        operation: 'saveCheckpoint',
+        error: error.message
+      });
+      
+      throw error;
+    }
+  }
+  
+  /**
    * Close the checkpoint manager
    * @returns {Promise} Promise that resolves when manager is closed
    */

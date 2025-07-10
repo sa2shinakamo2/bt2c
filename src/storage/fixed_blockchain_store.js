@@ -206,25 +206,13 @@ class BlockchainStore extends EventEmitter {
       // Initialize checkpoint manager if needed
       if (this.options.enableCheckpointing) {
         this.checkpointManager = new CheckpointManager({
-          dataDir: this.options.dataDir,
           checkpointDir: this.options.checkpointDir,
           maxCheckpoints: this.options.maxCheckpoints,
           privateKey: this.options.checkpointPrivateKey,
           publicKey: this.options.checkpointPublicKey,
           trustedCheckpoints: this.options.trustedCheckpoints,
-          blockchainStore: this,
-          autoCreateDir: this.options.autoCreateDir
+          blockchainStore: this
         });
-        
-        // Initialize the checkpoint manager
-        await this.checkpointManager.initialize();
-        
-        // Get the latest checkpoint
-        const latestCheckpoint = this.checkpointManager.getLatestCheckpoint();
-        if (latestCheckpoint) {
-          this.lastCheckpointHeight = latestCheckpoint.height;
-          this.lastCheckpointHash = latestCheckpoint.hash;
-        }
       }
       
       // Start sync timer
