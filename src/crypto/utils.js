@@ -13,7 +13,7 @@
 const NodeRSA = require('node-rsa');
 const CryptoJS = require('crypto-js');
 const bip39 = require('bip39');
-const bs58 = require('bs58');
+const base58 = require('bs58').default;
 const crypto = require('crypto');
 
 /**
@@ -41,7 +41,7 @@ function deriveAddress(publicKey) {
   const hashBytes = Buffer.from(hash, 'hex');
   
   // Encode with base58
-  return bs58.encode(hashBytes);
+  return base58.encode(hashBytes);
 }
 
 /**
